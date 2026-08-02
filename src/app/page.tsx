@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { supabase } from '../../supabaseClient';
+import { supabase } from './supabaseClient';
 
 interface MenuItem {
   id: number;
