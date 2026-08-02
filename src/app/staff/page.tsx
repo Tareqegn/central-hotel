@@ -1,32 +1,11 @@
 "use client";
 
-import React, { Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-
-function DashboardActions() {
-  const router = useRouter();
-  const searchParams = useSearchParams(); // Safely isolated here
-
-  return (
-    <div className="space-y-3">
-      <button
-        onClick={() => router.push('/dashboard')}
-        className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-xl text-xs uppercase tracking-wider font-mono transition-all shadow-lg active:scale-95"
-      >
-        Manager Dashboard →
-      </button>
-
-      <button
-        onClick={() => router.push('/staff')}
-        className="w-full py-3 bg-white/[0.05] hover:bg-white/[0.1] text-white font-semibold rounded-xl text-xs uppercase tracking-wider font-mono border border-white/[0.08] transition-all active:scale-95"
-      >
-        Staff Portal Hub
-      </button>
-    </div>
-  );
-}
+import React from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Page() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen bg-[#121212] text-neutral-100 flex items-center justify-center p-6 font-sans antialiased relative">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-white/[0.02] blur-[100px] pointer-events-none rounded-full" />
@@ -43,9 +22,21 @@ export default function Page() {
           Welcome to the Central Hotel 102-room management system. Select a portal below to access the interface.
         </p>
 
-        <Suspense fallback={<div className="text-xs font-mono text-neutral-500 py-4">Loading controls...</div>}>
-          <DashboardActions />
-        </Suspense>
+        <div className="space-y-3">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-xl text-xs uppercase tracking-wider font-mono transition-all shadow-lg active:scale-95"
+          >
+            Manager Dashboard →
+          </button>
+
+          <button
+            onClick={() => router.push('/staff')}
+            className="w-full py-3 bg-white/[0.05] hover:bg-white/[0.1] text-white font-semibold rounded-xl text-xs uppercase tracking-wider font-mono border border-white/[0.08] transition-all active:scale-95"
+          >
+            Staff Portal Hub
+          </button>
+        </div>
       </div>
     </div>
   );
