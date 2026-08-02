@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../supabaseClient';
 
@@ -185,9 +185,7 @@ interface PageProps {
   params: Promise<{ roomNumber: string }> | { roomNumber: string };
 }
 
-export default function RoomPage({ params }: PageProps) {
-  const resolvedParams = React.use(params as Promise<{ roomNumber: string }>);
-  const roomNumber = resolvedParams.roomNumber;
+function RoomContent({ roomNumber }: { roomNumber: string }) {
   const searchParams = useSearchParams();
 
   const [isValidating, setIsValidating] = useState<boolean>(true);
@@ -470,10 +468,8 @@ export default function RoomPage({ params }: PageProps) {
       darkMode ? 'bg-[#0b0d14] text-neutral-100' : 'bg-[#f7f8fa] text-neutral-900'
     }`}>
       
-      {/* Background ambient lighting */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/[0.07] blur-[120px] pointer-events-none rounded-full" />
 
-      {/* Main Enclosed Card Container */}
       <div className={`w-full max-w-md rounded-3xl border p-6 sm:p-8 shadow-2xl relative z-10 transition-colors duration-300 ${
         darkMode ? 'bg-[#131622] border-white/[0.06]' : 'bg-white border-neutral-200'
       }`}>
@@ -503,7 +499,6 @@ export default function RoomPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Header */}
         <header className="w-full text-center mb-6">
           <div className="w-16 h-16 mx-auto mb-3 flex items-center justify-center">
             <img 
@@ -696,8 +691,8 @@ export default function RoomPage({ params }: PageProps) {
                 <input 
                   type="time" 
                   value={taxiTime} 
-                  onChange={(e) => setTaxiTime(e.target.value)}
-                  className="w-full bg-[#0b0d14] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                  onChange={(e) => setTaxiTime(e.target.value)} 
+                  className="w-full p-3 rounded-xl bg-[#0b0d14] border border-white/10 text-xs text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
             )}
@@ -705,19 +700,13 @@ export default function RoomPage({ params }: PageProps) {
             {activeModal === 'Laundry' && (
               <div className="mb-4 space-y-3">
                 <p className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">{t.itemBreakdown}</p>
-                {Object.entries(laundryCounts).map(([key, count]) => (
-                  <div key={key} className="flex items-center justify-between bg-[#0b0d14] p-2.5 rounded-xl border border-white/[0.05]">
-                    <span className="text-xs capitalize">{t.laundryItems[key] || key}</span>
+                {Object.keys(laundryCounts).map((key) => (
+                  <div key={key} className="flex items-center justify-between bg-[#0b0d14] p-3 rounded-xl border border-white/[0.04]">
+                    <span className="text-xs capitalize font-medium">{t.laundryItems[key] || key}</span>
                     <div className="flex items-center gap-3">
-                      <button 
-                        onClick={() => setLaundryCounts(prev => ({ ...prev, [key]: Math.max(0, prev[key as keyof typeof prev] - 1) }))}
-                        className="w-6 h-6 rounded-lg bg-white/10 text-xs font-bold"
-                      >-</button>
-                      <span className="text-xs font-bold w-4 text-center">{count}</span>
-                      <button 
-                        onClick={() => setLaundryCounts(prev => ({ ...prev, [key]: prev[key as keyof typeof prev] + 1 }))}
-                        className="w-6 h-6 rounded-lg bg-white/10 text-xs font-bold"
-                      >+</button>
+                      <button onClick={() => setLaundryCounts(prev => ({ ...prev, [key]: Math.max(0, prev[key as keyof typeof laundryCounts] - 1) }))} className="w-7 h-7 bg-white/5 rounded-lg text-xs font-bold">-</button>
+                      <span className="text-xs font-bold w-4 text-center">{laundryCounts[key as keyof typeof laundryCounts]}</span>
+                      <button onClick={() => setLaundryCounts(prev => ({ ...prev, [key]: prev[key as keyof typeof laundryCounts] + 1 }))} className="w-7 h-7 bg-white/5 rounded-lg text-xs font-bold">+</button>
                     </div>
                   </div>
                 ))}
@@ -727,18 +716,15 @@ export default function RoomPage({ params }: PageProps) {
             <div className="mb-6">
               <label className="block text-[10px] uppercase font-bold text-neutral-400 mb-1.5 tracking-wider">{t.specialInstructions}</label>
               <textarea 
+                rows={2} 
                 value={customNote} 
-                onChange={(e) => setCustomNote(e.target.value)}
+                onChange={(e) => setCustomNote(e.target.value)} 
                 placeholder={t.placeholderNotes}
-                rows={2}
-                className="w-full bg-[#0b0d14] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"
+                className="w-full p-3 rounded-xl bg-[#0b0d14] border border-white/10 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"
               />
             </div>
 
-            <button 
-              onClick={submitModalForm}
-              className="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-3 rounded-xl text-xs uppercase tracking-widest transition-all shadow-lg shadow-amber-500/10"
-            >
+            <button onClick={submitModalForm} className="w-full bg-amber-500 text-neutral-950 font-semibold py-3 rounded-xl text-xs uppercase tracking-widest shadow-lg shadow-amber-500/10">
               {t.submit}
             </button>
           </div>
@@ -746,5 +732,21 @@ export default function RoomPage({ params }: PageProps) {
       )}
 
     </div>
+  );
+}
+
+export default function RoomPage({ params }: PageProps) {
+  const resolvedParams = React.use(params as Promise<{ roomNumber: string }>);
+  const roomNumber = resolvedParams.roomNumber;
+
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen flex-col items-center justify-center bg-[#0d0f17] text-neutral-400 font-sans antialiased">
+        <div className="w-5 h-5 border-[1.5px] border-amber-500/40 border-t-amber-500 rounded-full animate-spin"></div>
+        <p className="mt-4 text-[10px] tracking-[0.25em] uppercase font-light">Loading...</p>
+      </div>
+    }>
+      <RoomContent roomNumber={roomNumber} />
+    </Suspense>
   );
 }
