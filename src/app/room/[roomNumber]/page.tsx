@@ -594,63 +594,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         )}
 
         {activeTab === 'menu' && (
-          <div className="w-full flex flex-col gap-2.5 pb-24 max-h-[380px] overflow-y-auto pr-1">
-            
-            {/* Order Bill Summary Panel */}
-            {Object.keys(cart).length > 0 && (
-              <div className={`p-4 rounded-2xl border mb-3 shadow-lg relative ${
-                darkMode ? 'bg-[#0b0d14] border-amber-500/30 text-neutral-200' : 'bg-neutral-50 border-amber-500/30 text-neutral-800'
-              }`}>
-                <div className="flex justify-between items-center mb-2 pb-2 border-b border-white/5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">{t.itemsSelected}</span>
-                    <span className="text-xs font-bold">({Object.values(cart).reduce((a, b) => a + b, 0)})</span>
-                  </div>
-                  <button 
-                    onClick={() => setCart({})} 
-                    className="text-[10px] text-neutral-400 hover:text-red-400 uppercase tracking-wider transition-colors font-medium"
-                  >
-                    {t.clearCart}
-                  </button>
-                </div>
-
-                <div className="space-y-1.5 mb-3 text-xs max-h-32 overflow-y-auto pr-1">
-                  {Object.entries(cart).map(([id, qty]) => {
-                    const item = t.menu.find((m: MenuItem) => m.id === parseInt(id));
-                    if (!item) return null;
-                    return (
-                      <div key={id} className="flex justify-between text-neutral-400 font-light">
-                        <span>{qty}x {item.name}</span>
-                        <span className="font-mono text-neutral-200">{item.price * qty} ETB</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-2 border-t border-white/5 space-y-1 text-xs">
-                  <div className="flex justify-between text-neutral-400">
-                    <span>{t.subtotal}</span>
-                    <span className="font-mono">{subtotalPrice} ETB</span>
-                  </div>
-                  <div className="flex justify-between text-neutral-400">
-                    <span>{t.serviceTax}</span>
-                    <span className="font-mono">{serviceFee} ETB</span>
-                  </div>
-                  <div className="flex justify-between text-sm font-bold text-amber-400 pt-1">
-                    <span>{t.total}</span>
-                    <span className="font-mono">{totalPrice} ETB</span>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={handlePlaceOrder} 
-                  className="w-full mt-4 py-3 bg-amber-500 hover:brightness-110 text-neutral-950 font-bold rounded-xl text-xs uppercase tracking-wider shadow-lg active:scale-[0.99] transition-all"
-                >
-                  {t.confirmOrder} • {totalPrice} ETB
-                </button>
-              </div>
-            )}
-
+          <div className="w-full flex flex-col gap-2.5 pb-32 max-h-[400px] overflow-y-auto pr-1">
             {t.menu.map((item: MenuItem) => (
               <div key={item.id} className={`p-3.5 rounded-2xl flex items-center justify-between border transition-all ${
                 darkMode ? 'bg-white/[0.02] border-white/[0.03]' : 'bg-neutral-50 border-neutral-200'
@@ -668,9 +612,9 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
 
                 {cart[item.id] ? (
                   <div className={`flex items-center gap-2 rounded-xl p-1 border ${darkMode ? 'bg-[#131622] border-white/[0.08]' : 'bg-white border-neutral-200'}`}>
-                    <button onClick={() => removeFromCart(item.id)} className="w-6 h-6 rounded-lg text-xs font-bold hover:bg-white/10">-</button>
+                    <button onClick={() => removeFromCart(item.id)} className="w-6 h-6 rounded-lg text-xs font-bold hover:bg-white/15">-</button>
                     <span className="text-xs font-bold w-3 text-center">{cart[item.id]}</span>
-                    <button onClick={() => addToCart(item.id)} className="w-6 h-6 rounded-lg text-xs font-bold hover:bg-white/10">+</button>
+                    <button onClick={() => addToCart(item.id)} className="w-6 h-6 rounded-lg text-xs font-bold hover:bg-white/15">+</button>
                   </div>
                 ) : (
                   <button onClick={() => addToCart(item.id)} className={`px-3 py-1.5 rounded-xl text-[10px] uppercase font-semibold tracking-wider border transition-all ${
@@ -685,6 +629,61 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         )}
 
       </div>
+
+      {/* Floating Order Bill Summary Panel at Bottom (Above Tracking Bar) */}
+      {Object.keys(cart).length > 0 && !isModalOpen && (
+        <div className={`fixed ${trackedOrder ? 'bottom-20' : 'bottom-6'} left-5 right-5 max-w-md mx-auto p-4 rounded-2xl shadow-2xl border backdrop-blur-xl z-30 transition-all duration-300 ${
+          darkMode ? 'bg-[#131622]/95 border-amber-500/40 text-neutral-200' : 'bg-white/95 border-amber-500/40 text-neutral-800'
+        }`}>
+          <div className="flex justify-between items-center mb-2 pb-2 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">{t.itemsSelected}</span>
+              <span className="text-xs font-bold">({Object.values(cart).reduce((a, b) => a + b, 0)})</span>
+            </div>
+            <button 
+              onClick={() => setCart({})} 
+              className="text-[10px] text-neutral-400 hover:text-red-400 uppercase tracking-wider transition-colors font-medium"
+            >
+              {t.clearCart}
+            </button>
+          </div>
+
+          <div className="space-y-1.5 mb-3 text-xs max-h-24 overflow-y-auto pr-1">
+            {Object.entries(cart).map(([id, qty]) => {
+              const item = t.menu.find((m: MenuItem) => m.id === parseInt(id));
+              if (!item) return null;
+              return (
+                <div key={id} className="flex justify-between text-neutral-400 font-light">
+                  <span>{qty}x {item.name}</span>
+                  <span className="font-mono text-neutral-200">{item.price * qty} ETB</span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="pt-2 border-t border-white/10 space-y-1 text-xs">
+            <div className="flex justify-between text-neutral-400">
+              <span>{t.subtotal}</span>
+              <span className="font-mono">{subtotalPrice} ETB</span>
+            </div>
+            <div className="flex justify-between text-neutral-400">
+              <span>{t.serviceTax}</span>
+              <span className="font-mono">{serviceFee} ETB</span>
+            </div>
+            <div className="flex justify-between text-sm font-bold text-amber-400 pt-1">
+              <span>{t.total}</span>
+              <span className="font-mono">{totalPrice} ETB</span>
+            </div>
+          </div>
+
+          <button 
+            onClick={handlePlaceOrder} 
+            className="w-full mt-3 py-3 bg-amber-500 hover:brightness-110 text-neutral-950 font-bold rounded-xl text-xs uppercase tracking-wider shadow-lg active:scale-[0.99] transition-all"
+          >
+            {t.confirmOrder} • {totalPrice} ETB
+          </button>
+        </div>
+      )}
 
       {trackedOrder && !isModalOpen && (
         <div className={`fixed bottom-6 left-5 right-5 max-w-md mx-auto p-4 rounded-2xl flex items-center justify-between shadow-2xl border backdrop-blur-xl z-30 ${
