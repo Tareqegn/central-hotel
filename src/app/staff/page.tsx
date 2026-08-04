@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const departments = [
@@ -10,6 +9,7 @@ const departments = [
     name: 'Kitchen & Room Service', 
     desc: 'Manage live food orders and kitchen preparation tickets.', 
     activeCount: '4 active orders',
+    pin: '1111',
     theme: 'from-amber-500/10 via-amber-500/5 to-transparent border-amber-500/20 hover:border-amber-500/50 text-amber-400',
     badgeBg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     icon: (
@@ -23,6 +23,7 @@ const departments = [
     name: 'Housekeeping', 
     desc: 'Track room sanitization status, linens, and guest amenities.', 
     activeCount: '12 rooms pending',
+    pin: '2222',
     theme: 'from-emerald-500/10 via-emerald-500/5 to-transparent border-emerald-500/20 hover:border-emerald-500/50 text-emerald-400',
     badgeBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     icon: (
@@ -36,6 +37,7 @@ const departments = [
     name: 'Front Desk & Concierge', 
     desc: 'Oversee VIP requests, taxi bookings, spa, and guest check-ins.', 
     activeCount: '2 urgent inquiries',
+    pin: '3333',
     theme: 'from-indigo-500/10 via-indigo-500/5 to-transparent border-indigo-500/20 hover:border-indigo-500/50 text-indigo-400',
     badgeBg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
     icon: (
@@ -49,6 +51,7 @@ const departments = [
     name: 'Maintenance', 
     desc: 'Handle room repairs, electrical fixtures, and technical facility issues.', 
     activeCount: '1 ticket open',
+    pin: '4444',
     theme: 'from-rose-500/10 via-rose-500/5 to-transparent border-rose-500/20 hover:border-rose-500/50 text-rose-400',
     badgeBg: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
     icon: (
@@ -63,19 +66,30 @@ const departments = [
 export default function StaffHubPage() {
   const router = useRouter();
   
-  const [showPinModal, setShowPinModal] = useState(false);
+  // Modal states
+  const [activeModal, setActiveModal] = useState<'manager' | string | null>(null);
   const [pin, setPin] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   const MANAGER_PIN = "1234";
 
-  const handleManagerLogin = (e: React.FormEvent) => {
+  const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin === MANAGER_PIN) {
-      router.push('/dashboard');
+    if (activeModal === 'manager') {
+      if (pin === MANAGER_PIN) {
+        router.push('/dashboard');
+      } else {
+        setErrorMsg('Invalid Master Manager PIN');
+        setPin('');
+      }
     } else {
-      setErrorMsg('Incorrect manager passcode');
-      setPin('');
+      const currentDept = departments.find(d => d.id === activeModal);
+      if (currentDept && pin === currentDept.pin) {
+        router.push(`/staff/${currentDept.id}`);
+      } else {
+        setErrorMsg('Incorrect Station PIN');
+        setPin('');
+      }
     }
   };
 
@@ -93,14 +107,18 @@ export default function StaffHubPage() {
           <h1 className="text-2xl font-serif tracking-wide text-white">Central Yamarech</h1>
           <p className="text-[10px] tracking-[0.3em] text-amber-400 uppercase mt-1 font-semibold">Operations & Staff Portal Hub</p>
           
-          {/* Secure Manager Dashboard Button Trigger */}
+          {/* Enhanced Manager Dashboard Button with Pitch Significance */}
           <div className="mt-6">
             <button
-              onClick={() => setShowPinModal(true)}
-              className="px-6 py-3 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-neutral-950 font-bold text-[11px] uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-amber-500/10 hover:brightness-105 transition-all active:scale-95 border border-amber-300/30 flex items-center gap-2 mx-auto"
+              onClick={() => { setActiveModal('manager'); setPin(''); setErrorMsg(''); }}
+              className="group relative px-7 py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-neutral-950 font-extrabold text-[11px] uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-amber-500/20 hover:brightness-105 transition-all active:scale-95 border border-amber-300/40 flex items-center gap-3 mx-auto overflow-hidden"
             >
-              <span>🔒</span>
-              <span>Secure Manager Dashboard</span>
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 pointer-events-none" />
+              <span className="text-base">👑</span>
+              <div className="text-left">
+                <div className="leading-tight">Executive Management Hub</div>
+                <div className="text-[8px] tracking-[0.15em] opacity-80 font-mono">Master Override • 102 Rooms Control</div>
+              </div>
             </button>
           </div>
         </div>
@@ -108,10 +126,10 @@ export default function StaffHubPage() {
         {/* Departments Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {departments.map((dept) => (
-            <Link
+            <div
               key={dept.id}
-              href={`/staff/${dept.id}`}
-              className={`bg-gradient-to-br ${dept.theme} bg-[#131622] hover:bg-[#171a29] border p-6 rounded-3xl shadow-xl transition-all group flex flex-col justify-between relative overflow-hidden`}
+              onClick={() => { setActiveModal(dept.id); setPin(''); setErrorMsg(''); }}
+              className={`cursor-pointer bg-gradient-to-br ${dept.theme} bg-[#131622] hover:bg-[#171a29] border p-6 rounded-3xl shadow-xl transition-all group flex flex-col justify-between relative overflow-hidden`}
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -128,25 +146,34 @@ export default function StaffHubPage() {
               </div>
 
               <div className="mt-6 pt-4 border-t border-white/[0.04] flex items-center justify-between text-[10px] uppercase font-bold tracking-widest text-neutral-300 group-hover:text-white transition-colors">
-                <span>Access Station</span>
+                <span>Secure Access PIN ({dept.pin})</span>
                 <span className="transform group-hover:translate-x-1.5 transition-transform text-amber-400 font-black text-sm">→</span>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       </div>
 
-      {/* PIN Verification Modal for Manager Dashboard */}
-      {showPinModal && (
+      {/* Universal Secure PIN Verification Modal */}
+      {activeModal && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="max-w-xs w-full bg-[#131622] border border-white/10 p-6 rounded-3xl shadow-2xl text-center relative">
             <div className="w-10 h-10 mx-auto mb-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-400 text-sm">
-              🛡️
+              {activeModal === 'manager' ? '👑' : '🔐'}
             </div>
-            <h3 className="text-sm font-semibold tracking-wide uppercase text-amber-400 mb-1">Manager Authorization</h3>
-            <p className="text-[11px] text-neutral-400 mb-4 font-light">Enter 4-digit manager passcode (<span className="text-amber-400 font-mono font-bold">1234</span>) to unlock.</p>
             
-            <form onSubmit={handleManagerLogin}>
+            <h3 className="text-sm font-semibold tracking-wide uppercase text-amber-400 mb-1">
+              {activeModal === 'manager' ? 'Executive Authorization' : `${activeModal.toUpperCase()} Station PIN`}
+            </h3>
+            
+            <p className="text-[11px] text-neutral-400 mb-4 font-light">
+              {activeModal === 'manager' 
+                ? <>Enter master PIN (<span className="text-amber-400 font-mono font-bold">1234</span>) for full management control.</>
+                : <>Enter station PIN (<span className="text-amber-400 font-mono font-bold">{departments.find(d => d.id === activeModal)?.pin}</span>) to sign in.</>
+              }
+            </p>
+            
+            <form onSubmit={handleLoginSubmit}>
               <input 
                 type="password" 
                 maxLength={4}
@@ -161,7 +188,7 @@ export default function StaffHubPage() {
               <div className="flex gap-2">
                 <button 
                   type="button" 
-                  onClick={() => { setShowPinModal(false); setPin(''); setErrorMsg(''); }}
+                  onClick={() => { setActiveModal(null); setPin(''); setErrorMsg(''); }}
                   className="flex-1 py-2.5 bg-white/5 text-neutral-300 rounded-xl text-xs font-medium hover:bg-white/10"
                 >
                   Cancel
@@ -170,7 +197,7 @@ export default function StaffHubPage() {
                   type="submit" 
                   className="flex-1 py-2.5 bg-amber-500 text-neutral-950 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-400"
                 >
-                  Unlock
+                  Authorize
                 </button>
               </div>
             </form>
