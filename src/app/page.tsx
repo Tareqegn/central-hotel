@@ -696,27 +696,27 @@ export default function RoomPage({ params }: PageProps) {
                 <input 
                   type="time" 
                   value={taxiTime} 
-                  onChange={(e) => setTaxiTime(e.target.value)}
-                  className="w-full bg-[#0b0d14] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                  onChange={(e) => setTaxiTime(e.target.value)} 
+                  className={`w-full p-3 rounded-xl border text-xs ${darkMode ? 'bg-[#0b0d14] border-white/10 text-white' : 'bg-neutral-50 border-neutral-300 text-black'}`}
                 />
               </div>
             )}
 
             {activeModal === 'Laundry' && (
-              <div className="mb-4 space-y-3">
-                <p className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">{t.itemBreakdown}</p>
-                {Object.entries(laundryCounts).map(([key, count]) => (
-                  <div key={key} className="flex items-center justify-between bg-[#0b0d14] p-2.5 rounded-xl border border-white/[0.05]">
-                    <span className="text-xs capitalize">{t.laundryItems[key] || key}</span>
+              <div className="mb-4 space-y-2.5">
+                <label className="block text-[10px] uppercase font-bold text-neutral-400 tracking-wider">{t.itemBreakdown}</label>
+                {Object.keys(laundryCounts).map((key) => (
+                  <div key={key} className={`flex items-center justify-between p-2.5 rounded-xl border ${darkMode ? 'bg-[#0b0d14] border-white/[0.06]' : 'bg-neutral-50 border-neutral-200'}`}>
+                    <span className="text-xs font-medium capitalize">{t.laundryItems[key] || key}</span>
                     <div className="flex items-center gap-3">
                       <button 
                         onClick={() => setLaundryCounts(prev => ({ ...prev, [key]: Math.max(0, prev[key as keyof typeof prev] - 1) }))}
-                        className="w-6 h-6 rounded-lg bg-white/10 text-xs font-bold"
+                        className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center font-bold text-xs"
                       >-</button>
-                      <span className="text-xs font-bold w-4 text-center">{count}</span>
+                      <span className="text-xs font-bold w-4 text-center">{laundryCounts[key as keyof typeof laundryCounts]}</span>
                       <button 
                         onClick={() => setLaundryCounts(prev => ({ ...prev, [key]: prev[key as keyof typeof prev] + 1 }))}
-                        className="w-6 h-6 rounded-lg bg-white/10 text-xs font-bold"
+                        className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center font-bold text-xs"
                       >+</button>
                     </div>
                   </div>
@@ -726,19 +726,16 @@ export default function RoomPage({ params }: PageProps) {
 
             <div className="mb-6">
               <label className="block text-[10px] uppercase font-bold text-neutral-400 mb-1.5 tracking-wider">{t.specialInstructions}</label>
-              <textarea 
-                value={customNote} 
-                onChange={(e) => setCustomNote(e.target.value)}
+              <input 
+                type="text" 
                 placeholder={t.placeholderNotes}
-                rows={2}
-                className="w-full bg-[#0b0d14] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"
+                value={customNote}
+                onChange={(e) => setCustomNote(e.target.value)}
+                className={`w-full p-3 rounded-xl border text-xs ${darkMode ? 'bg-[#0b0d14] border-white/10 text-white placeholder:text-neutral-600' : 'bg-neutral-50 border-neutral-300 text-black'}`}
               />
             </div>
 
-            <button 
-              onClick={submitModalForm}
-              className="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-3 rounded-xl text-xs uppercase tracking-widest transition-all shadow-lg shadow-amber-500/10"
-            >
+            <button onClick={submitModalForm} className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold rounded-xl text-xs uppercase tracking-widest shadow-lg shadow-amber-500/10">
               {t.submit}
             </button>
           </div>
