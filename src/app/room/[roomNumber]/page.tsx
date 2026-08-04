@@ -38,6 +38,9 @@ interface TranslationSchema {
   pending: string;
   inProgress: string;
   completed: string;
+  subtotal: string;
+  serviceTax: string;
+  total: string;
   laundryItems: Record<string, string>;
   menu: MenuItem[];
 }
@@ -124,6 +127,9 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     pending: "Received",
     inProgress: "In Progress",
     completed: "Done",
+    subtotal: "Subtotal",
+    serviceTax: "Service Fee (10%)",
+    total: "Total",
     laundryItems: { shirts: "Shirts", pants: "Pants", others: "Other Items" },
     menu: [
       { id: 1, name: "Continental Breakfast", price: 280, icon: "croissant", desc: "Fresh pastry, seasonal fruit, and coffee." },
@@ -158,6 +164,9 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     pending: "በጥበቃ ላይ",
     inProgress: "በመስራት ላይ",
     completed: "ተጠናቋል",
+    subtotal: "ንዑስ ድምር",
+    serviceTax: "የአገልግሎት ክፍያ (10%)",
+    total: "አጠቃላይ ድምር",
     laundryItems: { shirts: "ሸሚዞች", pants: "ሱሪዎች", others: "ሌሎች" },
     menu: [
       { id: 1, name: "ኮንቲነንታል ቁርስ", price: 280, icon: "croissant", desc: "ትኩስ ዳቦ፣ ፍራፍሬ እና ቡና።" },
@@ -370,13 +379,23 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     });
   };
 
+  // Calculate Subtotal & Total
+  const subtotalPrice = Object.entries(cart).reduce((sum, [id, qty]) => {
+    const item = t.menu.find((m: MenuItem) => m.id === parseInt(id));
+    return sum + (item ? item.price * qty : 0);
+  }, 0);
+  const serviceFee = Math.round(subtotalPrice * 0.1); // 10% service charge
+  const totalPrice = subtotalPrice + serviceFee;
+
   const handlePlaceOrder = async () => {
     const orderDetails = Object.entries(cart).map(([id, qty]) => {
       const item = t.menu.find((m: MenuItem) => m.id === parseInt(id));
       return `${qty}x ${item?.name}`;
     }).join(", ");
 
-    handleSendRequest('Food Order', orderDetails);
+    const fullOrderPayload = `${orderDetails} | Subtotal: ${subtotalPrice} ETB | Service: ${serviceFee} ETB | Total: ${totalPrice} ETB`;
+
+    handleSendRequest('Food Order', fullOrderPayload);
     setCart({});
   };
 
@@ -559,15 +578,51 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         )}
 
         {activeTab === 'menu' && (
-          <div className="w-full flex flex-col gap-2.5 pb-20 max-h-[360px] overflow-y-auto pr-1">
+          <div className="w-full flex flex-col gap-2.5 pb-24 max-h-[380px] overflow-y-auto pr-1">
+            
+            {/* Order Bill Summary Panel */}
             {Object.keys(cart).length > 0 && (
-              <div className="sticky top-0 bg-gradient-to-r from-amber-500 to-amber-400 text-neutral-950 p-3.5 rounded-2xl shadow-xl flex items-center justify-between z-20 border border-amber-300/50 mb-2">
-                <div>
-                  <p className="text-[9px] uppercase font-bold tracking-widest opacity-70">Room Service</p>
-                  <p className="font-bold text-xs">{Object.values(cart).reduce((a, b) => a + b, 0)} {t.itemsSelected}</p>
+              <div className={`p-4 rounded-2xl border mb-3 shadow-lg ${
+                darkMode ? 'bg-[#0b0d14] border-amber-500/30 text-neutral-200' : 'bg-neutral-50 border-amber-500/30 text-neutral-800'
+              }`}>
+                <div className="flex justify-between items-center mb-2 pb-2 border-b border-white/5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">{t.itemsSelected}</span>
+                  <span className="text-xs font-bold">{Object.values(cart).reduce((a, b) => a + b, 0)} items</span>
                 </div>
-                <button onClick={handlePlaceOrder} className="bg-neutral-950 text-white font-semibold py-2 px-4 rounded-xl text-[10px] uppercase tracking-widest active:scale-95 transition-all">
-                  {t.confirmOrder}
+
+                <div className="space-y-1.5 mb-3 text-xs">
+                  {Object.entries(cart).map(([id, qty]) => {
+                    const item = t.menu.find((m: MenuItem) => m.id === parseInt(id));
+                    if (!item) return null;
+                    return (
+                      <div key={id} className="flex justify-between text-neutral-400 font-light">
+                        <span>{qty}x {item.name}</span>
+                        <span className="font-mono text-neutral-200">{item.price * qty} ETB</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-2 border-t border-white/5 space-y-1 text-xs">
+                  <div className="flex justify-between text-neutral-400">
+                    <span>{t.subtotal}</span>
+                    <span className="font-mono">{subtotalPrice} ETB</span>
+                  </div>
+                  <div className="flex justify-between text-neutral-400">
+                    <span>{t.serviceTax}</span>
+                    <span className="font-mono">{serviceFee} ETB</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-bold text-amber-400 pt-1">
+                    <span>{t.total}</span>
+                    <span className="font-mono">{totalPrice} ETB</span>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={handlePlaceOrder} 
+                  className="w-full mt-4 py-3 bg-amber-500 hover:brightness-110 text-neutral-950 font-bold rounded-xl text-xs uppercase tracking-wider shadow-lg active:scale-[0.99] transition-all"
+                >
+                  {t.confirmOrder} • {totalPrice} ETB
                 </button>
               </div>
             )}
