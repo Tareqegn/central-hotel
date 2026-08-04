@@ -42,6 +42,7 @@ interface TranslationSchema {
   serviceTax: string;
   total: string;
   clearCart: string;
+  viewCartAndPay: string;
   laundryItems: Record<string, { name: string; price: number }>;
   menu: MenuItem[];
 }
@@ -132,6 +133,7 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     serviceTax: "Service Fee (10%)",
     total: "Total",
     clearCart: "Clear Cart",
+    viewCartAndPay: "View Cart & Place Order",
     laundryItems: { 
       shirts: { name: "Shirts / Blouses", price: 50 }, 
       pants: { name: "Pants / Trousers", price: 70 }, 
@@ -174,6 +176,7 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     serviceTax: "የአገልግሎት ክፍያ (10%)",
     total: "አጠቃላይ ድምር",
     clearCart: "ባዶ አድርግ",
+    viewCartAndPay: "ቅርጫት ይመልከቱ እና ትዕዛዝ ይስጡ",
     laundryItems: { 
       shirts: { name: "ሸሚዞች", price: 50 }, 
       pants: { name: "ሱሪዎች", price: 70 }, 
@@ -210,6 +213,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [trackedOrder, setTrackedOrder] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isCartOpen, setIsCartOpen] = useState<boolean>(false); // Collapsible cart sheet toggle
 
   const [customNote, setCustomNote] = useState<string>('');
   const [taxiTime, setTaxiTime] = useState<string>('');
@@ -391,12 +395,11 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     });
   };
 
-  // Calculate Subtotal & Total for Food Cart
   const subtotalPrice = Object.entries(cart).reduce((sum, [id, qty]) => {
     const item = t.menu.find((m: MenuItem) => m.id === parseInt(id));
     return sum + (item ? item.price * qty : 0);
   }, 0);
-  const serviceFee = Math.round(subtotalPrice * 0.1); // 10% service charge
+  const serviceFee = Math.round(subtotalPrice * 0.1); 
   const totalPrice = subtotalPrice + serviceFee;
 
   const handlePlaceOrder = async () => {
@@ -409,6 +412,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
 
     handleSendRequest('Food Order', fullOrderPayload);
     setCart({});
+    setIsCartOpen(false);
   };
 
   const getDetailedLiveStatus = (category: string, status: string) => {
@@ -551,7 +555,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
 
         {activeTab === 'services' && (
           <div className="w-full flex flex-col gap-4 pb-4">
-            
             <div className="relative group w-full mb-1">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-amber-300 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
               <button 
@@ -630,59 +633,91 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
 
       </div>
 
-      {/* Floating Order Bill Summary Panel at Bottom (Above Tracking Bar) */}
-      {Object.keys(cart).length > 0 && !isModalOpen && (
-        <div className={`fixed ${trackedOrder ? 'bottom-20' : 'bottom-6'} left-5 right-5 max-w-md mx-auto p-4 rounded-2xl shadow-2xl border backdrop-blur-xl z-30 transition-all duration-300 ${
-          darkMode ? 'bg-[#131622]/95 border-amber-500/40 text-neutral-200' : 'bg-white/95 border-amber-500/40 text-neutral-800'
-        }`}>
-          <div className="flex justify-between items-center mb-2 pb-2 border-b border-white/10">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">{t.itemsSelected}</span>
-              <span className="text-xs font-bold">({Object.values(cart).reduce((a, b) => a + b, 0)})</span>
-            </div>
-            <button 
-              onClick={() => setCart({})} 
-              className="text-[10px] text-neutral-400 hover:text-red-400 uppercase tracking-wider transition-colors font-medium"
-            >
-              {t.clearCart}
-            </button>
-          </div>
-
-          <div className="space-y-1.5 mb-3 text-xs max-h-24 overflow-y-auto pr-1">
-            {Object.entries(cart).map(([id, qty]) => {
-              const item = t.menu.find((m: MenuItem) => m.id === parseInt(id));
-              if (!item) return null;
-              return (
-                <div key={id} className="flex justify-between text-neutral-400 font-light">
-                  <span>{qty}x {item.name}</span>
-                  <span className="font-mono text-neutral-200">{item.price * qty} ETB</span>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="pt-2 border-t border-white/10 space-y-1 text-xs">
-            <div className="flex justify-between text-neutral-400">
-              <span>{t.subtotal}</span>
-              <span className="font-mono">{subtotalPrice} ETB</span>
-            </div>
-            <div className="flex justify-between text-neutral-400">
-              <span>{t.serviceTax}</span>
-              <span className="font-mono">{serviceFee} ETB</span>
-            </div>
-            <div className="flex justify-between text-sm font-bold text-amber-400 pt-1">
-              <span>{t.total}</span>
-              <span className="font-mono">{totalPrice} ETB</span>
-            </div>
-          </div>
-
+      {/* Floating Collapsible Cart Pill (Sits cleanly right above tracking bar) */}
+      {Object.keys(cart).length > 0 && !isModalOpen && !isCartOpen && (
+        <div className={`fixed ${trackedOrder ? 'bottom-20' : 'bottom-6'} left-5 right-5 max-w-md mx-auto z-30 transition-all duration-300`}>
           <button 
-            onClick={handlePlaceOrder} 
-            className="w-full mt-3 py-3 bg-amber-500 hover:brightness-110 text-neutral-950 font-bold rounded-xl text-xs uppercase tracking-wider shadow-lg active:scale-[0.99] transition-all"
+            onClick={() => setIsCartOpen(true)}
+            className="w-full py-3.5 px-5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-110 text-neutral-950 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-2xl flex items-center justify-between active:scale-[0.99] transition-all"
           >
-            {t.confirmOrder} • {totalPrice} ETB
+            <div className="flex items-center gap-2">
+              <span className="bg-neutral-950 text-amber-400 text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-mono font-bold">
+                {Object.values(cart).reduce((a, b) => a + b, 0)}
+              </span>
+              <span>{t.viewCartAndPay}</span>
+            </div>
+            <span className="font-mono">{totalPrice} ETB</span>
           </button>
         </div>
+      )}
+
+      {/* Expanded Cart Sheet Modal */}
+      {isCartOpen && (
+        <>
+          <div onClick={() => setIsCartOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
+          <div className={`fixed bottom-0 left-0 right-0 max-w-md mx-auto border-t rounded-t-3xl z-50 p-6 shadow-2xl max-h-[80vh] overflow-y-auto ${
+            darkMode ? 'bg-[#121520] border-white/[0.08] text-white' : 'bg-white border-neutral-200 text-neutral-900'
+          }`}>
+            <div className="w-10 h-1 bg-neutral-600/40 rounded-full mx-auto mb-5 cursor-pointer" onClick={() => setIsCartOpen(false)} />
+            
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <span className="text-xs uppercase font-bold tracking-wider text-amber-400">{t.itemsSelected}</span>
+                <span className="text-xs font-bold">({Object.values(cart).reduce((a, b) => a + b, 0)})</span>
+              </div>
+              <button onClick={() => setCart({})} className="text-[10px] text-neutral-400 hover:text-red-400 uppercase tracking-wider font-medium">
+                {t.clearCart}
+              </button>
+            </div>
+
+            <div className="space-y-3 mb-4 max-h-48 overflow-y-auto pr-1">
+              {Object.entries(cart).map(([id, qty]) => {
+                const item = t.menu.find((m: MenuItem) => m.id === parseInt(id));
+                if (!item) return null;
+                return (
+                  <div key={id} className="flex justify-between items-center text-xs">
+                    <div>
+                      <span className="font-medium">{item.name}</span>
+                      <span className="text-neutral-400 block text-[10px]">{item.price} ETB each</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-neutral-300">{item.price * qty} ETB</span>
+                      <div className={`flex items-center gap-2 rounded-xl p-1 border ${darkMode ? 'bg-[#0b0d14] border-white/10' : 'bg-neutral-100 border-neutral-300'}`}>
+                        <button onClick={() => removeFromCart(id as any)} className="w-5 h-5 text-xs font-bold">-</button>
+                        <span className="w-3 text-center text-xs font-bold">{qty}</span>
+                        <button onClick={() => addToCart(id as any)} className="w-5 h-5 text-xs font-bold">+</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-3 border-t border-white/10 space-y-1.5 text-xs mb-6">
+              <div className="flex justify-between text-neutral-400">
+                <span>{t.subtotal}</span>
+                <span className="font-mono">{subtotalPrice} ETB</span>
+              </div>
+              <div className="flex justify-between text-neutral-400">
+                <span>{t.serviceTax}</span>
+                <span className="font-mono">{serviceFee} ETB</span>
+              </div>
+              <div className="flex justify-between text-sm font-bold text-amber-400 pt-1">
+                <span>{t.total}</span>
+                <span className="font-mono">{totalPrice} ETB</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setIsCartOpen(false)} className="flex-1 py-3 bg-neutral-800 text-neutral-300 font-medium rounded-xl text-xs uppercase tracking-wider">
+                {t.close}
+              </button>
+              <button onClick={handlePlaceOrder} className="flex-1 py-3 bg-amber-500 hover:brightness-110 text-neutral-950 font-bold rounded-xl text-xs uppercase tracking-wider shadow-lg">
+                {t.confirmOrder}
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {trackedOrder && !isModalOpen && (
