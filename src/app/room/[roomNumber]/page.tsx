@@ -49,6 +49,8 @@ interface TranslationSchema {
   myFolioSubtitle: string;
   noChargesYet: string;
   stayTotal: string;
+  rateServicePrompt: string;
+  feedbackThankYou: string;
   laundryItems: Record<string, { name: string; price: number }>;
   menu: MenuItem[];
 }
@@ -101,6 +103,11 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
     </svg>
   ),
+  star: (filled: boolean) => (
+    <svg className={`w-5 h-5 transition-colors ${filled ? 'text-amber-400 fill-amber-400' : 'text-neutral-500 hover:text-amber-300'}`} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" fill={filled ? "currentColor" : "none"}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.690h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+    </svg>
+  ),
   food: (iconStr: string) => {
     const baseClass = "w-5 h-5 stroke-[1.5] text-amber-400";
     switch (iconStr) {
@@ -151,6 +158,8 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     myFolioSubtitle: "Running statement of all stay orders",
     noChargesYet: "No accumulated charges recorded yet.",
     stayTotal: "Total Stay Charges",
+    rateServicePrompt: "Rate your experience:",
+    feedbackThankYou: "Thank you for your feedback!",
     laundryItems: { 
       shirts: { name: "Shirts / Blouses", price: 50 }, 
       pants: { name: "Pants / Trousers", price: 70 }, 
@@ -200,6 +209,8 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     myFolioSubtitle: "በቆይታዎ ያዘዟቸው አገልግሎቶች ዝርዝር",
     noChargesYet: " እስካሁን የተመዘገበ ወጪ የለም።",
     stayTotal: "አጠቃላይ የቆይታ ወጪ",
+    rateServicePrompt: "አገልግሎቱን ይገመግሙ:",
+    feedbackThankYou: "ለሰጡን አስተያየት እናመሰግናለን!",
     laundryItems: { 
       shirts: { name: "ሸሚዞች", price: 50 }, 
       pants: { name: "ሱሪዎች", price: 70 }, 
@@ -237,6 +248,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   const [trackedOrder, setTrackedOrder] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
+  const [submittedRating, setSubmittedRating] = useState<number | null>(null);
 
   const [customNote, setCustomNote] = useState<string>('');
   const [taxiTime, setTaxiTime] = useState<string>('');
@@ -326,6 +338,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   useEffect(() => {
     if (!activeOrderId) {
       setTrackedOrder(null);
+      setSubmittedRating(null);
       return;
     }
 
@@ -425,6 +438,19 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     handleSendRequest(activeModal || 'General', detailsString);
   };
 
+  const submitRating = async (ratingVal: number) => {
+    setSubmittedRating(ratingVal);
+    if (!activeOrderId) return;
+
+    const updatedNote = `${trackedOrder.note} | Rating: ${ratingVal} Stars`;
+    await supabase
+      .from('requests')
+      .update({ note: updatedNote })
+      .eq('id', activeOrderId);
+
+    fetchActiveRequests();
+  };
+
   const addToCart = (itemId: number) => setCart(prev => ({ ...prev, [itemId]: (prev[itemId] || 0) + 1 }));
   const removeFromCart = (itemId: number) => {
     setCart(prev => {
@@ -457,7 +483,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
 
   const getDetailedLiveStatus = (category: string, status: string) => {
     const isFood = category === 'Food Order';
-    const isWaiter = category === 'Call Waiter';
 
     switch (status) {
       case 'Pending': return isFood ? 'Order received. Kitchen is reviewing your ticket.' : 'Request received. Notifying staff team.';
@@ -468,7 +493,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     }
   };
 
-  // Extract total price from order note if available (for Folio calculation)
   const extractPriceFromNote = (note: string) => {
     if (!note) return 0;
     if (note.includes('Total: ')) {
@@ -557,7 +581,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
           </div>
         </header>
 
-        {/* 3-Tab Navigation including Folio */}
+        {/* 3-Tab Navigation */}
         <div className={`w-full flex p-1.5 rounded-2xl mb-6 border backdrop-blur-md ${
           darkMode ? 'bg-white/[0.02] border-white/[0.04]' : 'bg-neutral-100 border-neutral-200'
         }`}>
@@ -824,45 +848,73 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </>
       )}
 
-      {/* Active Tracking Banner with ETA */}
+      {/* Active Tracking Banner with Post-Completion Feedback */}
       {trackedOrder && !isModalOpen && (
-        <div className={`fixed bottom-6 left-5 right-5 max-w-md mx-auto p-4 rounded-2xl flex items-center justify-between shadow-2xl border backdrop-blur-xl z-30 ${
+        <div className={`fixed bottom-6 left-5 right-5 max-w-md mx-auto p-4 rounded-2xl flex flex-col gap-3 shadow-2xl border backdrop-blur-xl z-30 ${
           trackedOrder.status === 'Completed'
             ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-100' 
             : darkMode ? 'bg-[#131622]/95 border-amber-500/30 text-white' : 'bg-white/95 border-neutral-300 text-neutral-900'
         }`}>
-          <div className="flex items-center gap-3">
-            <span className={`w-2 h-2 rounded-full ${trackedOrder.status === 'Completed' ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-400">
-                {trackedOrder.status === 'Completed' ? 'Request Completed' : `${t.orderStatus}: ${trackedOrder.status}`}
-              </p>
-              <p className="text-[11px] text-neutral-300 truncate max-w-[170px] font-light">
-                {getDetailedLiveStatus(trackedOrder.category, trackedOrder.status)}
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className={`w-2 h-2 rounded-full ${trackedOrder.status === 'Completed' ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-400">
+                  {trackedOrder.status === 'Completed' ? 'Request Completed' : `${t.orderStatus}: ${trackedOrder.status}`}
+                </p>
+                <p className="text-[11px] text-neutral-300 truncate max-w-[170px] font-light">
+                  {getDetailedLiveStatus(trackedOrder.category, trackedOrder.status)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {trackedOrder.status !== 'Completed' && trackedOrder.note && trackedOrder.note.includes('ETA:') && (
+                <div className="text-right hidden sm:block">
+                  <span className="block text-[9px] uppercase tracking-wider text-neutral-400">{t.estimatedArrival}</span>
+                  <span className="text-xs font-mono font-bold text-amber-400">
+                    {trackedOrder.note.split('ETA: ')[1]?.split(' |')[0]}
+                  </span>
+                </div>
+              )}
+
+              {trackedOrder.status === 'Completed' ? (
+                <button onClick={() => { setActiveOrderId(null); setTrackedOrder(null); setSubmittedRating(null); }} className="bg-emerald-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
+                  Dismiss
+                </button>
+              ) : (
+                <button onClick={() => setIsModalOpen(true)} className="bg-amber-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
+                  {t.viewProgress}
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {trackedOrder.status !== 'Completed' && trackedOrder.note && trackedOrder.note.includes('ETA:') && (
-              <div className="text-right hidden sm:block">
-                <span className="block text-[9px] uppercase tracking-wider text-neutral-400">{t.estimatedArrival}</span>
-                <span className="text-xs font-mono font-bold text-amber-400">
-                  {trackedOrder.note.split('ETA: ')[1]?.split(' |')[0]}
-                </span>
-              </div>
-            )}
-
-            {trackedOrder.status === 'Completed' ? (
-              <button onClick={() => { setActiveOrderId(null); setTrackedOrder(null); }} className="bg-emerald-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
-                Dismiss
-              </button>
-            ) : (
-              <button onClick={() => setIsModalOpen(true)} className="bg-amber-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
-                {t.viewProgress}
-              </button>
-            )}
-          </div>
+          {/* Feedback Star Rating Section on Completion */}
+          {trackedOrder.status === 'Completed' && (
+            <div className="pt-2.5 border-t border-emerald-500/20 flex flex-col items-center justify-center">
+              {submittedRating ? (
+                <p className="text-[11px] text-amber-300 font-medium tracking-wide animate-fade-in">
+                  {t.feedbackThankYou} ⭐ ({submittedRating}/5)
+                </p>
+              ) : (
+                <div className="flex flex-col items-center gap-1.5">
+                  <span className="text-[10px] text-neutral-300 uppercase tracking-wider font-medium">{t.rateServicePrompt}</span>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button 
+                        key={star} 
+                        onClick={() => submitRating(star)}
+                        className="p-1 focus:outline-none hover:scale-125 transition-transform"
+                      >
+                        {Icons.star(false)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -884,7 +936,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
             <p className="text-xs text-neutral-300 mb-4 font-medium">
               {getDetailedLiveStatus(trackedOrder.category, trackedOrder.status)}
             </p>
-            <p className="text-[11px] text-neutral-400 mb-6 font-light">{trackedOrder.note}</p>
+            <p className="text-[11px] text-neutral-400 mb-6 font-light">{trackedOrder.note.split(' | ETA:')[0]}</p>
             <button onClick={() => setIsModalOpen(false)} className="w-full bg-neutral-800 text-white font-medium py-3 rounded-xl text-xs uppercase tracking-wider">
               {t.close}
             </button>
