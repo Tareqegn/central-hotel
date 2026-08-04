@@ -49,29 +49,29 @@ const Icons = {
     </svg>
   ),
   bell: () => (
-    <svg className="w-5 h-5 stroke-[1.5] text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 stroke-[2] text-neutral-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
     </svg>
   ),
   cleaning: () => (
-    <svg className="w-5 h-5 stroke-[1.5] text-amber-200/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 stroke-[1.5] text-amber-200/80 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
     </svg>
   ),
   laundry: () => (
-    <svg className="w-5 h-5 stroke-[1.5] text-amber-300/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 stroke-[1.5] text-amber-300/80 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
     </svg>
   ),
   taxi: () => (
-    <svg className="w-5 h-5 stroke-[1.5] text-amber-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 stroke-[1.5] text-amber-400/80 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h8m-9 5h10M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H5a2 2 0 00-2 2v5a2 2 0 002 2z" />
       <circle cx="7.5" cy="15.5" r="1.5" />
       <circle cx="16.5" cy="15.5" r="1.5" />
     </svg>
   ),
   spa: () => (
-    <svg className="w-5 h-5 stroke-[1.5] text-amber-300/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 stroke-[1.5] text-amber-300/80 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M14 12a2 2 0 11-4 0 2 2 0 014 0z" />
     </svg>
   ),
@@ -88,16 +88,11 @@ const Icons = {
   food: (iconStr: string) => {
     const baseClass = "w-5 h-5 stroke-[1.5] text-amber-400";
     switch (iconStr) {
-      case 'croissant':
-        return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>;
-      case 'avocado':
-        return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18m9-9H3" /></svg>;
-      case 'sandwich':
-        return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>;
-      case 'burger':
-        return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" /></svg>;
-      default:
-        return <span className="text-lg">🍽️</span>;
+      case 'croissant': return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>;
+      case 'avocado': return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18m9-9H3" /></svg>;
+      case 'sandwich': return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>;
+      case 'burger': return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" /></svg>;
+      default: return <span className="text-lg">🍽️</span>;
     }
   }
 };
@@ -129,11 +124,7 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     pending: "Received",
     inProgress: "In Progress",
     completed: "Done",
-    laundryItems: {
-      shirts: "Shirts",
-      pants: "Pants",
-      others: "Other Items"
-    },
+    laundryItems: { shirts: "Shirts", pants: "Pants", others: "Other Items" },
     menu: [
       { id: 1, name: "Continental Breakfast", price: 280, icon: "croissant", desc: "Fresh pastry, seasonal fruit, and coffee." },
       { id: 2, name: "Avocado Toast", price: 220, icon: "avocado", desc: "Sourdough, smashed avocado, and poached egg." },
@@ -167,11 +158,7 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     pending: "በጥበቃ ላይ",
     inProgress: "በመስራት ላይ",
     completed: "ተጠናቋል",
-    laundryItems: {
-      shirts: "ሸሚዞች",
-      pants: "ሱሪዎች",
-      others: "ሌሎች"
-    },
+    laundryItems: { shirts: "ሸሚዞች", pants: "ሱሪዎች", others: "ሌሎች" },
     menu: [
       { id: 1, name: "ኮንቲነንታል ቁርስ", price: 280, icon: "croissant", desc: "ትኩስ ዳቦ፣ ፍራፍሬ እና ቡና።" },
       { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "አቮካዶ እና እንቁላል።" },
@@ -402,8 +389,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     const isSpa = category === 'Spa Booking';
 
     switch (status) {
-      case 'Pending':
-        return isFood ? 'Order received. Kitchen is reviewing your ticket.' : 'Request received. Notifying staff team.';
+      case 'Pending': return isFood ? 'Order received. Kitchen is reviewing your ticket.' : 'Request received. Notifying staff team.';
       case 'In Progress':
         if (isFood) return 'Food is being freshly prepared in the kitchen!';
         if (isWaiter) return 'Waiter is preparing to visit your room.';
@@ -449,11 +435,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         
         <div className="max-w-xs w-full bg-[#131622] border border-white/[0.04] p-8 rounded-2xl shadow-2xl flex flex-col items-center relative z-10">
           <div className="w-16 h-16 mb-4 flex items-center justify-center">
-            <img 
-              src="/logo.png" 
-              alt="Central Yamarech Logo" 
-              className="w-full h-full object-contain"
-            />
+            <img src="/logo.png" alt="Central Yamarech Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-lg font-serif text-white tracking-wide">Central Yamarech</h1>
           <p className="text-[9px] tracking-[0.2em] text-amber-500/85 uppercase mt-1 mb-6 font-medium">{t.suiteLocked}</p>
@@ -468,10 +450,10 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
       darkMode ? 'bg-[#0b0d14] text-neutral-100' : 'bg-[#f7f8fa] text-neutral-900'
     }`}>
       
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/[0.07] blur-[120px] pointer-events-none rounded-full" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/[0.05] blur-[140px] pointer-events-none rounded-full" />
 
-      <div className={`w-full max-w-md rounded-3xl border p-6 sm:p-8 shadow-2xl relative z-10 transition-colors duration-300 ${
-        darkMode ? 'bg-[#131622] border-white/[0.06]' : 'bg-white border-neutral-200'
+      <div className={`w-full max-w-md rounded-[2rem] border p-6 sm:p-8 shadow-2xl relative z-10 transition-colors duration-300 ${
+        darkMode ? 'bg-[#131622] border-white/[0.04]' : 'bg-white border-neutral-200'
       }`}>
         
         <div className="flex justify-between items-center mb-6">
@@ -500,39 +482,36 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </div>
 
         <header className="w-full text-center mb-6">
-          <div className="w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-            <img 
-              src="/logo.png" 
-              alt="Central Yamarech Logo" 
-              className="w-full h-full object-contain"
-            />
+          <div className="w-14 h-14 mx-auto mb-3 flex items-center justify-center">
+            <img src="/logo.png" alt="Central Yamarech Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-xl font-serif tracking-wide font-normal">Central Yamarech</h1>
           <p className="text-[9px] tracking-[0.25em] text-neutral-400 uppercase mt-1 font-medium">Hawassa Hotel</p>
-          <div className="mt-3 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/[0.06] border border-amber-500/10 text-[10px] text-amber-400 tracking-wider font-medium">
-            {sessionData?.guest_name || 'Valued Guest'}
+          
+          <div className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[9px] text-amber-400 tracking-wider font-semibold uppercase">
+            Guest: {sessionData?.guest_name || 'Valued Guest'} • Active
           </div>
         </header>
 
-        <div className={`w-full flex p-1 rounded-2xl mb-6 border ${
-          darkMode ? 'bg-[#0b0d14] border-white/[0.06]' : 'bg-neutral-100 border-neutral-200'
+        <div className={`w-full flex p-1.5 rounded-2xl mb-6 border backdrop-blur-md ${
+          darkMode ? 'bg-white/[0.02] border-white/[0.04]' : 'bg-neutral-100 border-neutral-200'
         }`}>
           <button 
             onClick={() => setActiveTab('services')} 
-            className={`flex-1 py-2.5 text-xs font-medium rounded-xl transition-all tracking-wide ${
+            className={`flex-1 py-2.5 text-[11px] font-semibold rounded-xl transition-all tracking-wider uppercase ${
               activeTab === 'services' 
-                ? 'bg-amber-500 text-neutral-950 font-semibold shadow-sm' 
-                : 'text-neutral-400 hover:text-neutral-200'
+                ? darkMode ? 'bg-[#1a1e2e] text-amber-400 border border-white/[0.05] shadow-lg' : 'bg-white text-amber-600 shadow-sm'
+                : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
             {t.servicesTab}
           </button>
           <button 
             onClick={() => setActiveTab('menu')} 
-            className={`flex-1 py-2.5 text-xs font-medium rounded-xl transition-all tracking-wide ${
+            className={`flex-1 py-2.5 text-[11px] font-semibold rounded-xl transition-all tracking-wider uppercase ${
               activeTab === 'menu' 
-                ? 'bg-amber-500 text-neutral-950 font-semibold shadow-sm' 
-                : 'text-neutral-400 hover:text-neutral-200'
+                ? darkMode ? 'bg-[#1a1e2e] text-amber-400 border border-white/[0.05] shadow-lg' : 'bg-white text-amber-600 shadow-sm'
+                : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
             {t.menuTab}
@@ -540,16 +519,20 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </div>
 
         {activeTab === 'services' && (
-          <div className="w-full flex flex-col gap-3 pb-4">
-            <button 
-              onClick={() => handleSendRequest("Call Waiter", "Waiter requested to room immediately via call bell.")} 
-              className="w-full py-3.5 px-5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-105 text-neutral-950 rounded-2xl font-semibold text-xs uppercase tracking-[0.2em] shadow-lg shadow-amber-500/10 flex items-center justify-center gap-3 transition-all active:scale-[0.99]"
-            >
-              <Icons.bell />
-              <span>{t.callWaiter}</span>
-            </button>
+          <div className="w-full flex flex-col gap-4 pb-4">
             
-            <div className="grid grid-cols-2 gap-3 mt-1">
+            <div className="relative group w-full mb-1">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-amber-300 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
+              <button 
+                onClick={() => handleSendRequest("Call Waiter", "Waiter requested to room immediately via call bell.")} 
+                className="relative w-full py-4 px-5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-110 text-neutral-950 rounded-2xl font-bold text-xs uppercase tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+              >
+                <Icons.bell />
+                <span>{t.callWaiter}</span>
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
               {[
                 { id: 'Housekeeping', title: t.roomCleaning, icon: <Icons.cleaning /> },
                 { id: 'Laundry', title: t.laundryService, icon: <Icons.laundry /> },
@@ -559,16 +542,16 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
                 <button 
                   key={service.id}
                   onClick={() => setActiveModal(service.id)} 
-                  className={`p-4 rounded-2xl border text-left flex flex-col justify-between h-24 transition-all group ${
+                  className={`p-4 rounded-2xl border text-left flex flex-col justify-between h-28 transition-all group ${
                     darkMode 
-                      ? 'bg-[#0b0d14]/70 hover:bg-[#1a1e2e] border-white/[0.05] text-neutral-200' 
-                      : 'bg-neutral-50 hover:bg-white border-neutral-200 text-neutral-800 shadow-sm'
+                      ? 'bg-white/[0.02] hover:bg-white/[0.04] border-white/[0.03] hover:border-amber-500/30 text-neutral-300' 
+                      : 'bg-neutral-50 hover:bg-white border-neutral-200 text-neutral-800 shadow-sm hover:border-amber-500/30'
                   }`}
                 >
-                  <div className="group-hover:scale-105 transition-transform origin-left">
+                  <div className="group-hover:scale-110 transition-transform origin-left">
                     {service.icon}
                   </div>
-                  <span className="text-xs font-medium tracking-wide">{service.title}</span>
+                  <span className="text-[11px] font-medium tracking-wide">{service.title}</span>
                 </button>
               ))}
             </div>
@@ -578,12 +561,12 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         {activeTab === 'menu' && (
           <div className="w-full flex flex-col gap-2.5 pb-20 max-h-[360px] overflow-y-auto pr-1">
             {Object.keys(cart).length > 0 && (
-              <div className="sticky top-0 bg-amber-500 text-neutral-950 p-3.5 rounded-2xl shadow-xl flex items-center justify-between z-20 border border-white/25 mb-2">
+              <div className="sticky top-0 bg-gradient-to-r from-amber-500 to-amber-400 text-neutral-950 p-3.5 rounded-2xl shadow-xl flex items-center justify-between z-20 border border-amber-300/50 mb-2">
                 <div>
                   <p className="text-[9px] uppercase font-bold tracking-widest opacity-70">Room Service</p>
                   <p className="font-bold text-xs">{Object.values(cart).reduce((a, b) => a + b, 0)} {t.itemsSelected}</p>
                 </div>
-                <button onClick={handlePlaceOrder} className="bg-neutral-950 text-white font-medium py-2 px-3.5 rounded-xl text-[10px] uppercase tracking-widest active:scale-95 transition-all">
+                <button onClick={handlePlaceOrder} className="bg-neutral-950 text-white font-semibold py-2 px-4 rounded-xl text-[10px] uppercase tracking-widest active:scale-95 transition-all">
                   {t.confirmOrder}
                 </button>
               </div>
@@ -591,7 +574,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
 
             {t.menu.map((item: MenuItem) => (
               <div key={item.id} className={`p-3.5 rounded-2xl flex items-center justify-between border transition-all ${
-                darkMode ? 'bg-[#0b0d14]/70 border-white/[0.05]' : 'bg-neutral-50 border-neutral-200'
+                darkMode ? 'bg-white/[0.02] border-white/[0.03]' : 'bg-neutral-50 border-neutral-200'
               }`}>
                 <div className="flex items-center gap-3 pr-2">
                   <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-[#131622] border-white/[0.04]' : 'bg-white border-neutral-200'}`}>
@@ -682,7 +665,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
             
             <div className="flex justify-between items-center mb-5">
               <h3 className="text-sm font-semibold tracking-wide uppercase text-amber-400">{activeModal}</h3>
-              <button onClick={closeModals} className="text-[11px] text-neutral-400 font-medium">{t.close}</button>
+              <button onClick={closeModals} className="text-[11px] text-neutral-400 font-medium hover:text-white transition-colors">{t.close}</button>
             </div>
 
             {activeModal === 'Request Taxi' && (
@@ -692,7 +675,9 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
                   type="time" 
                   value={taxiTime} 
                   onChange={(e) => setTaxiTime(e.target.value)} 
-                  className="w-full p-3 rounded-xl bg-[#0b0d14] border border-white/10 text-xs text-white focus:outline-none focus:border-amber-500"
+                  className={`w-full p-3 rounded-xl border text-xs focus:outline-none focus:border-amber-500 ${
+                    darkMode ? 'bg-[#0b0d14] border-white/10 text-white' : 'bg-neutral-100 border-neutral-300 text-neutral-900'
+                  }`}
                 />
               </div>
             )}
@@ -701,19 +686,19 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
               <div className="mb-4 space-y-2">
                 <label className="block text-[10px] uppercase font-bold text-neutral-400 mb-1.5 tracking-wider">{t.itemBreakdown}</label>
                 {Object.entries(t.laundryItems).map(([key, label]) => (
-                  <div key={key} className="flex items-center justify-between p-2.5 rounded-xl bg-[#0b0d14] border border-white/5">
-                    <span className="text-xs text-neutral-300">{label}</span>
+                  <div key={key} className={`flex items-center justify-between p-2.5 rounded-xl border ${darkMode ? 'bg-[#0b0d14] border-white/5' : 'bg-neutral-50 border-neutral-200'}`}>
+                    <span className={`text-xs ${darkMode ? 'text-neutral-300' : 'text-neutral-800'}`}>{label}</span>
                     <div className="flex items-center gap-3">
                       <button 
                         onClick={() => setLaundryCounts(prev => ({ ...prev, [key]: Math.max(0, (prev as any)[key] - 1) }))}
-                        className="w-7 h-7 rounded-lg bg-white/5 text-white text-xs font-bold hover:bg-white/10"
+                        className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${darkMode ? 'bg-white/5 text-white hover:bg-white/10' : 'bg-neutral-200 text-neutral-800 hover:bg-neutral-300'}`}
                       >
                         -
                       </button>
                       <span className="text-xs font-bold w-4 text-center">{(laundryCounts as any)[key]}</span>
                       <button 
                         onClick={() => setLaundryCounts(prev => ({ ...prev, [key]: (prev as any)[key] + 1 }))}
-                        className="w-7 h-7 rounded-lg bg-white/5 text-white text-xs font-bold hover:bg-white/10"
+                        className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${darkMode ? 'bg-white/5 text-white hover:bg-white/10' : 'bg-neutral-200 text-neutral-800 hover:bg-neutral-300'}`}
                       >
                         +
                       </button>
@@ -724,26 +709,28 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
             )}
 
             <div className="mb-6">
-              <label className="block text-[10px] uppercase font-bold text-neutral-400 mb-1.5 tracking-wider">{t.specialInstructions}</label>
-              <textarea 
-                value={customNote}
-                onChange={(e) => setCustomNote(e.target.value)}
-                placeholder={t.placeholderNotes}
-                rows={2}
-                className="w-full p-3 rounded-xl bg-[#0b0d14] border border-white/10 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"
-              />
+               <label className="block text-[10px] uppercase font-bold text-neutral-400 mb-1.5 tracking-wider">{t.specialInstructions}</label>
+               <textarea 
+                  value={customNote}
+                  onChange={(e) => setCustomNote(e.target.value)}
+                  placeholder={t.placeholderNotes}
+                  rows={2}
+                  className={`w-full p-3 rounded-xl border text-xs focus:outline-none focus:border-amber-500 resize-none ${
+                    darkMode ? 'bg-[#0b0d14] border-white/10 text-white' : 'bg-neutral-100 border-neutral-300 text-neutral-900'
+                  }`}
+               />
             </div>
 
             <button 
               onClick={submitModalForm}
-              className="w-full py-3.5 bg-amber-500 text-neutral-950 font-bold rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-amber-500/10 active:scale-[0.99] transition-all"
+              className="w-full py-3.5 bg-amber-500 text-neutral-950 font-bold rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-amber-500/10 hover:brightness-110 active:scale-[0.99] transition-all"
             >
               {t.submit}
             </button>
+
           </div>
         </>
       )}
-
     </div>
   );
 }
