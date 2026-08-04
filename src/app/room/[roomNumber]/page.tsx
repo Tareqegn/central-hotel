@@ -41,7 +41,8 @@ interface TranslationSchema {
   subtotal: string;
   serviceTax: string;
   total: string;
-  laundryItems: Record<string, string>;
+  clearCart: string;
+  laundryItems: Record<string, { name: string; price: number }>;
   menu: MenuItem[];
 }
 
@@ -130,7 +131,12 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     subtotal: "Subtotal",
     serviceTax: "Service Fee (10%)",
     total: "Total",
-    laundryItems: { shirts: "Shirts", pants: "Pants", others: "Other Items" },
+    clearCart: "Clear Cart",
+    laundryItems: { 
+      shirts: { name: "Shirts / Blouses", price: 50 }, 
+      pants: { name: "Pants / Trousers", price: 70 }, 
+      others: { name: "Other Items", price: 40 } 
+    },
     menu: [
       { id: 1, name: "Continental Breakfast", price: 280, icon: "croissant", desc: "Fresh pastry, seasonal fruit, and coffee." },
       { id: 2, name: "Avocado Toast", price: 220, icon: "avocado", desc: "Sourdough, smashed avocado, and poached egg." },
@@ -167,7 +173,12 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     subtotal: "ንዑስ ድምር",
     serviceTax: "የአገልግሎት ክፍያ (10%)",
     total: "አጠቃላይ ድምር",
-    laundryItems: { shirts: "ሸሚዞች", pants: "ሱሪዎች", others: "ሌሎች" },
+    clearCart: "ባዶ አድርግ",
+    laundryItems: { 
+      shirts: { name: "ሸሚዞች", price: 50 }, 
+      pants: { name: "ሱሪዎች", price: 70 }, 
+      others: { name: "ሌሎች ልብሶች", price: 40 } 
+    },
     menu: [
       { id: 1, name: "ኮንቲነንታል ቁርስ", price: 280, icon: "croissant", desc: "ትኩስ ዳቦ፣ ፍራፍሬ እና ቡና።" },
       { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "አቮካዶ እና እንቁላል።" },
@@ -360,8 +371,9 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     if (activeModal === 'Call Waiter') detailsString = "Waiter requested to room via call bell.";
     else if (activeModal === 'Request Taxi') detailsString = `Transport scheduled for ${taxiTime || "Asap"}. ${customNote}`;
     else if (activeModal === 'Laundry') {
-      const itemsArr = Object.entries(laundryCounts).filter(([_, qty]) => qty > 0).map(([item, qty]) => `${qty} ${item}`);
-      detailsString = itemsArr.length ? `Laundry items: ${itemsArr.join(', ')}. ` : "";
+      const itemsArr = Object.entries(laundryCounts).filter(([_, qty]) => qty > 0).map(([item, qty]) => `${qty} ${t.laundryItems[item].name}`);
+      const laundryTotal = Object.entries(laundryCounts).reduce((sum, [item, qty]) => sum + (qty * t.laundryItems[item].price), 0);
+      detailsString = itemsArr.length ? `Laundry items: ${itemsArr.join(', ')} | Total: ${laundryTotal} ETB. ` : "";
       if (customNote) detailsString += `Note: ${customNote}`;
     } else {
       detailsString = customNote || `${activeModal} service requested.`;
@@ -379,7 +391,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     });
   };
 
-  // Calculate Subtotal & Total
+  // Calculate Subtotal & Total for Food Cart
   const subtotalPrice = Object.entries(cart).reduce((sum, [id, qty]) => {
     const item = t.menu.find((m: MenuItem) => m.id === parseInt(id));
     return sum + (item ? item.price * qty : 0);
@@ -570,7 +582,11 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
                   <div className="group-hover:scale-110 transition-transform origin-left">
                     {service.icon}
                   </div>
-                  <span className="text-[11px] font-medium tracking-wide">{service.title}</span>
+                  <div>
+                    <span className="text-[11px] font-medium tracking-wide block">{service.title}</span>
+                    {service.id === 'Laundry' && <span className="text-[9px] text-amber-400 font-mono">From 40 ETB</span>}
+                    {service.id === 'Spa Booking' && <span className="text-[9px] text-amber-400 font-mono">Book Session</span>}
+                  </div>
                 </button>
               ))}
             </div>
@@ -582,15 +598,23 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
             
             {/* Order Bill Summary Panel */}
             {Object.keys(cart).length > 0 && (
-              <div className={`p-4 rounded-2xl border mb-3 shadow-lg ${
+              <div className={`p-4 rounded-2xl border mb-3 shadow-lg relative ${
                 darkMode ? 'bg-[#0b0d14] border-amber-500/30 text-neutral-200' : 'bg-neutral-50 border-amber-500/30 text-neutral-800'
               }`}>
                 <div className="flex justify-between items-center mb-2 pb-2 border-b border-white/5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">{t.itemsSelected}</span>
-                  <span className="text-xs font-bold">{Object.values(cart).reduce((a, b) => a + b, 0)} items</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">{t.itemsSelected}</span>
+                    <span className="text-xs font-bold">({Object.values(cart).reduce((a, b) => a + b, 0)})</span>
+                  </div>
+                  <button 
+                    onClick={() => setCart({})} 
+                    className="text-[10px] text-neutral-400 hover:text-red-400 uppercase tracking-wider transition-colors font-medium"
+                  >
+                    {t.clearCart}
+                  </button>
                 </div>
 
-                <div className="space-y-1.5 mb-3 text-xs">
+                <div className="space-y-1.5 mb-3 text-xs max-h-32 overflow-y-auto pr-1">
                   {Object.entries(cart).map(([id, qty]) => {
                     const item = t.menu.find((m: MenuItem) => m.id === parseInt(id));
                     if (!item) return null;
@@ -739,10 +763,18 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
 
             {activeModal === 'Laundry' && (
               <div className="mb-4 space-y-2">
-                <label className="block text-[10px] uppercase font-bold text-neutral-400 mb-1.5 tracking-wider">{t.itemBreakdown}</label>
-                {Object.entries(t.laundryItems).map(([key, label]) => (
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-[10px] uppercase font-bold text-neutral-400 tracking-wider">{t.itemBreakdown}</label>
+                  <span className="text-[10px] font-mono text-amber-400 font-semibold">
+                    Est: {Object.entries(laundryCounts).reduce((sum, [key, qty]) => sum + (qty * t.laundryItems[key].price), 0)} ETB
+                  </span>
+                </div>
+                {Object.entries(t.laundryItems).map(([key, item]) => (
                   <div key={key} className={`flex items-center justify-between p-2.5 rounded-xl border ${darkMode ? 'bg-[#0b0d14] border-white/5' : 'bg-neutral-50 border-neutral-200'}`}>
-                    <span className={`text-xs ${darkMode ? 'text-neutral-300' : 'text-neutral-800'}`}>{label}</span>
+                    <div>
+                      <span className={`text-xs block ${darkMode ? 'text-neutral-300' : 'text-neutral-800'}`}>{item.name}</span>
+                      <span className="text-[10px] text-amber-400/80 font-mono">{item.price} ETB/pc</span>
+                    </div>
                     <div className="flex items-center gap-3">
                       <button 
                         onClick={() => setLaundryCounts(prev => ({ ...prev, [key]: Math.max(0, (prev as any)[key] - 1) }))}
