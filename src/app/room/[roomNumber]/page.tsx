@@ -698,15 +698,25 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
             )}
 
             {activeModal === 'Laundry' && (
-              <div className="mb-4 space-y-3">
-                <p className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">{t.itemBreakdown}</p>
-                {Object.keys(laundryCounts).map((key) => (
-                  <div key={key} className="flex items-center justify-between bg-[#0b0d14] p-3 rounded-xl border border-white/[0.04]">
-                    <span className="text-xs capitalize font-medium">{t.laundryItems[key] || key}</span>
+              <div className="mb-4 space-y-2">
+                <label className="block text-[10px] uppercase font-bold text-neutral-400 mb-1.5 tracking-wider">{t.itemBreakdown}</label>
+                {Object.entries(t.laundryItems).map(([key, label]) => (
+                  <div key={key} className="flex items-center justify-between p-2.5 rounded-xl bg-[#0b0d14] border border-white/5">
+                    <span className="text-xs text-neutral-300">{label}</span>
                     <div className="flex items-center gap-3">
-                      <button onClick={() => setLaundryCounts(prev => ({ ...prev, [key]: Math.max(0, prev[key as keyof typeof laundryCounts] - 1) }))} className="w-7 h-7 bg-white/5 rounded-lg text-xs font-bold">-</button>
-                      <span className="text-xs font-bold w-4 text-center">{laundryCounts[key as keyof typeof laundryCounts]}</span>
-                      <button onClick={() => setLaundryCounts(prev => ({ ...prev, [key]: prev[key as keyof typeof laundryCounts] + 1 }))} className="w-7 h-7 bg-white/5 rounded-lg text-xs font-bold">+</button>
+                      <button 
+                        onClick={() => setLaundryCounts(prev => ({ ...prev, [key]: Math.max(0, (prev as any)[key] - 1) }))}
+                        className="w-7 h-7 rounded-lg bg-white/5 text-white text-xs font-bold hover:bg-white/10"
+                      >
+                        -
+                      </button>
+                      <span className="text-xs font-bold w-4 text-center">{(laundryCounts as any)[key]}</span>
+                      <button 
+                        onClick={() => setLaundryCounts(prev => ({ ...prev, [key]: (prev as any)[key] + 1 }))}
+                        className="w-7 h-7 rounded-lg bg-white/5 text-white text-xs font-bold hover:bg-white/10"
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -716,15 +726,18 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
             <div className="mb-6">
               <label className="block text-[10px] uppercase font-bold text-neutral-400 mb-1.5 tracking-wider">{t.specialInstructions}</label>
               <textarea 
-                rows={2} 
-                value={customNote} 
-                onChange={(e) => setCustomNote(e.target.value)} 
+                value={customNote}
+                onChange={(e) => setCustomNote(e.target.value)}
                 placeholder={t.placeholderNotes}
+                rows={2}
                 className="w-full p-3 rounded-xl bg-[#0b0d14] border border-white/10 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"
               />
             </div>
 
-            <button onClick={submitModalForm} className="w-full bg-amber-500 text-neutral-950 font-semibold py-3 rounded-xl text-xs uppercase tracking-widest shadow-lg shadow-amber-500/10">
+            <button 
+              onClick={submitModalForm}
+              className="w-full py-3.5 bg-amber-500 text-neutral-950 font-bold rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-amber-500/10 active:scale-[0.99] transition-all"
+            >
               {t.submit}
             </button>
           </div>
@@ -735,8 +748,8 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   );
 }
 
-export default function RoomPage({ params }: PageProps) {
-  const resolvedParams = React.use(params as Promise<{ roomNumber: string }>);
+export default async function RoomPage({ params }: PageProps) {
+  const resolvedParams = await Promise.resolve(params);
   const roomNumber = resolvedParams.roomNumber;
 
   return (
