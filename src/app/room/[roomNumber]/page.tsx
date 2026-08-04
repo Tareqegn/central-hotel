@@ -19,6 +19,7 @@ interface TranslationSchema {
   verifying: string;
   servicesTab: string;
   menuTab: string;
+  folioTab: string;
   callWaiter: string;
   roomCleaning: string;
   laundryService: string;
@@ -43,6 +44,11 @@ interface TranslationSchema {
   total: string;
   clearCart: string;
   viewCartAndPay: string;
+  estimatedArrival: string;
+  myFolioTitle: string;
+  myFolioSubtitle: string;
+  noChargesYet: string;
+  stayTotal: string;
   laundryItems: Record<string, { name: string; price: number }>;
   menu: MenuItem[];
 }
@@ -90,6 +96,11 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
     </svg>
   ),
+  folio: () => (
+    <svg className="w-4 h-4 stroke-[1.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+    </svg>
+  ),
   food: (iconStr: string) => {
     const baseClass = "w-5 h-5 stroke-[1.5] text-amber-400";
     switch (iconStr) {
@@ -109,7 +120,8 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     securityMsg: "Please scan the official room QR code or check in with front desk reception to activate your room page.",
     verifying: "Checking session...",
     servicesTab: "Services",
-    menuTab: "Room Service Menu",
+    menuTab: "Menu",
+    folioTab: "Folio",
     callWaiter: "Call a Waiter",
     roomCleaning: "Room Cleaning",
     laundryService: "Laundry Service",
@@ -134,6 +146,11 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     total: "Total",
     clearCart: "Clear Cart",
     viewCartAndPay: "View Cart & Place Order",
+    estimatedArrival: "Est. Arrival",
+    myFolioTitle: "My Room Charges",
+    myFolioSubtitle: "Running statement of all stay orders",
+    noChargesYet: "No accumulated charges recorded yet.",
+    stayTotal: "Total Stay Charges",
     laundryItems: { 
       shirts: { name: "Shirts / Blouses", price: 50 }, 
       pants: { name: "Pants / Trousers", price: 70 }, 
@@ -152,7 +169,8 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     securityMsg: "እባክዎ በክፍልዎ ውስጥ ያለውን የQR ኮድ ይጠቀሙ ወይም ሪሴፕሽን ያነጋግሩ።",
     verifying: "በማረጋገጥ ላይ...",
     servicesTab: "አገልግሎቶች",
-    menuTab: "የምግብ ዝርዝር",
+    menuTab: "ምናሌ",
+    folioTab: "ሂሳብ",
     callWaiter: "አስተናጋጅ ጥራ",
     roomCleaning: "ክፍል ማጽዳት",
     laundryService: "የልብስ ማጠቢያ",
@@ -177,6 +195,11 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     total: "አጠቃላይ ድምር",
     clearCart: "ባዶ አድርግ",
     viewCartAndPay: "ቅርጫት ይመልከቱ እና ትዕዛዝ ይስጡ",
+    estimatedArrival: "የሚደርስበት ግምታዊ ሰዓት",
+    myFolioTitle: "የክፍልዎ ወጪዎች",
+    myFolioSubtitle: "በቆይታዎ ያዘዟቸው አገልግሎቶች ዝርዝር",
+    noChargesYet: " እስካሁን የተመዘገበ ወጪ የለም።",
+    stayTotal: "አጠቃላይ የቆይታ ወጪ",
     laundryItems: { 
       shirts: { name: "ሸሚዞች", price: 50 }, 
       pants: { name: "ሱሪዎች", price: 70 }, 
@@ -213,7 +236,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [trackedOrder, setTrackedOrder] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isCartOpen, setIsCartOpen] = useState<boolean>(false); // Collapsible cart sheet toggle
+  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
 
   const [customNote, setCustomNote] = useState<string>('');
   const [taxiTime, setTaxiTime] = useState<string>('');
@@ -356,10 +379,27 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     setLaundryCounts({ shirts: 0, pants: 0, others: 0 });
   };
 
+  const calculateETA = (categoryName: string) => {
+    const now = new Date();
+    let addMinutes = 15;
+    if (categoryName === 'Food Order') addMinutes = 25;
+    else if (categoryName === 'Call Waiter') addMinutes = 5;
+    else if (categoryName === 'Housekeeping') addMinutes = 20;
+    else if (categoryName === 'Laundry') addMinutes = 30;
+    else if (categoryName === 'Request Taxi') addMinutes = 15;
+    else if (categoryName === 'Spa Booking') addMinutes = 40;
+
+    now.setMinutes(now.getMinutes() + addMinutes);
+    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   const handleSendRequest = async (categoryName: string, configuredDetails: string) => {
+    const estimatedArrival = calculateETA(categoryName);
+    const detailsWithEta = `${configuredDetails} | ETA: ${estimatedArrival}`;
+
     const { data, error } = await supabase
       .from('requests')
-      .insert([{ room: String(roomNumber), category: categoryName, note: configuredDetails, status: 'Pending' }])
+      .insert([{ room: String(roomNumber), category: categoryName, note: detailsWithEta, status: 'Pending' }])
       .select()
       .single();
 
@@ -418,41 +458,30 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   const getDetailedLiveStatus = (category: string, status: string) => {
     const isFood = category === 'Food Order';
     const isWaiter = category === 'Call Waiter';
-    const isHousekeeping = category === 'Housekeeping';
-    const isLaundry = category === 'Laundry';
-    const isTaxi = category === 'Request Taxi';
-    const isSpa = category === 'Spa Booking';
 
     switch (status) {
       case 'Pending': return isFood ? 'Order received. Kitchen is reviewing your ticket.' : 'Request received. Notifying staff team.';
-      case 'In Progress':
-        if (isFood) return 'Food is being freshly prepared in the kitchen!';
-        if (isWaiter) return 'Waiter is preparing to visit your room.';
-        if (isHousekeeping) return 'Housekeeping staff assigned to your room.';
-        if (isLaundry) return 'Laundry team is processing your items.';
-        if (isTaxi) return 'Transport coordination in progress.';
-        if (isSpa) return 'Spa appointment being confirmed.';
-        return 'Staff member assigned and handling your request.';
-      case 'On the Way':
-        if (isFood) return 'Your order is packed and now on the way to your room!';
-        if (isWaiter) return 'Waiter is on the way to your room!';
-        if (isHousekeeping) return 'Housekeeping staff heading to your room now!';
-        if (isLaundry) return 'Clean items are on the way to your room!';
-        if (isTaxi) return 'Your taxi has arrived or is pulling up!';
-        if (isSpa) return 'Spa therapist is ready for your session!';
-        return 'Staff member is heading to your room now!';
-      case 'Completed':
-        if (isFood) return 'Your food has been delivered. Enjoy your meal!';
-        if (isWaiter) return 'Waiter assistance has been provided.';
-        if (isHousekeeping) return 'Room cleaning service is complete.';
-        if (isLaundry) return 'Laundry service has been completed.';
-        if (isTaxi) return 'Transport service concluded. Have a great trip!';
-        if (isSpa) return 'Spa service completed. Hope you feel relaxed!';
-        return 'Request completed successfully!';
-      default:
-        return status;
+      case 'In Progress': return isFood ? 'Food is being freshly prepared in the kitchen!' : 'Staff member assigned and handling your request.';
+      case 'On the Way': return 'Staff member / delivery is on the way to your room!';
+      case 'Completed': return 'Request completed successfully!';
+      default: return status;
     }
   };
+
+  // Extract total price from order note if available (for Folio calculation)
+  const extractPriceFromNote = (note: string) => {
+    if (!note) return 0;
+    if (note.includes('Total: ')) {
+      const parts = note.split('Total: ');
+      if (parts[1]) {
+        const val = parseInt(parts[1]);
+        if (!isNaN(val)) return val;
+      }
+    }
+    return 0;
+  };
+
+  const totalFolioCharges = activeRequests.reduce((sum, req) => sum + extractPriceFromNote(req.note), 0);
 
   if (isValidating) {
     return (
@@ -528,12 +557,13 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
           </div>
         </header>
 
+        {/* 3-Tab Navigation including Folio */}
         <div className={`w-full flex p-1.5 rounded-2xl mb-6 border backdrop-blur-md ${
           darkMode ? 'bg-white/[0.02] border-white/[0.04]' : 'bg-neutral-100 border-neutral-200'
         }`}>
           <button 
             onClick={() => setActiveTab('services')} 
-            className={`flex-1 py-2.5 text-[11px] font-semibold rounded-xl transition-all tracking-wider uppercase ${
+            className={`flex-1 py-2 text-[10px] font-semibold rounded-xl transition-all tracking-wider uppercase ${
               activeTab === 'services' 
                 ? darkMode ? 'bg-[#1a1e2e] text-amber-400 border border-white/[0.05] shadow-lg' : 'bg-white text-amber-600 shadow-sm'
                 : 'text-neutral-500 hover:text-neutral-300'
@@ -543,13 +573,24 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
           </button>
           <button 
             onClick={() => setActiveTab('menu')} 
-            className={`flex-1 py-2.5 text-[11px] font-semibold rounded-xl transition-all tracking-wider uppercase ${
+            className={`flex-1 py-2 text-[10px] font-semibold rounded-xl transition-all tracking-wider uppercase ${
               activeTab === 'menu' 
                 ? darkMode ? 'bg-[#1a1e2e] text-amber-400 border border-white/[0.05] shadow-lg' : 'bg-white text-amber-600 shadow-sm'
                 : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
             {t.menuTab}
+          </button>
+          <button 
+            onClick={() => setActiveTab('folio')} 
+            className={`flex-1 py-2 text-[10px] font-semibold rounded-xl transition-all tracking-wider uppercase flex items-center justify-center gap-1.5 ${
+              activeTab === 'folio' 
+                ? darkMode ? 'bg-[#1a1e2e] text-amber-400 border border-white/[0.05] shadow-lg' : 'bg-white text-amber-600 shadow-sm'
+                : 'text-neutral-500 hover:text-neutral-300'
+            }`}
+          >
+            <Icons.folio />
+            <span>{t.folioTab}</span>
           </button>
         </div>
 
@@ -597,7 +638,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         )}
 
         {activeTab === 'menu' && (
-          <div className="w-full flex flex-col gap-2.5 pb-32 max-h-[400px] overflow-y-auto pr-1">
+          <div className="w-full flex flex-col gap-2.5 pb-32 max-h-[380px] overflow-y-auto pr-1">
             {t.menu.map((item: MenuItem) => (
               <div key={item.id} className={`p-3.5 rounded-2xl flex items-center justify-between border transition-all ${
                 darkMode ? 'bg-white/[0.02] border-white/[0.03]' : 'bg-neutral-50 border-neutral-200'
@@ -631,9 +672,72 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
           </div>
         )}
 
+        {/* My Charges / Folio Tab Content */}
+        {activeTab === 'folio' && (
+          <div className="w-full flex flex-col pb-28 max-h-[380px] overflow-y-auto pr-1">
+            <div className="mb-4">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-400">{t.myFolioTitle}</h2>
+              <p className="text-[10px] text-neutral-400 font-light">{t.myFolioSubtitle}</p>
+            </div>
+
+            {activeRequests.length === 0 ? (
+              <div className="text-center py-12 text-neutral-500 text-xs font-light">
+                {t.noChargesYet}
+              </div>
+            ) : (
+              <div className="space-y-2.5 mb-4">
+                {activeRequests.map((req) => {
+                  const reqPrice = extractPriceFromNote(req.note);
+                  return (
+                    <div key={req.id} className={`p-3.5 rounded-2xl border flex flex-col gap-2 ${
+                      darkMode ? 'bg-white/[0.02] border-white/[0.04]' : 'bg-neutral-50 border-neutral-200'
+                    }`}>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="text-xs font-semibold tracking-wide text-white block">{req.category}</span>
+                          <span className="text-[10px] text-neutral-400 font-light block mt-0.5 max-w-[220px]">
+                            {req.note.split(' | ETA:')[0]}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-mono font-bold text-amber-400">
+                            {reqPrice > 0 ? `${reqPrice} ETB` : 'Complimentary'}
+                          </span>
+                          <span className={`block text-[9px] uppercase tracking-wider mt-0.5 font-medium ${
+                            req.status === 'Completed' ? 'text-emerald-400' : 'text-amber-400/80'
+                          }`}>
+                            {req.status}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center pt-1.5 border-t border-white/[0.04] text-[9px] text-neutral-500 font-mono">
+                        <span>{new Date(req.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        {req.note.includes('ETA:') && (
+                          <span className="text-amber-400/70">
+                            ETA: {req.note.split('ETA: ')[1]?.split(' |')[0]}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {activeRequests.length > 0 && (
+              <div className={`p-4 rounded-2xl border flex justify-between items-center ${
+                darkMode ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50 border-amber-200'
+              }`}>
+                <span className="text-xs uppercase font-bold tracking-wider text-amber-400">{t.stayTotal}</span>
+                <span className="text-sm font-mono font-bold text-amber-400">{totalFolioCharges} ETB</span>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
-      {/* Floating Collapsible Cart Pill (Sits cleanly right above tracking bar) */}
+      {/* Floating Collapsible Cart Pill */}
       {Object.keys(cart).length > 0 && !isModalOpen && !isCartOpen && (
         <div className={`fixed ${trackedOrder ? 'bottom-20' : 'bottom-6'} left-5 right-5 max-w-md mx-auto z-30 transition-all duration-300`}>
           <button 
@@ -720,6 +824,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </>
       )}
 
+      {/* Active Tracking Banner with ETA */}
       {trackedOrder && !isModalOpen && (
         <div className={`fixed bottom-6 left-5 right-5 max-w-md mx-auto p-4 rounded-2xl flex items-center justify-between shadow-2xl border backdrop-blur-xl z-30 ${
           trackedOrder.status === 'Completed'
@@ -737,15 +842,27 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
               </p>
             </div>
           </div>
-          {trackedOrder.status === 'Completed' ? (
-            <button onClick={() => { setActiveOrderId(null); setTrackedOrder(null); }} className="bg-emerald-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
-              Dismiss
-            </button>
-          ) : (
-            <button onClick={() => setIsModalOpen(true)} className="bg-amber-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
-              {t.viewProgress}
-            </button>
-          )}
+
+          <div className="flex items-center gap-3">
+            {trackedOrder.status !== 'Completed' && trackedOrder.note && trackedOrder.note.includes('ETA:') && (
+              <div className="text-right hidden sm:block">
+                <span className="block text-[9px] uppercase tracking-wider text-neutral-400">{t.estimatedArrival}</span>
+                <span className="text-xs font-mono font-bold text-amber-400">
+                  {trackedOrder.note.split('ETA: ')[1]?.split(' |')[0]}
+                </span>
+              </div>
+            )}
+
+            {trackedOrder.status === 'Completed' ? (
+              <button onClick={() => { setActiveOrderId(null); setTrackedOrder(null); }} className="bg-emerald-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
+                Dismiss
+              </button>
+            ) : (
+              <button onClick={() => setIsModalOpen(true)} className="bg-amber-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
+                {t.viewProgress}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -756,7 +873,14 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
             darkMode ? 'bg-[#121520] border-white/[0.08] text-white' : 'bg-white border-neutral-200 text-neutral-900'
           }`}>
             <div className="w-10 h-1 bg-neutral-600/40 rounded-full mx-auto mb-6 cursor-pointer" onClick={() => setIsModalOpen(false)} />
-            <h3 className="text-sm font-semibold mb-1 uppercase tracking-wider text-amber-400">{trackedOrder.category}</h3>
+            <div className="flex justify-between items-center mb-1">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-amber-400">{trackedOrder.category}</h3>
+              {trackedOrder.note && trackedOrder.note.includes('ETA:') && (
+                <span className="text-xs font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+                  {t.estimatedArrival}: {trackedOrder.note.split('ETA: ')[1]?.split(' |')[0]}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-neutral-300 mb-4 font-medium">
               {getDetailedLiveStatus(trackedOrder.category, trackedOrder.status)}
             </p>
