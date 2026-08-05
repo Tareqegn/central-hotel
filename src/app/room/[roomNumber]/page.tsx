@@ -50,6 +50,8 @@ interface TranslationSchema {
   noChargesYet: string;
   stayTotal: string;
   rateServicePrompt: string;
+  feedbackPlaceholder: string;
+  submitFeedback: string;
   feedbackThankYou: string;
   laundryItems: Record<string, { name: string; price: number }>;
   menu: MenuItem[];
@@ -153,7 +155,9 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     myFolioSubtitle: "Running statement of all stay orders",
     noChargesYet: "No accumulated charges recorded yet.",
     stayTotal: "Total Stay Charges",
-    rateServicePrompt: "Rate your stay experience:",
+    rateServicePrompt: "Rate your stay experience & share feedback:",
+    feedbackPlaceholder: "Tell us about your stay, specific requests, or suggestions...",
+    submitFeedback: "Submit Feedback",
     feedbackThankYou: "Thank you for your feedback!",
     laundryItems: { 
       shirts: { name: "Shirts / Blouses", price: 50 }, 
@@ -204,7 +208,9 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     myFolioSubtitle: "የሁሉም ቆይታ ትዕዛዞች መግለጫ",
     noChargesYet: " እስካሁን የተመዘገበ ክፍያ የለም",
     stayTotal: "ጠቅላላ የቆይታ ክፍያ",
-    rateServicePrompt: "አገልግሎቱን ይገምግሙ:",
+    rateServicePrompt: "አገልግሎቱን ይገምግሙ እና አስተያየትዎን ይጻፉ:",
+    feedbackPlaceholder: "ስለ ቆይታዎ፣ ልዩ ጥያቄዎችዎ ወይም አስተያየትዎ ይጻፉ...",
+    submitFeedback: "አስተያየት ላክ",
     feedbackThankYou: "ለሰጡን አስተያየት እናመሰግናለን!",
     laundryItems: { 
       shirts: { name: "ሸሚዝ", price: 50 }, 
@@ -244,8 +250,9 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
 
-  // New states for Star Rating & Express Checkout
+  // States for Star Rating & Customer Feedback Text Area
   const [rating, setRating] = useState<number>(0);
+  const [feedbackText, setFeedbackText] = useState<string>('');
   const [hasRated, setHasRated] = useState<boolean>(false);
   const [checkoutRequested, setCheckoutRequested] = useState<boolean>(false);
 
@@ -436,8 +443,8 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     handleSendRequest(activeModal || 'General', detailsString);
   };
 
-  const handleRatingSubmit = async (selectedStars: number) => {
-    setRating(selectedStars);
+  const handleFeedbackSubmit = async () => {
+    if (rating === 0 && !feedbackText.trim()) return;
     setHasRated(true);
 
     try {
@@ -445,13 +452,13 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         {
           room: String(roomNumber),
           category: 'Feedback',
-          note: `Guest Rating: ${selectedStars} Stars`,
+          note: `Rating: ${rating > 0 ? `${rating} Stars` : 'No Rating'} | Comments: ${feedbackText.trim() || 'None'}`,
           status: 'Completed'
         }
       ]);
       fetchActiveRequests();
     } catch (err) {
-      console.error('Failed to submit rating', err);
+      console.error('Failed to submit feedback', err);
     }
   };
 
@@ -718,7 +725,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
           </div>
         )}
 
-        {/* My Charges / Folio Tab Content with Rating & Express Checkout */}
+        {/* My Charges / Folio Tab Content with Rating & Custom Text Feedback Box */}
         {activeTab === 'folio' && (
           <div className="w-full flex flex-col pb-28 max-h-[380px] overflow-y-auto pr-1 space-y-4">
             <div>
@@ -779,30 +786,50 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
               </div>
             )}
 
-            {/* --- Stay Feedback & Express Checkout Widgets --- */}
-            <div className={`p-4 rounded-2xl border space-y-4 ${darkMode ? 'bg-white/[0.01] border-white/[0.04]' : 'bg-neutral-50 border-neutral-200'}`}>
+            {/* --- Stay Feedback & Custom Text Input Widget --- */}
+            <div className={`p-4 rounded-2xl border space-y-3 ${darkMode ? 'bg-white/[0.01] border-white/[0.04]' : 'bg-neutral-50 border-neutral-200'}`}>
               
-              {/* Star Rating */}
               <div>
-                <h3 className="text-xs font-medium text-neutral-200 mb-1">{t.rateServicePrompt}</h3>
-                {hasRated ? (
-                  <p className="text-[11px] text-amber-400 font-medium pt-1">⭐ Thank you for rating your stay ({rating}/5)!</p>
-                ) : (
-                  <div className="flex gap-2 pt-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => handleRatingSubmit(star)}
-                        className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all border ${
-                          darkMode ? 'bg-[#0b0d14] border-white/10 text-neutral-400 hover:text-amber-400 hover:border-amber-500/40' : 'bg-white border-neutral-300 text-neutral-700 hover:border-amber-500'
-                        }`}
-                      >
-                        ★ {star}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <h3 className="text-xs font-medium text-neutral-200 mb-2">{t.rateServicePrompt}</h3>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setRating(star)}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all border ${
+                        rating === star 
+                          ? 'bg-amber-500 text-neutral-950 border-amber-500 shadow-md' 
+                          : darkMode ? 'bg-[#0b0d14] border-white/10 text-neutral-400 hover:text-amber-400 hover:border-amber-500/40' : 'bg-white border-neutral-300 text-neutral-700 hover:border-amber-500'
+                      }`}
+                    >
+                      ★ {star}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              <div>
+                <textarea
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  placeholder={t.feedbackPlaceholder}
+                  rows={3}
+                  className={`w-full p-3 rounded-xl border text-xs focus:outline-none focus:border-amber-500 resize-none ${
+                    darkMode ? 'bg-[#0b0d14] border-white/10 text-white' : 'bg-neutral-100 border-neutral-300 text-neutral-900'
+                  }`}
+                />
+              </div>
+
+              {hasRated ? (
+                <p className="text-[11px] text-amber-400 font-medium text-center py-1">⭐ {t.feedbackThankYou}</p>
+              ) : (
+                <button
+                  onClick={handleFeedbackSubmit}
+                  className="w-full py-2.5 bg-amber-500 hover:brightness-110 text-neutral-950 font-bold rounded-xl text-xs uppercase tracking-wider shadow-md transition-all"
+                >
+                  {t.submitFeedback}
+                </button>
+              )}
 
               <hr className={darkMode ? 'border-white/[0.04]' : 'border-neutral-200'} />
 
