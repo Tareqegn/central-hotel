@@ -1,4 +1,4 @@
-// Improvement added: Added a Shift Notes / Manager Log box for shift-to-shift communication.
+// Improvement added: Added a Live Announcement Broadcast center for managers to push notices to guests instantly.
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -16,8 +16,17 @@ interface RequestItem {
   created_at: string;
 }
 
+interface Announcement {
+  id: string;
+  message: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 export default function ManagerDashboard() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [newAnnouncementText, setNewAnnouncementText] = useState<string>('');
   const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [shiftNotes, setShiftNotes] = useState<string>(() => {
@@ -66,26 +75,36 @@ export default function ManagerDashboard() {
     } catch (e) {}
   };
 
-  const fetchRequests = async () => {
-    const { data, error } = await supabase
+  const fetchData = async () => {
+    // Fetch requests
+    const { data: reqData } = await supabase
       .from('requests')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (data && !error) {
-      setRequests(data);
-    }
+    if (reqData) setRequests(reqData);
+
+    // Fetch announcements
+    const { data: annData } = await supabase
+      .from('announcements')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (annData) setAnnouncements(annData);
   };
 
   useEffect(() => {
-    fetchRequests();
+    fetchData();
     const channel = supabase
       .channel('manager_dashboard_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, (payload: { eventType: string }) => {
         if (payload.eventType === 'INSERT') {
           playAlertChime();
         }
-        fetchRequests();
+        fetchData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+        fetchData();
       })
       .subscribe();
 
@@ -99,7 +118,35 @@ export default function ManagerDashboard() {
       .from('requests')
       .update({ status: newStatus })
       .eq('id', id);
-    fetchRequests();
+    fetchData();
+  };
+
+  const handlePublishAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAnnouncementText.trim()) return;
+
+    await supabase.from('announcements').insert([
+      { message: newAnnouncementText.trim(), is_active: true }
+    ]);
+
+    setNewAnnouncementText('');
+    fetchData();
+  };
+
+  const toggleAnnouncementStatus = async (id: string, currentStatus: boolean) => {
+    await supabase
+      .from('announcements')
+      .update({ is_active: !currentStatus })
+      .eq('id', id);
+    fetchData();
+  };
+
+  const deleteAnnouncement = async (id: string) => {
+    await supabase
+      .from('announcements')
+      .delete()
+      .eq('id', id);
+    fetchData();
   };
 
   // Get unique room numbers for filter dropdown
@@ -119,7 +166,7 @@ export default function ManagerDashboard() {
     return matchesRoom && matchesSearch;
   });
 
-  // Financial & Pitch Metrics Calculations (based on current filter view)
+  // Financial & Pitch Metrics Calculations
   const activeRoomsCount = new Set(filteredRequests.filter(r => r.status !== 'Completed').map(r => r.room)).size;
 
   const now = new Date().getTime();
@@ -234,79 +281,113 @@ export default function ManagerDashboard() {
           </div>
         </div>
 
-        {/* Pitch KPI & Financial Metrics Grid (Clean 6-Column Layout) */}
+        {/* Pitch KPI & Financial Metrics Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          
-          {/* 1. Real-Time F&B Revenue */}
           <div className="bg-[#18181b] border border-white/[0.08] p-4 rounded-xl flex flex-col justify-between shadow-lg">
             <p className="text-[10px] uppercase font-mono tracking-widest text-neutral-400 mb-2">F&B Revenue</p>
-            <div className="flex items-baseline justify-between">
-              <span className="text-lg font-serif text-emerald-400">${totalRevenue.toFixed(2)}</span>
-            </div>
+            <span className="text-lg font-serif text-emerald-400">${totalRevenue.toFixed(2)}</span>
           </div>
-
-          {/* 2. Average Order Value */}
           <div className="bg-[#18181b] border border-white/[0.08] p-4 rounded-xl flex flex-col justify-between shadow-lg">
             <p className="text-[10px] uppercase font-mono tracking-widest text-neutral-400 mb-2">Avg. Order (AOV)</p>
-            <div className="flex items-baseline justify-between">
-              <span className="text-lg font-serif text-white">${averageOrderValue.toFixed(2)}</span>
-            </div>
+            <span className="text-lg font-serif text-white">${averageOrderValue.toFixed(2)}</span>
           </div>
-
-          {/* 3. Top-Selling Category */}
           <div className="bg-[#18181b] border border-white/[0.08] p-4 rounded-xl flex flex-col justify-between shadow-lg">
             <p className="text-[10px] uppercase font-mono tracking-widest text-neutral-400 mb-2">Top Category</p>
-            <div className="flex items-baseline justify-between">
-              <span className="text-sm font-serif text-amber-400 truncate max-w-[110px]">{topSellingItem}</span>
-            </div>
+            <span className="text-sm font-serif text-amber-400 truncate max-w-[110px]">{topSellingItem}</span>
           </div>
-
-          {/* 4. Active Rooms */}
           <div className="bg-[#18181b] border border-white/[0.08] p-4 rounded-xl flex flex-col justify-between shadow-lg">
             <p className="text-[10px] uppercase font-mono tracking-widest text-neutral-400 mb-2">Active Rooms</p>
-            <div className="flex items-baseline justify-between">
-              <span className="text-lg font-serif text-white">{activeRoomsCount} Rooms</span>
-            </div>
+            <span className="text-lg font-serif text-white">{activeRoomsCount} Rooms</span>
           </div>
-
-          {/* 5. Urgent / VIP Alerts */}
           <div className={`border p-4 rounded-xl flex flex-col justify-between shadow-lg transition-all ${
-            urgentCount > 0 
-              ? 'bg-red-500/10 border-red-500/40 animate-pulse' 
-              : 'bg-[#18181b] border-white/[0.08]'
+            urgentCount > 0 ? 'bg-red-500/10 border-red-500/40 animate-pulse' : 'bg-[#18181b] border-white/[0.08]'
           }`}>
             <p className="text-[10px] uppercase font-mono tracking-widest text-neutral-400 mb-2">VIP / Delayed</p>
-            <div className="flex items-baseline justify-between">
-              <span className={`text-lg font-serif ${urgentCount > 0 ? 'text-red-400 font-bold' : 'text-white'}`}>
-                {urgentCount}
-              </span>
-            </div>
+            <span className={`text-lg font-serif ${urgentCount > 0 ? 'text-red-400 font-bold' : 'text-white'}`}>{urgentCount}</span>
           </div>
-
-          {/* 6. Response Time */}
           <div className="bg-[#18181b] border border-white/[0.08] p-4 rounded-xl flex flex-col justify-between shadow-lg">
             <p className="text-[10px] uppercase font-mono tracking-widest text-neutral-400 mb-2">Resp. Time</p>
-            <div className="flex items-baseline justify-between">
-              <span className="text-lg font-serif text-emerald-400">3m 45s</span>
+            <span className="text-lg font-serif text-emerald-400">3m 45s</span>
+          </div>
+        </div>
+
+        {/* Shift Notes & Live Announcements Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          
+          {/* Shift Handover Notes */}
+          <div className="bg-[#18181b] border border-white/[0.08] p-5 rounded-2xl shadow-lg flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
+                  📝 Shift Notes & Handover Log
+                </span>
+                <span className="text-[9px] text-neutral-500 font-mono">Auto-saved locally</span>
+              </div>
+              <textarea
+                value={shiftNotes}
+                onChange={handleShiftNotesChange}
+                placeholder="Type hand-over notes for incoming shift managers..."
+                className="w-full bg-[#121212] text-neutral-200 text-xs font-mono p-3 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400 h-24 resize-none leading-relaxed"
+              />
             </div>
           </div>
 
-        </div>
+          {/* Live Guest Announcement Center */}
+          <div className="bg-[#18181b] border border-white/[0.08] p-5 rounded-2xl shadow-lg flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
+                  📢 Broadcast Guest Announcement
+                </span>
+                <span className="text-[9px] text-emerald-400 font-mono">Pushed live to rooms</span>
+              </div>
+              <form onSubmit={handlePublishAnnouncement} className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  value={newAnnouncementText}
+                  onChange={(e) => setNewAnnouncementText(e.target.value)}
+                  placeholder="e.g., Free wine tasting at lobby at 8 PM..."
+                  className="flex-1 bg-[#121212] text-neutral-200 text-xs font-mono px-3 py-2 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400"
+                />
+                <button
+                  type="submit"
+                  className="bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-md"
+                >
+                  Publish
+                </button>
+              </form>
+            </div>
 
-        {/* Shift Notes / Manager Log Section */}
-        <div className="mb-8 bg-[#18181b] border border-white/[0.08] p-4 rounded-2xl shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
-              📝 Shift Notes & Handover Log (Auto-Saved)
-            </span>
-            <span className="text-[9px] text-neutral-500 font-mono">Visible to on-duty managers</span>
+            {/* Active Announcements List */}
+            <div className="space-y-2 max-h-24 overflow-y-auto">
+              {announcements.length === 0 ? (
+                <p className="text-[11px] text-neutral-500 font-mono italic">No broadcast announcements created yet.</p>
+              ) : (
+                announcements.map((ann) => (
+                  <div key={ann.id} className="flex items-center justify-between bg-[#121212] px-3 py-1.5 rounded-lg border border-white/[0.06]">
+                    <span className="text-xs text-neutral-200 truncate max-w-[280px]">{ann.message}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleAnnouncementStatus(ann.id, ann.is_active)}
+                        className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded ${
+                          ann.is_active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-neutral-800 text-neutral-400'
+                        }`}
+                      >
+                        {ann.is_active ? 'LIVE' : 'HIDDEN'}
+                      </button>
+                      <button
+                        onClick={() => deleteAnnouncement(ann.id)}
+                        className="text-[10px] text-red-400 hover:text-red-300 font-mono"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-          <textarea
-            value={shiftNotes}
-            onChange={handleShiftNotesChange}
-            placeholder="Type hand-over notes, VIP instructions, or special shift reminders here..."
-            className="w-full bg-[#121212] text-neutral-200 text-xs font-mono p-3 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400 h-20 resize-none leading-relaxed"
-          />
+
         </div>
 
         {/* Kanban Columns Grid */}
