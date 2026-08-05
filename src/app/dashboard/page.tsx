@@ -1,4 +1,4 @@
-// Improvement added: Added staff department targeting (Kitchen, Housekeeping, Waiters, Front Desk) for internal announcements.
+// Improvement added: Added granular staff targeting down to specific individual staff members (e.g., specific waiters or housekeepers).
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -22,6 +22,7 @@ interface Announcement {
   is_active: boolean;
   target: 'guest' | 'staff';
   staff_role?: string;
+  staff_name?: string;
   created_at: string;
 }
 
@@ -31,14 +32,17 @@ export default function ManagerDashboard() {
   const [newAnnouncementText, setNewAnnouncementText] = useState<string>('');
   const [announcementTarget, setAnnouncementTarget] = useState<'guest' | 'staff'>('guest');
   const [selectedStaffRole, setSelectedStaffRole] = useState<string>('all');
+  const [selectedStaffName, setSelectedStaffName] = useState<string>('all');
   const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  
   const [shiftNotes, setShiftNotes] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('manager_shift_notes') || '';
     }
     return '';
   });
+  
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('manager_sound_enabled');
@@ -46,6 +50,14 @@ export default function ManagerDashboard() {
     }
     return true;
   });
+
+  // Sample staff roster for specific assignment mapping
+  const staffRoster: { [key: string]: string[] } = {
+    waiters: ['John', 'Abebe', 'Sara', 'Michael'],
+    housekeeping: ['Tigist', 'Hanna', 'Dawit'],
+    kitchen: ['Chef Markos', 'Chef Leah', 'Samson'],
+    'front desk': ['Edom', 'Natnael']
+  };
 
   const handleToggleSound = () => {
     const newState = !soundEnabled;
@@ -132,7 +144,8 @@ export default function ManagerDashboard() {
         message: newAnnouncementText.trim(), 
         is_active: true, 
         target: announcementTarget,
-        staff_role: announcementTarget === 'staff' ? selectedStaffRole : 'all'
+        staff_role: announcementTarget === 'staff' ? selectedStaffRole : 'all',
+        staff_name: announcementTarget === 'staff' ? selectedStaffName : 'all'
       }
     ]);
 
@@ -236,14 +249,6 @@ export default function ManagerDashboard() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-[#121212] text-neutral-100 font-mono text-xs px-2.5 py-1 rounded-lg border border-white/[0.1] focus:outline-none focus:border-amber-400 w-36 sm:w-44"
               />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="text-[10px] bg-white/[0.05] hover:bg-white/[0.1] text-neutral-300 px-2 py-1 rounded-md font-mono transition-all border border-white/[0.08]"
-                >
-                  Clear
-                </button>
-              )}
             </div>
 
             <div className="flex items-center gap-2 bg-[#18181b] backdrop-blur-md px-3 py-2 rounded-xl border border-white/[0.08]">
@@ -255,9 +260,7 @@ export default function ManagerDashboard() {
               >
                 <option value="ALL">All Rooms</option>
                 {uniqueRooms.map((roomNum) => (
-                  <option key={roomNum} value={roomNum}>
-                    Room {roomNum}
-                  </option>
+                  <option key={roomNum} value={roomNum}>Room {roomNum}</option>
                 ))}
               </select>
             </div>
@@ -267,9 +270,7 @@ export default function ManagerDashboard() {
               <button
                 onClick={handleToggleSound}
                 className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
-                  soundEnabled 
-                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' 
-                    : 'bg-white/[0.03] text-neutral-500 border border-white/[0.06]'
+                  soundEnabled ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-white/[0.03] text-neutral-500 border border-white/[0.06]'
                 }`}
               >
                 {soundEnabled ? 'ON' : 'OFF'}
@@ -329,27 +330,45 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          {/* Unified Announcement Center (Guest vs Staff with Department Target) */}
+          {/* Granular Staff & Guest Broadcast Command Center */}
           <div className="bg-[#18181b] border border-white/[0.08] p-5 rounded-2xl shadow-lg flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
-                  📢 Broadcast Command Center
+                  📢 Granular Broadcast Center
                 </span>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {announcementTarget === 'staff' && (
-                    <select
-                      value={selectedStaffRole}
-                      onChange={(e) => setSelectedStaffRole(e.target.value)}
-                      className="bg-[#121212] text-blue-400 font-mono text-[10px] px-2 py-1 rounded-lg border border-blue-500/30 focus:outline-none focus:border-blue-400"
-                    >
-                      <option value="all">All Departments</option>
-                      <option value="kitchen">Kitchen</option>
-                      <option value="housekeeping">Housekeeping</option>
-                      <option value="waiters">Waiters</option>
-                      <option value="front desk">Front Desk</option>
-                    </select>
+                    <>
+                      <select
+                        value={selectedStaffRole}
+                        onChange={(e) => {
+                          setSelectedStaffRole(e.target.value);
+                          setSelectedStaffName('all'); // reset individual name when department changes
+                        }}
+                        className="bg-[#121212] text-blue-400 font-mono text-[10px] px-2 py-1 rounded-lg border border-blue-500/30 focus:outline-none focus:border-blue-400"
+                      >
+                        <option value="all">All Departments</option>
+                        <option value="kitchen">Kitchen</option>
+                        <option value="housekeeping">Housekeeping</option>
+                        <option value="waiters">Waiters</option>
+                        <option value="front desk">Front Desk</option>
+                      </select>
+
+                      {selectedStaffRole !== 'all' && staffRoster[selectedStaffRole] && (
+                        <select
+                          value={selectedStaffName}
+                          onChange={(e) => setSelectedStaffName(e.target.value)}
+                          className="bg-[#121212] text-emerald-400 font-mono text-[10px] px-2 py-1 rounded-lg border border-emerald-500/30 focus:outline-none focus:border-emerald-400"
+                        >
+                          <option value="all">All {selectedStaffRole}</option>
+                          {staffRoster[selectedStaffRole].map((name) => (
+                            <option key={name} value={name}>{name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </>
                   )}
 
                   {/* Target Toggle Tabs */}
@@ -358,9 +377,7 @@ export default function ManagerDashboard() {
                       type="button"
                       onClick={() => setAnnouncementTarget('guest')}
                       className={`px-2.5 py-1 text-[10px] font-mono rounded-md transition-all ${
-                        announcementTarget === 'guest' 
-                          ? 'bg-amber-500 text-black font-bold shadow' 
-                          : 'text-neutral-400 hover:text-neutral-200'
+                        announcementTarget === 'guest' ? 'bg-amber-500 text-black font-bold shadow' : 'text-neutral-400 hover:text-neutral-200'
                       }`}
                     >
                       To Guests
@@ -369,9 +386,7 @@ export default function ManagerDashboard() {
                       type="button"
                       onClick={() => setAnnouncementTarget('staff')}
                       className={`px-2.5 py-1 text-[10px] font-mono rounded-md transition-all ${
-                        announcementTarget === 'staff' 
-                          ? 'bg-blue-500 text-white font-bold shadow' 
-                          : 'text-neutral-400 hover:text-neutral-200'
+                        announcementTarget === 'staff' ? 'bg-blue-500 text-white font-bold shadow' : 'text-neutral-400 hover:text-neutral-200'
                       }`}
                     >
                       To Staff
@@ -385,7 +400,13 @@ export default function ManagerDashboard() {
                   type="text"
                   value={newAnnouncementText}
                   onChange={(e) => setNewAnnouncementText(e.target.value)}
-                  placeholder={announcementTarget === 'guest' ? "e.g., Free wine tasting at lobby at 8 PM..." : `e.g., Notice for ${selectedStaffRole.toUpperCase()} department...`}
+                  placeholder={
+                    announcementTarget === 'guest' 
+                      ? "e.g., Free wine tasting at lobby at 8 PM..." 
+                      : selectedStaffName !== 'all' 
+                      ? `Direct notice to ${selectedStaffName}...` 
+                      : `Notice for ${selectedStaffRole.toUpperCase()} department...`
+                  }
                   className="flex-1 bg-[#121212] text-neutral-200 text-xs font-mono px-3 py-2 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400"
                 />
                 <button
@@ -410,7 +431,9 @@ export default function ManagerDashboard() {
                       <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded ${
                         ann.target === 'staff' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                       }`}>
-                        {ann.target === 'staff' ? `Staff (${ann.staff_role || 'all'})` : 'guest'}
+                        {ann.target === 'staff' 
+                          ? `Staff (${ann.staff_role || 'all'}${ann.staff_name && ann.staff_name !== 'all' ? ` ➔ ${ann.staff_name}` : ''})` 
+                          : 'guest'}
                       </span>
                       <span className="text-xs text-neutral-200 truncate">{ann.message}</span>
                     </div>
