@@ -1,4 +1,4 @@
-// Improvement applied: Cleaned up emoji characters inside conditional audio status labels and added proper type casting.
+// Improvement added: Added feedback column mapping to properly display customer ratings and comments in the manager dashboard.
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -11,6 +11,8 @@ interface RequestItem {
   note: string;
   status: string;
   price?: number;
+  rating?: number;
+  feedback?: string;
   created_at: string;
 }
 
@@ -272,9 +274,26 @@ export default function ManagerDashboard() {
                             </div>
 
                             <h3 className="text-sm font-semibold tracking-wide text-white mb-1.5">{req.category}</h3>
-                            <p className="text-xs text-neutral-300 mb-4 font-light leading-relaxed bg-[#121212]/60 p-2.5 rounded-lg border border-white/[0.04]">
+                            <p className="text-xs text-neutral-300 mb-3 font-light leading-relaxed bg-[#121212]/60 p-2.5 rounded-lg border border-white/[0.04]">
                               {req.note}
                             </p>
+
+                            {/* Customer Feedback / Rating Display */}
+                            {(req.rating || req.feedback) && (
+                              <div className="mb-4 bg-amber-500/5 border border-amber-500/20 p-2.5 rounded-lg">
+                                <p className="text-[9px] uppercase font-mono tracking-widest text-amber-400 mb-1">Customer Feedback</p>
+                                {req.rating && (
+                                  <div className="text-xs text-amber-300 font-semibold mb-1">
+                                    Rating: {req.rating} Star{req.rating > 1 ? 's' : ''}
+                                  </div>
+                                )}
+                                {req.feedback && (
+                                  <p className="text-xs text-neutral-200 italic">
+                                    Comments: {req.feedback}
+                                  </p>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           {/* Status Action Buttons */}
