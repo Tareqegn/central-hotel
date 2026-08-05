@@ -1,4 +1,4 @@
-// Improvement added: Added feedback column mapping to properly display customer ratings and comments in the manager dashboard.
+// Improvement added: Added an interactive Room Filter dropdown allowing managers to isolate requests for a specific room and reset back to the full dashboard view.
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -18,6 +18,7 @@ interface RequestItem {
 
 export default function ManagerDashboard() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
+  const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('ALL');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('manager_sound_enabled');
@@ -88,21 +89,31 @@ export default function ManagerDashboard() {
     fetchRequests();
   };
 
-  // Financial & Pitch Metrics Calculations
-  const activeRoomsCount = new Set(requests.filter(r => r.status !== 'Completed').map(r => r.room)).size;
+  // Get unique room numbers for filter dropdown
+  const uniqueRooms = Array.from(new Set(requests.map(r => r.room))).sort((a, b) => {
+    return parseInt(a) - parseInt(b) || a.localeCompare(b);
+  });
+
+  // Filter requests based on selection
+  const filteredRequests = selectedRoomFilter === 'ALL' 
+    ? requests 
+    : requests.filter(r => r.room === selectedRoomFilter);
+
+  // Financial & Pitch Metrics Calculations (based on current filter view)
+  const activeRoomsCount = new Set(filteredRequests.filter(r => r.status !== 'Completed').map(r => r.room)).size;
 
   const now = new Date().getTime();
-  const urgentCount = requests.filter(r => {
+  const urgentCount = filteredRequests.filter(r => {
     if (r.status !== 'Pending') return false;
     const createdTime = new Date(r.created_at).getTime();
     return (now - createdTime) > 10 * 60 * 1000;
   }).length;
 
-  const totalRevenue = requests.reduce((sum, item) => sum + (item.price || 15.00), 0);
-  const averageOrderValue = requests.length > 0 ? totalRevenue / requests.length : 0;
+  const totalRevenue = filteredRequests.reduce((sum, item) => sum + (item.price || 15.00), 0);
+  const averageOrderValue = filteredRequests.length > 0 ? totalRevenue / filteredRequests.length : 0;
 
   const categoryCounts: { [key: string]: number } = {};
-  requests.forEach(r => {
+  filteredRequests.forEach(r => {
     const cat = r.category || 'General Service';
     categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
   });
@@ -146,18 +157,48 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-[#18181b] backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/[0.08]">
-            <span className="text-xs text-neutral-400 font-mono">Audio Chime:</span>
-            <button
-              onClick={handleToggleSound}
-              className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
-                soundEnabled 
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' 
-                  : 'bg-white/[0.03] text-neutral-500 border border-white/[0.06]'
-              }`}
-            >
-              {soundEnabled ? 'ON' : 'OFF'}
-            </button>
+          <div className="flex flex-wrap items-center gap-3">
+            
+            {/* Room Filter Control */}
+            <div className="flex items-center gap-2 bg-[#18181b] backdrop-blur-md px-3 py-2 rounded-xl border border-white/[0.08]">
+              <span className="text-xs text-neutral-400 font-mono">Room Filter:</span>
+              <select
+                value={selectedRoomFilter}
+                onChange={(e) => setSelectedRoomFilter(e.target.value)}
+                className="bg-[#121212] text-amber-400 font-mono text-xs px-2.5 py-1 rounded-lg border border-amber-500/30 focus:outline-none focus:border-amber-400"
+              >
+                <option value="ALL">All Rooms (Overview)</option>
+                {uniqueRooms.map((roomNum) => (
+                  <option key={roomNum} value={roomNum}>
+                    Room {roomNum}
+                  </option>
+                ))}
+              </select>
+              {selectedRoomFilter !== 'ALL' && (
+                <button
+                  onClick={() => setSelectedRoomFilter('ALL')}
+                  className="text-[10px] bg-white/[0.05] hover:bg-white/[0.1] text-neutral-300 px-2 py-1 rounded-md font-mono transition-all border border-white/[0.08]"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+
+            {/* Audio Chime Toggle */}
+            <div className="flex items-center gap-3 bg-[#18181b] backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/[0.08]">
+              <span className="text-xs text-neutral-400 font-mono">Audio Chime:</span>
+              <button
+                onClick={handleToggleSound}
+                className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
+                  soundEnabled 
+                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' 
+                    : 'bg-white/[0.03] text-neutral-500 border border-white/[0.06]'
+                }`}
+              >
+                {soundEnabled ? 'ON' : 'OFF'}
+              </button>
+            </div>
+
           </div>
         </div>
 
@@ -223,7 +264,7 @@ export default function ManagerDashboard() {
         {/* Kanban Columns Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
           {columns.map((col) => {
-            const colRequests = requests.filter(r => r.status === col.statusKey);
+            const colRequests = filteredRequests.filter(r => r.status === col.statusKey);
 
             return (
               <div key={col.statusKey} className="bg-[#18181b]/70 rounded-2xl border border-white/[0.06] p-4 flex flex-col backdrop-blur-md min-h-[560px] shadow-xl">
@@ -278,18 +319,22 @@ export default function ManagerDashboard() {
                               {req.note}
                             </p>
 
-                            {/* Customer Feedback / Rating Display */}
+                            {/* Distinct Customer Feedback / Rating Display */}
                             {(req.rating || req.feedback) && (
-                              <div className="mb-4 bg-amber-500/5 border border-amber-500/20 p-2.5 rounded-lg">
-                                <p className="text-[9px] uppercase font-mono tracking-widest text-amber-400 mb-1">Customer Feedback</p>
-                                {req.rating && (
-                                  <div className="text-xs text-amber-300 font-semibold mb-1">
-                                    Rating: {req.rating} Star{req.rating > 1 ? 's' : ''}
-                                  </div>
-                                )}
+                              <div className="mb-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-l-2 border-amber-400 p-3 rounded-r-xl shadow-inner">
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-bold flex items-center gap-1.5">
+                                    ★ Guest Feedback
+                                  </span>
+                                  {req.rating && (
+                                    <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] px-2 py-0.5 rounded-md font-mono font-bold">
+                                      {req.rating} / 5 Stars
+                                    </span>
+                                  )}
+                                </div>
                                 {req.feedback && (
-                                  <p className="text-xs text-neutral-200 italic">
-                                    Comments: {req.feedback}
+                                  <p className="text-xs text-neutral-100 italic bg-black/20 p-2 rounded-lg border border-white/[0.03]">
+                                    "{req.feedback}"
                                   </p>
                                 )}
                               </div>
