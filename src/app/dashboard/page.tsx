@@ -1,4 +1,4 @@
-// Improvement added: Added an interactive Room Filter dropdown allowing managers to isolate requests for a specific room and reset back to the full dashboard view.
+// Improvement added: Added a real-time keyword search bar to filter requests instantly across all columns.
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -19,6 +19,7 @@ interface RequestItem {
 export default function ManagerDashboard() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('manager_sound_enabled');
@@ -94,10 +95,17 @@ export default function ManagerDashboard() {
     return parseInt(a) - parseInt(b) || a.localeCompare(b);
   });
 
-  // Filter requests based on selection
-  const filteredRequests = selectedRoomFilter === 'ALL' 
-    ? requests 
-    : requests.filter(r => r.room === selectedRoomFilter);
+  // Filter requests based on Room selection and Keyword Search query
+  const filteredRequests = requests.filter(r => {
+    const matchesRoom = selectedRoomFilter === 'ALL' || r.room === selectedRoomFilter;
+    const matchesSearch = searchQuery === '' || 
+      r.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.note.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.room.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (r.feedback && r.feedback.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    return matchesRoom && matchesSearch;
+  });
 
   // Financial & Pitch Metrics Calculations (based on current filter view)
   const activeRoomsCount = new Set(filteredRequests.filter(r => r.status !== 'Completed').map(r => r.room)).size;
@@ -159,34 +167,46 @@ export default function ManagerDashboard() {
 
           <div className="flex flex-wrap items-center gap-3">
             
+            {/* Keyword Search Bar */}
+            <div className="flex items-center gap-2 bg-[#18181b] backdrop-blur-md px-3 py-2 rounded-xl border border-white/[0.08]">
+              <span className="text-xs text-neutral-400 font-mono">Search:</span>
+              <input
+                type="text"
+                placeholder="Filter requests..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-[#121212] text-neutral-100 font-mono text-xs px-2.5 py-1 rounded-lg border border-white/[0.1] focus:outline-none focus:border-amber-400 w-36 sm:w-44"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="text-[10px] bg-white/[0.05] hover:bg-white/[0.1] text-neutral-300 px-2 py-1 rounded-md font-mono transition-all border border-white/[0.08]"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
             {/* Room Filter Control */}
             <div className="flex items-center gap-2 bg-[#18181b] backdrop-blur-md px-3 py-2 rounded-xl border border-white/[0.08]">
-              <span className="text-xs text-neutral-400 font-mono">Room Filter:</span>
+              <span className="text-xs text-neutral-400 font-mono">Room:</span>
               <select
                 value={selectedRoomFilter}
                 onChange={(e) => setSelectedRoomFilter(e.target.value)}
                 className="bg-[#121212] text-amber-400 font-mono text-xs px-2.5 py-1 rounded-lg border border-amber-500/30 focus:outline-none focus:border-amber-400"
               >
-                <option value="ALL">All Rooms (Overview)</option>
+                <option value="ALL">All Rooms</option>
                 {uniqueRooms.map((roomNum) => (
                   <option key={roomNum} value={roomNum}>
                     Room {roomNum}
                   </option>
                 ))}
               </select>
-              {selectedRoomFilter !== 'ALL' && (
-                <button
-                  onClick={() => setSelectedRoomFilter('ALL')}
-                  className="text-[10px] bg-white/[0.05] hover:bg-white/[0.1] text-neutral-300 px-2 py-1 rounded-md font-mono transition-all border border-white/[0.08]"
-                >
-                  Reset
-                </button>
-              )}
             </div>
 
             {/* Audio Chime Toggle */}
             <div className="flex items-center gap-3 bg-[#18181b] backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/[0.08]">
-              <span className="text-xs text-neutral-400 font-mono">Audio Chime:</span>
+              <span className="text-xs text-neutral-400 font-mono">Audio:</span>
               <button
                 onClick={handleToggleSound}
                 className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
