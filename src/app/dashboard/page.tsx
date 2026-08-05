@@ -1,4 +1,4 @@
-// Improvement added: Added a real-time keyword search bar to filter requests instantly across all columns.
+// Improvement added: Added a Shift Notes / Manager Log box for shift-to-shift communication.
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -20,6 +20,12 @@ export default function ManagerDashboard() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [shiftNotes, setShiftNotes] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('manager_shift_notes') || '';
+    }
+    return '';
+  });
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('manager_sound_enabled');
@@ -32,6 +38,12 @@ export default function ManagerDashboard() {
     const newState = !soundEnabled;
     setSoundEnabled(newState);
     localStorage.setItem('manager_sound_enabled', JSON.stringify(newState));
+  };
+
+  const handleShiftNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setShiftNotes(val);
+    localStorage.setItem('manager_shift_notes', val);
   };
 
   const playAlertChime = () => {
@@ -279,6 +291,22 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
+        </div>
+
+        {/* Shift Notes / Manager Log Section */}
+        <div className="mb-8 bg-[#18181b] border border-white/[0.08] p-4 rounded-2xl shadow-lg">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
+              📝 Shift Notes & Handover Log (Auto-Saved)
+            </span>
+            <span className="text-[9px] text-neutral-500 font-mono">Visible to on-duty managers</span>
+          </div>
+          <textarea
+            value={shiftNotes}
+            onChange={handleShiftNotesChange}
+            placeholder="Type hand-over notes, VIP instructions, or special shift reminders here..."
+            className="w-full bg-[#121212] text-neutral-200 text-xs font-mono p-3 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400 h-20 resize-none leading-relaxed"
+          />
         </div>
 
         {/* Kanban Columns Grid */}
