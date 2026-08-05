@@ -1,4 +1,4 @@
-// Improvement added: Added dual-target announcement system for both guests and internal floor staff with clean UI tabs.
+// Improvement added: Added staff department targeting (Kitchen, Housekeeping, Waiters, Front Desk) for internal announcements.
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -21,6 +21,7 @@ interface Announcement {
   message: string;
   is_active: boolean;
   target: 'guest' | 'staff';
+  staff_role?: string;
   created_at: string;
 }
 
@@ -29,6 +30,7 @@ export default function ManagerDashboard() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [newAnnouncementText, setNewAnnouncementText] = useState<string>('');
   const [announcementTarget, setAnnouncementTarget] = useState<'guest' | 'staff'>('guest');
+  const [selectedStaffRole, setSelectedStaffRole] = useState<string>('all');
   const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [shiftNotes, setShiftNotes] = useState<string>(() => {
@@ -129,7 +131,8 @@ export default function ManagerDashboard() {
       { 
         message: newAnnouncementText.trim(), 
         is_active: true, 
-        target: announcementTarget 
+        target: announcementTarget,
+        staff_role: announcementTarget === 'staff' ? selectedStaffRole : 'all'
       }
     ]);
 
@@ -326,37 +329,54 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          {/* Unified Announcement Center (Guest vs Staff) */}
+          {/* Unified Announcement Center (Guest vs Staff with Department Target) */}
           <div className="bg-[#18181b] border border-white/[0.08] p-5 rounded-2xl shadow-lg flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
                   📢 Broadcast Command Center
                 </span>
-                {/* Target Toggle Tabs */}
-                <div className="flex bg-[#121212] p-1 rounded-lg border border-white/[0.08]">
-                  <button
-                    type="button"
-                    onClick={() => setAnnouncementTarget('guest')}
-                    className={`px-2.5 py-1 text-[10px] font-mono rounded-md transition-all ${
-                      announcementTarget === 'guest' 
-                        ? 'bg-amber-500 text-black font-bold shadow' 
-                        : 'text-neutral-400 hover:text-neutral-200'
-                    }`}
-                  >
-                    To Guests
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAnnouncementTarget('staff')}
-                    className={`px-2.5 py-1 text-[10px] font-mono rounded-md transition-all ${
-                      announcementTarget === 'staff' 
-                        ? 'bg-blue-500 text-white font-bold shadow' 
-                        : 'text-neutral-400 hover:text-neutral-200'
-                    }`}
-                  >
-                    To Staff
-                  </button>
+                
+                <div className="flex items-center gap-2">
+                  {announcementTarget === 'staff' && (
+                    <select
+                      value={selectedStaffRole}
+                      onChange={(e) => setSelectedStaffRole(e.target.value)}
+                      className="bg-[#121212] text-blue-400 font-mono text-[10px] px-2 py-1 rounded-lg border border-blue-500/30 focus:outline-none focus:border-blue-400"
+                    >
+                      <option value="all">All Departments</option>
+                      <option value="kitchen">Kitchen</option>
+                      <option value="housekeeping">Housekeeping</option>
+                      <option value="waiters">Waiters</option>
+                      <option value="front desk">Front Desk</option>
+                    </select>
+                  )}
+
+                  {/* Target Toggle Tabs */}
+                  <div className="flex bg-[#121212] p-1 rounded-lg border border-white/[0.08]">
+                    <button
+                      type="button"
+                      onClick={() => setAnnouncementTarget('guest')}
+                      className={`px-2.5 py-1 text-[10px] font-mono rounded-md transition-all ${
+                        announcementTarget === 'guest' 
+                          ? 'bg-amber-500 text-black font-bold shadow' 
+                          : 'text-neutral-400 hover:text-neutral-200'
+                      }`}
+                    >
+                      To Guests
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAnnouncementTarget('staff')}
+                      className={`px-2.5 py-1 text-[10px] font-mono rounded-md transition-all ${
+                        announcementTarget === 'staff' 
+                          ? 'bg-blue-500 text-white font-bold shadow' 
+                          : 'text-neutral-400 hover:text-neutral-200'
+                      }`}
+                    >
+                      To Staff
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -365,7 +385,7 @@ export default function ManagerDashboard() {
                   type="text"
                   value={newAnnouncementText}
                   onChange={(e) => setNewAnnouncementText(e.target.value)}
-                  placeholder={announcementTarget === 'guest' ? "e.g., Free wine tasting at lobby at 8 PM..." : "e.g., All staff meeting at 3 PM in breakroom..."}
+                  placeholder={announcementTarget === 'guest' ? "e.g., Free wine tasting at lobby at 8 PM..." : `e.g., Notice for ${selectedStaffRole.toUpperCase()} department...`}
                   className="flex-1 bg-[#121212] text-neutral-200 text-xs font-mono px-3 py-2 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400"
                 />
                 <button
@@ -390,7 +410,7 @@ export default function ManagerDashboard() {
                       <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded ${
                         ann.target === 'staff' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                       }`}>
-                        {ann.target || 'guest'}
+                        {ann.target === 'staff' ? `Staff (${ann.staff_role || 'all'})` : 'guest'}
                       </span>
                       <span className="text-xs text-neutral-200 truncate">{ann.message}</span>
                     </div>
