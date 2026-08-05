@@ -110,7 +110,7 @@ const Icons = {
       case 'avocado': return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18m9-9H3" /></svg>;
       case 'sandwich': return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>;
       case 'burger': return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" /></svg>;
-      default: return <span className="text-lg">🍽️</span>;
+      default: return <span className="text-lg">???</span>;
     }
   }
 };
@@ -169,53 +169,53 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
   },
   am: {
     welcome: "እንኳን ደህና መጡ",
-    suiteLocked: "ክፍሉ ተቆልፏል",
-    securityMsg: "እባክዎ በክፍልዎ ውስጥ ያለውን የQR ኮድ ይጠቀሙ ወይም ሪሴፕሽን ያነጋግሩ።",
-    verifying: "በማረጋገጥ ላይ...",
+    suiteLocked: "ክፍል ተረጋግጧል",
+    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት ዴስክ ጋር ያረጋግጡ",
+    verifying: "ክፍለ ጊዜ በመፈተሽ ላይ...",
     servicesTab: "አገልግሎቶች",
-    menuTab: "ምናሌ",
+    menuTab: "ምግብ",
     folioTab: "ሂሳብ",
     callWaiter: "አስተናጋጅ ጥራ",
     roomCleaning: "ክፍል ማጽዳት",
     laundryService: "የልብስ ማጠቢያ",
     taxiTransport: "ታክሲ",
     spaBooking: "ስፓ",
-    itemsSelected: "ምርቶች",
+    itemsSelected: "ምረጣዎች",
     confirmOrder: "ትዕዛዝ አረጋግጥ",
     orderStatus: "ሁኔታ",
-    viewProgress: "ሂደት ተመልከት",
+    viewProgress: "ሁኔታ ተመልከት",
     close: "ዝጋ",
     submit: "ላክ",
     specialInstructions: "ልዩ ማስታወሻዎች",
-    placeholderNotes: "ለሰራተኞቹ የሚገለጽ ዝርዝር...",
+    placeholderNotes: "ለምሳሌ  አለርጂ፣ ተጨማሪ ፎጣ...",
     departureTime: "የመነሻ ሰዓት",
     itemBreakdown: "ዝርዝር",
-    waiterAlert: "አስተናጋጅ ወደ ክፍልዎ እንዲመጣ ጥሪ ይተላለፍ?",
-    pending: "በጥበቃ ላይ",
-    inProgress: "በመስራት ላይ",
+    waiterAlert: "አስተናጋጅ ወደ ክፍልዎ እንዲመጣ ይፈልጋሉ?",
+    pending: "ተቀባይነት አግኝቷል",
+    inProgress: "በሂደት ላይ",
     completed: "ተጠናቋል",
     subtotal: "ንዑስ ድምር",
     serviceTax: "የአገልግሎት ክፍያ (10%)",
-    total: "አጠቃላይ ድምር",
-    clearCart: "ባዶ አድርግ",
-    viewCartAndPay: "ቅርጫት ይመልከቱ እና ትዕዛዝ ይስጡ",
-    estimatedArrival: "የሚደርስበት ግምታዊ ሰዓት",
-    myFolioTitle: "የክፍልዎ ወጪዎች",
-    myFolioSubtitle: "በቆይታዎ ያዘዟቸው አገልግሎቶች ዝርዝር",
-    noChargesYet: " እስካሁን የተመዘገበ ወጪ የለም።",
-    stayTotal: "አጠቃላይ የቆይታ ወጪ",
-    rateServicePrompt: "አገልግሎቱን ይገመግሙ:",
+    total: "ጠቅላላ ድምር",
+    clearCart: "ካርት ባዶ አድርግ",
+    viewCartAndPay: "ካርት ተመልከት እና ትዕዛዝ ላክ",
+    estimatedArrival: "የሚጠበቀው የመደርሻ ሰዓት",
+    myFolioTitle: "የእርስዎ ሂሳብ",
+    myFolioSubtitle: "የሁሉም ቆይታ ትዕዛዞች መግለጫ",
+    noChargesYet: " እስካሁን የተመዘገበ ክፍያ የለም",
+    stayTotal: "ጠቅላላ የቆይታ ክፍያ",
+    rateServicePrompt: "አገልግሎቱን ይገምግሙ:",
     feedbackThankYou: "ለሰጡን አስተያየት እናመሰግናለን!",
     laundryItems: { 
-      shirts: { name: "ሸሚዞች", price: 50 }, 
-      pants: { name: "ሱሪዎች", price: 70 }, 
-      others: { name: "ሌሎች ልብሶች", price: 40 } 
+      shirts: { name: "ሸሚዝ", price: 50 }, 
+      pants: { name: "ሱሪ", price: 70 }, 
+      others: { name: "ሌሎች እቃዎች", price: 40 } 
     },
     menu: [
-      { id: 1, name: "ኮንቲነንታል ቁርስ", price: 280, icon: "croissant", desc: "ትኩስ ዳቦ፣ ፍራፍሬ እና ቡና።" },
-      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "አቮካዶ እና እንቁላል።" },
-      { id: 3, name: "ክለብ ሳንድዊች", price: 340, icon: "sandwich", desc: "ሳንድዊች ከድንች ጥብስ ጋር።" },
-      { id: 4, name: "ክላሲክ በርገር", price: 410, icon: "burger", desc: "የበሬ ሥጋ በርገር ከቺዝ ጋር።" },
+      { id: 1, name: "የመጀመሪያ ጧት ምግብ", price: 280, icon: "croissant", desc: "ትኩስ pastry፣ ወቅታዊ ፍራፍሬ እና ቡና" },
+      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "ሶርዶው እና የተፈጨ አቮካዶ" },
+      { id: 3, name: "ክለብ ሳንድዊች", price: 340, icon: "sandwich", desc: "ባለ ሶስት ዴክ ዶሮ ሳንድዊች" },
+      { id: 4, name: "ክላሲክ በርገር", price: 410, icon: "burger", desc: "ስጋ፣ ቼዳር ቺዝ፣ እና ድንች ፍራፍሬ" },
     ]
   }
 };
@@ -436,7 +436,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     handleSendRequest(activeModal || 'General', detailsString);
   };
 
-  // Handlers for Star Rating and Express Checkout
   const handleRatingSubmit = async (selectedStars: number) => {
     setRating(selectedStars);
     setHasRated(true);
