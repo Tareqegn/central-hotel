@@ -1,3 +1,4 @@
+// Improvement applied: Cleaned up emoji characters inside conditional audio status labels and added proper type casting.
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -32,7 +33,7 @@ export default function ManagerDashboard() {
   const playAlertChime = () => {
     if (!soundEnabled) return;
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioContext) return;
       const ctx = new AudioContext();
       [587.33, 880].forEach((freq, index) => {
@@ -64,7 +65,7 @@ export default function ManagerDashboard() {
     fetchRequests();
     const channel = supabase
       .channel('manager_dashboard_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, (payload: any) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, (payload: { eventType: string }) => {
         if (payload.eventType === 'INSERT') {
           playAlertChime();
         }
@@ -153,7 +154,7 @@ export default function ManagerDashboard() {
                   : 'bg-white/[0.03] text-neutral-500 border border-white/[0.06]'
               }`}
             >
-              {soundEnabled ? 'ON 🔊' : 'OFF 🔇'}
+              {soundEnabled ? 'ON' : 'OFF'}
             </button>
           </div>
         </div>
@@ -166,7 +167,6 @@ export default function ManagerDashboard() {
             <p className="text-[10px] uppercase font-mono tracking-widest text-neutral-400 mb-2">F&B Revenue</p>
             <div className="flex items-baseline justify-between">
               <span className="text-lg font-serif text-emerald-400">${totalRevenue.toFixed(2)}</span>
-              <span className="text-xs">💰</span>
             </div>
           </div>
 
@@ -175,7 +175,6 @@ export default function ManagerDashboard() {
             <p className="text-[10px] uppercase font-mono tracking-widest text-neutral-400 mb-2">Avg. Order (AOV)</p>
             <div className="flex items-baseline justify-between">
               <span className="text-lg font-serif text-white">${averageOrderValue.toFixed(2)}</span>
-              <span className="text-xs">📊</span>
             </div>
           </div>
 
@@ -184,7 +183,6 @@ export default function ManagerDashboard() {
             <p className="text-[10px] uppercase font-mono tracking-widest text-neutral-400 mb-2">Top Category</p>
             <div className="flex items-baseline justify-between">
               <span className="text-sm font-serif text-amber-400 truncate max-w-[110px]">{topSellingItem}</span>
-              <span className="text-xs">🔥</span>
             </div>
           </div>
 
@@ -193,7 +191,6 @@ export default function ManagerDashboard() {
             <p className="text-[10px] uppercase font-mono tracking-widest text-neutral-400 mb-2">Active Rooms</p>
             <div className="flex items-baseline justify-between">
               <span className="text-lg font-serif text-white">{activeRoomsCount} Rooms</span>
-              <span className="text-xs">🏨</span>
             </div>
           </div>
 
@@ -208,7 +205,6 @@ export default function ManagerDashboard() {
               <span className={`text-lg font-serif ${urgentCount > 0 ? 'text-red-400 font-bold' : 'text-white'}`}>
                 {urgentCount}
               </span>
-              <span className="text-xs">⚠️</span>
             </div>
           </div>
 
@@ -217,7 +213,6 @@ export default function ManagerDashboard() {
             <p className="text-[10px] uppercase font-mono tracking-widest text-neutral-400 mb-2">Resp. Time</p>
             <div className="flex items-baseline justify-between">
               <span className="text-lg font-serif text-emerald-400">3m 45s</span>
-              <span className="text-xs">⚡</span>
             </div>
           </div>
 
@@ -291,7 +286,7 @@ export default function ManagerDashboard() {
                                   onClick={() => updateStatus(req.id, 'Pending')}
                                   className="py-1.5 px-2 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] rounded-lg text-[10px] font-medium transition-all text-neutral-300 hover:text-white"
                                 >
-                                  ← Pending
+                                  Pending
                                 </button>
                               )}
                               {col.statusKey !== 'In Progress' && (
@@ -315,7 +310,7 @@ export default function ManagerDashboard() {
                                   onClick={() => updateStatus(req.id, 'Completed')}
                                   className="py-1.5 px-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 rounded-lg text-[10px] font-semibold transition-all text-emerald-300 shadow-sm col-span-2"
                                 >
-                                  Mark Done ✓
+                                  Mark Done
                                 </button>
                               )}
                             </div>
