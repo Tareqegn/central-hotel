@@ -103,11 +103,6 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
     </svg>
   ),
-  star: (filled: boolean) => (
-    <svg className={`w-5 h-5 transition-colors ${filled ? 'text-amber-400 fill-amber-400' : 'text-neutral-500 hover:text-amber-300'}`} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" fill={filled ? "currentColor" : "none"}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.690h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-    </svg>
-  ),
   food: (iconStr: string) => {
     const baseClass = "w-5 h-5 stroke-[1.5] text-amber-400";
     switch (iconStr) {
@@ -158,7 +153,7 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     myFolioSubtitle: "Running statement of all stay orders",
     noChargesYet: "No accumulated charges recorded yet.",
     stayTotal: "Total Stay Charges",
-    rateServicePrompt: "Rate your experience:",
+    rateServicePrompt: "Rate your stay experience:",
     feedbackThankYou: "Thank you for your feedback!",
     laundryItems: { 
       shirts: { name: "Shirts / Blouses", price: 50 }, 
@@ -248,7 +243,11 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   const [trackedOrder, setTrackedOrder] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
-  const [submittedRating, setSubmittedRating] = useState<number | null>(null);
+
+  // New states for Star Rating & Express Checkout
+  const [rating, setRating] = useState<number>(0);
+  const [hasRated, setHasRated] = useState<boolean>(false);
+  const [checkoutRequested, setCheckoutRequested] = useState<boolean>(false);
 
   const [customNote, setCustomNote] = useState<string>('');
   const [taxiTime, setTaxiTime] = useState<string>('');
@@ -338,7 +337,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   useEffect(() => {
     if (!activeOrderId) {
       setTrackedOrder(null);
-      setSubmittedRating(null);
       return;
     }
 
@@ -438,17 +436,42 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     handleSendRequest(activeModal || 'General', detailsString);
   };
 
-  const submitRating = async (ratingVal: number) => {
-    setSubmittedRating(ratingVal);
-    if (!activeOrderId) return;
+  // Handlers for Star Rating and Express Checkout
+  const handleRatingSubmit = async (selectedStars: number) => {
+    setRating(selectedStars);
+    setHasRated(true);
 
-    const updatedNote = `${trackedOrder.note} | Rating: ${ratingVal} Stars`;
-    await supabase
-      .from('requests')
-      .update({ note: updatedNote })
-      .eq('id', activeOrderId);
+    try {
+      await supabase.from('requests').insert([
+        {
+          room: String(roomNumber),
+          category: 'Feedback',
+          note: `Guest Rating: ${selectedStars} Stars`,
+          status: 'Completed'
+        }
+      ]);
+      fetchActiveRequests();
+    } catch (err) {
+      console.error('Failed to submit rating', err);
+    }
+  };
 
-    fetchActiveRequests();
+  const handleCheckoutRequest = async () => {
+    setCheckoutRequested(true);
+
+    try {
+      await supabase.from('requests').insert([
+        {
+          room: String(roomNumber),
+          category: 'Checkout',
+          note: 'Express Checkout Requested by Guest',
+          status: 'Pending'
+        }
+      ]);
+      fetchActiveRequests();
+    } catch (err) {
+      console.error('Failed to request checkout', err);
+    }
   };
 
   const addToCart = (itemId: number) => setCart(prev => ({ ...prev, [itemId]: (prev[itemId] || 0) + 1 }));
@@ -696,21 +719,21 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
           </div>
         )}
 
-        {/* My Charges / Folio Tab Content */}
+        {/* My Charges / Folio Tab Content with Rating & Express Checkout */}
         {activeTab === 'folio' && (
-          <div className="w-full flex flex-col pb-28 max-h-[380px] overflow-y-auto pr-1">
-            <div className="mb-4">
+          <div className="w-full flex flex-col pb-28 max-h-[380px] overflow-y-auto pr-1 space-y-4">
+            <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-400">{t.myFolioTitle}</h2>
               <p className="text-[10px] text-neutral-400 font-light">{t.myFolioSubtitle}</p>
             </div>
 
-            {activeRequests.length === 0 ? (
-              <div className="text-center py-12 text-neutral-500 text-xs font-light">
+            {activeRequests.filter(r => r.category !== 'Feedback' && r.category !== 'Checkout').length === 0 ? (
+              <div className="text-center py-8 text-neutral-500 text-xs font-light">
                 {t.noChargesYet}
               </div>
             ) : (
-              <div className="space-y-2.5 mb-4">
-                {activeRequests.map((req) => {
+              <div className="space-y-2.5">
+                {activeRequests.filter(r => r.category !== 'Feedback' && r.category !== 'Checkout').map((req) => {
                   const reqPrice = extractPriceFromNote(req.note);
                   return (
                     <div key={req.id} className={`p-3.5 rounded-2xl border flex flex-col gap-2 ${
@@ -748,7 +771,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
               </div>
             )}
 
-            {activeRequests.length > 0 && (
+            {activeRequests.filter(r => r.category !== 'Feedback' && r.category !== 'Checkout').length > 0 && (
               <div className={`p-4 rounded-2xl border flex justify-between items-center ${
                 darkMode ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50 border-amber-200'
               }`}>
@@ -756,6 +779,51 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
                 <span className="text-sm font-mono font-bold text-amber-400">{totalFolioCharges} ETB</span>
               </div>
             )}
+
+            {/* --- Stay Feedback & Express Checkout Widgets --- */}
+            <div className={`p-4 rounded-2xl border space-y-4 ${darkMode ? 'bg-white/[0.01] border-white/[0.04]' : 'bg-neutral-50 border-neutral-200'}`}>
+              
+              {/* Star Rating */}
+              <div>
+                <h3 className="text-xs font-medium text-neutral-200 mb-1">{t.rateServicePrompt}</h3>
+                {hasRated ? (
+                  <p className="text-[11px] text-amber-400 font-medium pt-1">⭐ Thank you for rating your stay ({rating}/5)!</p>
+                ) : (
+                  <div className="flex gap-2 pt-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => handleRatingSubmit(star)}
+                        className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all border ${
+                          darkMode ? 'bg-[#0b0d14] border-white/10 text-neutral-400 hover:text-amber-400 hover:border-amber-500/40' : 'bg-white border-neutral-300 text-neutral-700 hover:border-amber-500'
+                        }`}
+                      >
+                        ★ {star}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <hr className={darkMode ? 'border-white/[0.04]' : 'border-neutral-200'} />
+
+              {/* Express Checkout */}
+              <div>
+                <button
+                  onClick={handleCheckoutRequest}
+                  disabled={checkoutRequested}
+                  className={`w-full py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                    checkoutRequested 
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-not-allowed' 
+                      : 'bg-amber-500 hover:brightness-110 text-neutral-950 shadow-lg shadow-amber-500/10'
+                  }`}
+                >
+                  <span>{checkoutRequested ? 'Express Checkout Requested' : 'Request Express Checkout'}</span>
+                </button>
+              </div>
+
+            </div>
+
           </div>
         )}
 
@@ -848,73 +916,45 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </>
       )}
 
-      {/* Active Tracking Banner with Post-Completion Feedback */}
-      {trackedOrder && !isModalOpen && (
-        <div className={`fixed bottom-6 left-5 right-5 max-w-md mx-auto p-4 rounded-2xl flex flex-col gap-3 shadow-2xl border backdrop-blur-xl z-30 ${
+      {/* Active Tracking Banner */}
+      {trackedOrder && trackedOrder.category !== 'Feedback' && trackedOrder.category !== 'Checkout' && !isModalOpen && (
+        <div className={`fixed bottom-6 left-5 right-5 max-w-md mx-auto p-4 rounded-2xl flex items-center justify-between shadow-2xl border backdrop-blur-xl z-30 ${
           trackedOrder.status === 'Completed'
             ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-100' 
             : darkMode ? 'bg-[#131622]/95 border-amber-500/30 text-white' : 'bg-white/95 border-neutral-300 text-neutral-900'
         }`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className={`w-2 h-2 rounded-full ${trackedOrder.status === 'Completed' ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-400">
-                  {trackedOrder.status === 'Completed' ? 'Request Completed' : `${t.orderStatus}: ${trackedOrder.status}`}
-                </p>
-                <p className="text-[11px] text-neutral-300 truncate max-w-[170px] font-light">
-                  {getDetailedLiveStatus(trackedOrder.category, trackedOrder.status)}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {trackedOrder.status !== 'Completed' && trackedOrder.note && trackedOrder.note.includes('ETA:') && (
-                <div className="text-right hidden sm:block">
-                  <span className="block text-[9px] uppercase tracking-wider text-neutral-400">{t.estimatedArrival}</span>
-                  <span className="text-xs font-mono font-bold text-amber-400">
-                    {trackedOrder.note.split('ETA: ')[1]?.split(' |')[0]}
-                  </span>
-                </div>
-              )}
-
-              {trackedOrder.status === 'Completed' ? (
-                <button onClick={() => { setActiveOrderId(null); setTrackedOrder(null); setSubmittedRating(null); }} className="bg-emerald-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
-                  Dismiss
-                </button>
-              ) : (
-                <button onClick={() => setIsModalOpen(true)} className="bg-amber-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
-                  {t.viewProgress}
-                </button>
-              )}
+          <div className="flex items-center gap-3">
+            <span className={`w-2 h-2 rounded-full ${trackedOrder.status === 'Completed' ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-400">
+                {trackedOrder.status === 'Completed' ? 'Request Completed' : `${t.orderStatus}: ${trackedOrder.status}`}
+              </p>
+              <p className="text-[11px] text-neutral-300 truncate max-w-[170px] font-light">
+                {getDetailedLiveStatus(trackedOrder.category, trackedOrder.status)}
+              </p>
             </div>
           </div>
 
-          {/* Feedback Star Rating Section on Completion */}
-          {trackedOrder.status === 'Completed' && (
-            <div className="pt-2.5 border-t border-emerald-500/20 flex flex-col items-center justify-center">
-              {submittedRating ? (
-                <p className="text-[11px] text-amber-300 font-medium tracking-wide animate-fade-in">
-                  {t.feedbackThankYou} ⭐ ({submittedRating}/5)
-                </p>
-              ) : (
-                <div className="flex flex-col items-center gap-1.5">
-                  <span className="text-[10px] text-neutral-300 uppercase tracking-wider font-medium">{t.rateServicePrompt}</span>
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button 
-                        key={star} 
-                        onClick={() => submitRating(star)}
-                        className="p-1 focus:outline-none hover:scale-125 transition-transform"
-                      >
-                        {Icons.star(false)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {trackedOrder.status !== 'Completed' && trackedOrder.note && trackedOrder.note.includes('ETA:') && (
+              <div className="text-right hidden sm:block">
+                <span className="block text-[9px] uppercase tracking-wider text-neutral-400">{t.estimatedArrival}</span>
+                <span className="text-xs font-mono font-bold text-amber-400">
+                  {trackedOrder.note.split('ETA: ')[1]?.split(' |')[0]}
+                </span>
+              </div>
+            )}
+
+            {trackedOrder.status === 'Completed' ? (
+              <button onClick={() => { setActiveOrderId(null); setTrackedOrder(null); }} className="bg-emerald-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
+                Dismiss
+              </button>
+            ) : (
+              <button onClick={() => setIsModalOpen(true)} className="bg-amber-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
+                {t.viewProgress}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
