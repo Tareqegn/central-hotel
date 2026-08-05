@@ -1,4 +1,4 @@
-// Improvement added: Added a Live Announcement Broadcast center for managers to push notices to guests instantly.
+// Improvement added: Added dual-target announcement system for both guests and internal floor staff with clean UI tabs.
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -20,6 +20,7 @@ interface Announcement {
   id: string;
   message: string;
   is_active: boolean;
+  target: 'guest' | 'staff';
   created_at: string;
 }
 
@@ -27,6 +28,7 @@ export default function ManagerDashboard() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [newAnnouncementText, setNewAnnouncementText] = useState<string>('');
+  const [announcementTarget, setAnnouncementTarget] = useState<'guest' | 'staff'>('guest');
   const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [shiftNotes, setShiftNotes] = useState<string>(() => {
@@ -76,7 +78,6 @@ export default function ManagerDashboard() {
   };
 
   const fetchData = async () => {
-    // Fetch requests
     const { data: reqData } = await supabase
       .from('requests')
       .select('*')
@@ -84,7 +85,6 @@ export default function ManagerDashboard() {
 
     if (reqData) setRequests(reqData);
 
-    // Fetch announcements
     const { data: annData } = await supabase
       .from('announcements')
       .select('*')
@@ -126,7 +126,11 @@ export default function ManagerDashboard() {
     if (!newAnnouncementText.trim()) return;
 
     await supabase.from('announcements').insert([
-      { message: newAnnouncementText.trim(), is_active: true }
+      { 
+        message: newAnnouncementText.trim(), 
+        is_active: true, 
+        target: announcementTarget 
+      }
     ]);
 
     setNewAnnouncementText('');
@@ -149,12 +153,10 @@ export default function ManagerDashboard() {
     fetchData();
   };
 
-  // Get unique room numbers for filter dropdown
   const uniqueRooms = Array.from(new Set(requests.map(r => r.room))).sort((a, b) => {
     return parseInt(a) - parseInt(b) || a.localeCompare(b);
   });
 
-  // Filter requests based on Room selection and Keyword Search query
   const filteredRequests = requests.filter(r => {
     const matchesRoom = selectedRoomFilter === 'ALL' || r.room === selectedRoomFilter;
     const matchesSearch = searchQuery === '' || 
@@ -166,9 +168,7 @@ export default function ManagerDashboard() {
     return matchesRoom && matchesSearch;
   });
 
-  // Financial & Pitch Metrics Calculations
   const activeRoomsCount = new Set(filteredRequests.filter(r => r.status !== 'Completed').map(r => r.room)).size;
-
   const now = new Date().getTime();
   const urgentCount = filteredRequests.filter(r => {
     if (r.status !== 'Pending') return false;
@@ -197,7 +197,6 @@ export default function ManagerDashboard() {
   return (
     <div className="min-h-screen bg-[#121212] text-neutral-100 p-6 sm:p-8 font-sans tracking-tight antialiased relative overflow-x-hidden">
       
-      {/* Subtle Ambient Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[250px] bg-white/[0.02] blur-[120px] pointer-events-none rounded-full" />
 
       <div className="max-w-[1500px] mx-auto relative z-10">
@@ -225,8 +224,6 @@ export default function ManagerDashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            
-            {/* Keyword Search Bar */}
             <div className="flex items-center gap-2 bg-[#18181b] backdrop-blur-md px-3 py-2 rounded-xl border border-white/[0.08]">
               <span className="text-xs text-neutral-400 font-mono">Search:</span>
               <input
@@ -246,7 +243,6 @@ export default function ManagerDashboard() {
               )}
             </div>
 
-            {/* Room Filter Control */}
             <div className="flex items-center gap-2 bg-[#18181b] backdrop-blur-md px-3 py-2 rounded-xl border border-white/[0.08]">
               <span className="text-xs text-neutral-400 font-mono">Room:</span>
               <select
@@ -263,7 +259,6 @@ export default function ManagerDashboard() {
               </select>
             </div>
 
-            {/* Audio Chime Toggle */}
             <div className="flex items-center gap-3 bg-[#18181b] backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/[0.08]">
               <span className="text-xs text-neutral-400 font-mono">Audio:</span>
               <button
@@ -277,11 +272,10 @@ export default function ManagerDashboard() {
                 {soundEnabled ? 'ON' : 'OFF'}
               </button>
             </div>
-
           </div>
         </div>
 
-        {/* Pitch KPI & Financial Metrics Grid */}
+        {/* Pitch KPI Metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           <div className="bg-[#18181b] border border-white/[0.08] p-4 rounded-xl flex flex-col justify-between shadow-lg">
             <p className="text-[10px] uppercase font-mono tracking-widest text-neutral-400 mb-2">F&B Revenue</p>
@@ -311,7 +305,7 @@ export default function ManagerDashboard() {
           </div>
         </div>
 
-        {/* Shift Notes & Live Announcements Row */}
+        {/* Shift Notes & Targeted Broadcast Center Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           
           {/* Shift Handover Notes */}
@@ -327,31 +321,58 @@ export default function ManagerDashboard() {
                 value={shiftNotes}
                 onChange={handleShiftNotesChange}
                 placeholder="Type hand-over notes for incoming shift managers..."
-                className="w-full bg-[#121212] text-neutral-200 text-xs font-mono p-3 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400 h-24 resize-none leading-relaxed"
+                className="w-full bg-[#121212] text-neutral-200 text-xs font-mono p-3 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400 h-28 resize-none leading-relaxed"
               />
             </div>
           </div>
 
-          {/* Live Guest Announcement Center */}
+          {/* Unified Announcement Center (Guest vs Staff) */}
           <div className="bg-[#18181b] border border-white/[0.08] p-5 rounded-2xl shadow-lg flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
-                  📢 Broadcast Guest Announcement
+                  📢 Broadcast Command Center
                 </span>
-                <span className="text-[9px] text-emerald-400 font-mono">Pushed live to rooms</span>
+                {/* Target Toggle Tabs */}
+                <div className="flex bg-[#121212] p-1 rounded-lg border border-white/[0.08]">
+                  <button
+                    type="button"
+                    onClick={() => setAnnouncementTarget('guest')}
+                    className={`px-2.5 py-1 text-[10px] font-mono rounded-md transition-all ${
+                      announcementTarget === 'guest' 
+                        ? 'bg-amber-500 text-black font-bold shadow' 
+                        : 'text-neutral-400 hover:text-neutral-200'
+                    }`}
+                  >
+                    To Guests
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAnnouncementTarget('staff')}
+                    className={`px-2.5 py-1 text-[10px] font-mono rounded-md transition-all ${
+                      announcementTarget === 'staff' 
+                        ? 'bg-blue-500 text-white font-bold shadow' 
+                        : 'text-neutral-400 hover:text-neutral-200'
+                    }`}
+                  >
+                    To Staff
+                  </button>
+                </div>
               </div>
+
               <form onSubmit={handlePublishAnnouncement} className="flex gap-2 mb-3">
                 <input
                   type="text"
                   value={newAnnouncementText}
                   onChange={(e) => setNewAnnouncementText(e.target.value)}
-                  placeholder="e.g., Free wine tasting at lobby at 8 PM..."
+                  placeholder={announcementTarget === 'guest' ? "e.g., Free wine tasting at lobby at 8 PM..." : "e.g., All staff meeting at 3 PM in breakroom..."}
                   className="flex-1 bg-[#121212] text-neutral-200 text-xs font-mono px-3 py-2 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400"
                 />
                 <button
                   type="submit"
-                  className="bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-md"
+                  className={`font-mono font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-md ${
+                    announcementTarget === 'guest' ? 'bg-amber-500 hover:bg-amber-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'
+                  }`}
                 >
                   Publish
                 </button>
@@ -359,13 +380,20 @@ export default function ManagerDashboard() {
             </div>
 
             {/* Active Announcements List */}
-            <div className="space-y-2 max-h-24 overflow-y-auto">
+            <div className="space-y-2 max-h-28 overflow-y-auto pr-1">
               {announcements.length === 0 ? (
-                <p className="text-[11px] text-neutral-500 font-mono italic">No broadcast announcements created yet.</p>
+                <p className="text-[11px] text-neutral-500 font-mono italic">No broadcasts created yet.</p>
               ) : (
                 announcements.map((ann) => (
                   <div key={ann.id} className="flex items-center justify-between bg-[#121212] px-3 py-1.5 rounded-lg border border-white/[0.06]">
-                    <span className="text-xs text-neutral-200 truncate max-w-[280px]">{ann.message}</span>
+                    <div className="flex items-center gap-2 truncate max-w-[260px]">
+                      <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded ${
+                        ann.target === 'staff' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                      }`}>
+                        {ann.target || 'guest'}
+                      </span>
+                      <span className="text-xs text-neutral-200 truncate">{ann.message}</span>
+                    </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => toggleAnnouncementStatus(ann.id, ann.is_active)}
@@ -398,7 +426,6 @@ export default function ManagerDashboard() {
             return (
               <div key={col.statusKey} className="bg-[#18181b]/70 rounded-2xl border border-white/[0.06] p-4 flex flex-col backdrop-blur-md min-h-[560px] shadow-xl">
                 
-                {/* Column Header */}
                 <div className={`flex justify-between items-center p-3 rounded-xl border mb-4 ${col.color}`}>
                   <h2 className="text-xs font-bold uppercase tracking-wider font-mono">{col.title}</h2>
                   <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-black/40">
@@ -406,7 +433,6 @@ export default function ManagerDashboard() {
                   </span>
                 </div>
 
-                {/* Cards List */}
                 <div className="space-y-3 flex-1">
                   {colRequests.length === 0 ? (
                     <div className="h-40 flex items-center justify-center text-neutral-500 text-[11px] tracking-wider uppercase font-mono border border-dashed border-white/[0.04] rounded-xl">
@@ -448,7 +474,6 @@ export default function ManagerDashboard() {
                               {req.note}
                             </p>
 
-                            {/* Distinct Customer Feedback / Rating Display */}
                             {(req.rating || req.feedback) && (
                               <div className="mb-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-l-2 border-amber-400 p-3 rounded-r-xl shadow-inner">
                                 <div className="flex items-center justify-between mb-1.5">
@@ -470,7 +495,6 @@ export default function ManagerDashboard() {
                             )}
                           </div>
 
-                          {/* Status Action Buttons */}
                           <div className="space-y-1.5 pt-3 border-t border-white/[0.06]">
                             <p className="text-[9px] uppercase tracking-widest text-neutral-400 font-semibold font-mono">Move To:</p>
                             <div className="grid grid-cols-2 gap-1.5">
