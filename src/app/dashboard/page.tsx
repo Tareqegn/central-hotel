@@ -1,4 +1,4 @@
-// Improvement added: Added granular staff targeting down to specific individual staff members (e.g., specific waiters or housekeepers).
+// Improvement: Room-specific guest announcements combined with guest name and preference tracking.
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -23,18 +23,35 @@ interface Announcement {
   target: 'guest' | 'staff';
   staff_role?: string;
   staff_name?: string;
+  target_room?: string;
   created_at: string;
+}
+
+interface GuestProfile {
+  id: string;
+  room: string;
+  guest_name: string;
+  preferences: string;
 }
 
 export default function ManagerDashboard() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [guestProfiles, setGuestProfiles] = useState<GuestProfile[]>([]);
+  
   const [newAnnouncementText, setNewAnnouncementText] = useState<string>('');
   const [announcementTarget, setAnnouncementTarget] = useState<'guest' | 'staff'>('guest');
   const [selectedStaffRole, setSelectedStaffRole] = useState<string>('all');
   const [selectedStaffName, setSelectedStaffName] = useState<string>('all');
+  const [guestAnnouncementRoom, setGuestAnnouncementRoom] = useState<string>('all');
+
   const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Guest CRM Note State
+  const [crmRoom, setCrmRoom] = useState<string>('');
+  const [crmGuestName, setCrmGuestName] = useState<string>('');
+  const [crmPreferences, setCrmPreferences] = useState<string>('');
   
   const [shiftNotes, setShiftNotes] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -51,7 +68,6 @@ export default function ManagerDashboard() {
     return true;
   });
 
-  // Sample staff roster for specific assignment mapping
   const staffRoster: { [key: string]: string[] } = {
     waiters: ['John', 'Abebe', 'Sara', 'Michael'],
     housekeeping: ['Tigist', 'Hanna', 'Dawit'],
@@ -96,15 +112,18 @@ export default function ManagerDashboard() {
       .from('requests')
       .select('*')
       .order('created_at', { ascending: false });
-
     if (reqData) setRequests(reqData);
 
     const { data: annData } = await supabase
       .from('announcements')
       .select('*')
       .order('created_at', { ascending: false });
-
     if (annData) setAnnouncements(annData);
+
+    const { data: profileData } = await supabase
+      .from('guest_profiles')
+      .select('*');
+    if (profileData) setGuestProfiles(profileData);
   };
 
   useEffect(() => {
@@ -112,12 +131,13 @@ export default function ManagerDashboard() {
     const channel = supabase
       .channel('manager_dashboard_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, (payload: { eventType: string }) => {
-        if (payload.eventType === 'INSERT') {
-          playAlertChime();
-        }
+        if (payload.eventType === 'INSERT') playAlertChime();
         fetchData();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+        fetchData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_profiles' }, () => {
         fetchData();
       })
       .subscribe();
@@ -128,10 +148,7 @@ export default function ManagerDashboard() {
   }, [soundEnabled]);
 
   const updateStatus = async (id: string, newStatus: string) => {
-    await supabase
-      .from('requests')
-      .update({ status: newStatus })
-      .eq('id', id);
+    await supabase.from('requests').update({ status: newStatus }).eq('id', id);
     fetchData();
   };
 
@@ -145,7 +162,8 @@ export default function ManagerDashboard() {
         is_active: true, 
         target: announcementTarget,
         staff_role: announcementTarget === 'staff' ? selectedStaffRole : 'all',
-        staff_name: announcementTarget === 'staff' ? selectedStaffName : 'all'
+        staff_name: announcementTarget === 'staff' ? selectedStaffName : 'all',
+        target_room: announcementTarget === 'guest' ? guestAnnouncementRoom : 'all'
       }
     ]);
 
@@ -153,24 +171,40 @@ export default function ManagerDashboard() {
     fetchData();
   };
 
+  const handleSaveGuestProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!crmRoom.trim() || !crmPreferences.trim()) return;
+
+    await supabase.from('guest_profiles').upsert([
+      { room: crmRoom.trim(), guest_name: crmGuestName.trim(), preferences: crmPreferences.trim() }
+    ], { onConflict: 'room' });
+
+    setCrmRoom('');
+    setCrmGuestName('');
+    setCrmPreferences('');
+    fetchData();
+  };
+
   const toggleAnnouncementStatus = async (id: string, currentStatus: boolean) => {
-    await supabase
-      .from('announcements')
-      .update({ is_active: !currentStatus })
-      .eq('id', id);
+    await supabase.from('announcements').update({ is_active: !currentStatus }).eq('id', id);
     fetchData();
   };
 
   const deleteAnnouncement = async (id: string) => {
-    await supabase
-      .from('announcements')
-      .delete()
-      .eq('id', id);
+    await supabase.from('announcements').delete().eq('id', id);
     fetchData();
   };
 
   const uniqueRooms = Array.from(new Set(requests.map(r => r.room))).sort((a, b) => {
     return parseInt(a) - parseInt(b) || a.localeCompare(b);
+  });
+
+  // Helper map for room -> guest name lookup
+  const roomToGuestNameMap: { [room: string]: string } = {};
+  guestProfiles.forEach(p => {
+    if (p.guest_name) {
+      roomToGuestNameMap[p.room] = p.guest_name;
+    }
   });
 
   const filteredRequests = requests.filter(r => {
@@ -225,9 +259,7 @@ export default function ManagerDashboard() {
                 src="/logo.png" 
                 alt="Hotel Logo" 
                 className="w-full h-full object-contain"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
+                onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
               />
             </div>
             <div>
@@ -260,7 +292,9 @@ export default function ManagerDashboard() {
               >
                 <option value="ALL">All Rooms</option>
                 {uniqueRooms.map((roomNum) => (
-                  <option key={roomNum} value={roomNum}>Room {roomNum}</option>
+                  <option key={roomNum} value={roomNum}>
+                    Room {roomNum} {roomToGuestNameMap[roomNum] ? `(${roomToGuestNameMap[roomNum]})` : ''}
+                  </option>
                 ))}
               </select>
             </div>
@@ -309,9 +343,68 @@ export default function ManagerDashboard() {
           </div>
         </div>
 
-        {/* Shift Notes & Targeted Broadcast Center Row */}
+        {/* Guest CRM Memory & Shift Notes Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           
+          {/* Guest Preference CRM Memory Log */}
+          <div className="bg-[#18181b] border border-white/[0.08] p-5 rounded-2xl shadow-lg flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
+                  ⭐ Guest Identity & Preference CRM
+                </span>
+                <span className="text-[9px] text-neutral-500 font-mono">Stored in Supabase</span>
+              </div>
+
+              <form onSubmit={handleSaveGuestProfile} className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+                <input
+                  type="text"
+                  placeholder="Room (e.g. 104)"
+                  value={crmRoom}
+                  onChange={(e) => setCrmRoom(e.target.value)}
+                  className="bg-[#121212] text-amber-400 text-xs font-mono px-3 py-2 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400"
+                />
+                <input
+                  type="text"
+                  placeholder="Guest Name (e.g. Mr. John)"
+                  value={crmGuestName}
+                  onChange={(e) => setCrmGuestName(e.target.value)}
+                  className="bg-[#121212] text-neutral-200 text-xs font-mono px-3 py-2 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400"
+                />
+                <button
+                  type="submit"
+                  className="bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs py-2 px-3 rounded-xl transition-all shadow-md"
+                >
+                  Save Profile
+                </button>
+              </form>
+
+              <input
+                type="text"
+                placeholder="Preferences (e.g., Enjoyed spa last time, prefers red wine)"
+                value={crmPreferences}
+                onChange={(e) => setCrmPreferences(e.target.value)}
+                className="w-full bg-[#121212] text-neutral-200 text-xs font-mono px-3 py-2 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400 mb-3"
+              />
+            </div>
+
+            {/* Existing Profiles List */}
+            <div className="space-y-1.5 max-h-24 overflow-y-auto pr-1">
+              {guestProfiles.length === 0 ? (
+                <p className="text-[11px] text-neutral-500 font-mono italic">No guest memory profiles stored yet.</p>
+              ) : (
+                guestProfiles.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between bg-[#121212] px-3 py-1.5 rounded-lg border border-white/[0.06] text-xs">
+                    <span className="font-mono font-bold text-amber-400">
+                      Room {p.room} — <span className="text-white">{p.guest_name || 'Unnamed Guest'}</span>:
+                    </span>
+                    <span className="text-neutral-300 truncate max-w-[220px] italic">"{p.preferences}"</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
           {/* Shift Handover Notes */}
           <div className="bg-[#18181b] border border-white/[0.08] p-5 rounded-2xl shadow-lg flex flex-col justify-between">
             <div>
@@ -330,135 +423,146 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          {/* Granular Staff & Guest Broadcast Command Center */}
-          <div className="bg-[#18181b] border border-white/[0.08] p-5 rounded-2xl shadow-lg flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
-                  📢 Granular Broadcast Center
-                </span>
-                
-                <div className="flex items-center gap-2 flex-wrap">
-                  {announcementTarget === 'staff' && (
-                    <>
-                      <select
-                        value={selectedStaffRole}
-                        onChange={(e) => {
-                          setSelectedStaffRole(e.target.value);
-                          setSelectedStaffName('all'); // reset individual name when department changes
-                        }}
-                        className="bg-[#121212] text-blue-400 font-mono text-[10px] px-2 py-1 rounded-lg border border-blue-500/30 focus:outline-none focus:border-blue-400"
-                      >
-                        <option value="all">All Departments</option>
-                        <option value="kitchen">Kitchen</option>
-                        <option value="housekeeping">Housekeeping</option>
-                        <option value="waiters">Waiters</option>
-                        <option value="front desk">Front Desk</option>
-                      </select>
+        </div>
 
-                      {selectedStaffRole !== 'all' && staffRoster[selectedStaffRole] && (
-                        <select
-                          value={selectedStaffName}
-                          onChange={(e) => setSelectedStaffName(e.target.value)}
-                          className="bg-[#121212] text-emerald-400 font-mono text-[10px] px-2 py-1 rounded-lg border border-emerald-500/30 focus:outline-none focus:border-emerald-400"
-                        >
-                          <option value="all">All {selectedStaffRole}</option>
-                          {staffRoster[selectedStaffRole].map((name) => (
-                            <option key={name} value={name}>{name}</option>
-                          ))}
-                        </select>
-                      )}
-                    </>
+        {/* Room-Specific Broadcast Command Center */}
+        <div className="bg-[#18181b] border border-white/[0.08] p-5 rounded-2xl shadow-lg mb-8">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
+              📢 Granular Broadcast Command Center
+            </span>
+            
+            <div className="flex items-center gap-2 flex-wrap">
+              {announcementTarget === 'staff' ? (
+                <>
+                  <select
+                    value={selectedStaffRole}
+                    onChange={(e) => {
+                      setSelectedStaffRole(e.target.value);
+                      setSelectedStaffName('all');
+                    }}
+                    className="bg-[#121212] text-blue-400 font-mono text-[10px] px-2 py-1 rounded-lg border border-blue-500/30 focus:outline-none focus:border-blue-400"
+                  >
+                    <option value="all">All Departments</option>
+                    <option value="kitchen">Kitchen</option>
+                    <option value="housekeeping">Housekeeping</option>
+                    <option value="waiters">Waiters</option>
+                    <option value="front desk">Front Desk</option>
+                  </select>
+
+                  {selectedStaffRole !== 'all' && staffRoster[selectedStaffRole] && (
+                    <select
+                      value={selectedStaffName}
+                      onChange={(e) => setSelectedStaffName(e.target.value)}
+                      className="bg-[#121212] text-emerald-400 font-mono text-[10px] px-2 py-1 rounded-lg border border-emerald-500/30 focus:outline-none focus:border-emerald-400"
+                    >
+                      <option value="all">All {selectedStaffRole}</option>
+                      {staffRoster[selectedStaffRole].map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
                   )}
+                </>
+              ) : (
+                <select
+                  value={guestAnnouncementRoom}
+                  onChange={(e) => setGuestAnnouncementRoom(e.target.value)}
+                  className="bg-[#121212] text-amber-400 font-mono text-[10px] px-2 py-1 rounded-lg border border-amber-500/30 focus:outline-none focus:border-amber-400"
+                >
+                  <option value="all">All Guests (Lobby / General Broadcast)</option>
+                  {uniqueRooms.map((roomNum) => (
+                    <option key={roomNum} value={roomNum}>
+                      Room {roomNum} {roomToGuestNameMap[roomNum] ? `— ${roomToGuestNameMap[roomNum]}` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
 
-                  {/* Target Toggle Tabs */}
-                  <div className="flex bg-[#121212] p-1 rounded-lg border border-white/[0.08]">
-                    <button
-                      type="button"
-                      onClick={() => setAnnouncementTarget('guest')}
-                      className={`px-2.5 py-1 text-[10px] font-mono rounded-md transition-all ${
-                        announcementTarget === 'guest' ? 'bg-amber-500 text-black font-bold shadow' : 'text-neutral-400 hover:text-neutral-200'
-                      }`}
-                    >
-                      To Guests
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAnnouncementTarget('staff')}
-                      className={`px-2.5 py-1 text-[10px] font-mono rounded-md transition-all ${
-                        announcementTarget === 'staff' ? 'bg-blue-500 text-white font-bold shadow' : 'text-neutral-400 hover:text-neutral-200'
-                      }`}
-                    >
-                      To Staff
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <form onSubmit={handlePublishAnnouncement} className="flex gap-2 mb-3">
-                <input
-                  type="text"
-                  value={newAnnouncementText}
-                  onChange={(e) => setNewAnnouncementText(e.target.value)}
-                  placeholder={
-                    announcementTarget === 'guest' 
-                      ? "e.g., Free wine tasting at lobby at 8 PM..." 
-                      : selectedStaffName !== 'all' 
-                      ? `Direct notice to ${selectedStaffName}...` 
-                      : `Notice for ${selectedStaffRole.toUpperCase()} department...`
-                  }
-                  className="flex-1 bg-[#121212] text-neutral-200 text-xs font-mono px-3 py-2 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400"
-                />
+              {/* Target Toggle Tabs */}
+              <div className="flex bg-[#121212] p-1 rounded-lg border border-white/[0.08]">
                 <button
-                  type="submit"
-                  className={`font-mono font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-md ${
-                    announcementTarget === 'guest' ? 'bg-amber-500 hover:bg-amber-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'
+                  type="button"
+                  onClick={() => setAnnouncementTarget('guest')}
+                  className={`px-2.5 py-1 text-[10px] font-mono rounded-md transition-all ${
+                    announcementTarget === 'guest' ? 'bg-amber-500 text-black font-bold shadow' : 'text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
-                  Publish
+                  To Guests
                 </button>
-              </form>
-            </div>
-
-            {/* Active Announcements List */}
-            <div className="space-y-2 max-h-28 overflow-y-auto pr-1">
-              {announcements.length === 0 ? (
-                <p className="text-[11px] text-neutral-500 font-mono italic">No broadcasts created yet.</p>
-              ) : (
-                announcements.map((ann) => (
-                  <div key={ann.id} className="flex items-center justify-between bg-[#121212] px-3 py-1.5 rounded-lg border border-white/[0.06]">
-                    <div className="flex items-center gap-2 truncate max-w-[260px]">
-                      <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded ${
-                        ann.target === 'staff' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                      }`}>
-                        {ann.target === 'staff' 
-                          ? `Staff (${ann.staff_role || 'all'}${ann.staff_name && ann.staff_name !== 'all' ? ` ➔ ${ann.staff_name}` : ''})` 
-                          : 'guest'}
-                      </span>
-                      <span className="text-xs text-neutral-200 truncate">{ann.message}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => toggleAnnouncementStatus(ann.id, ann.is_active)}
-                        className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded ${
-                          ann.is_active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-neutral-800 text-neutral-400'
-                        }`}
-                      >
-                        {ann.is_active ? 'LIVE' : 'HIDDEN'}
-                      </button>
-                      <button
-                        onClick={() => deleteAnnouncement(ann.id)}
-                        className="text-[10px] text-red-400 hover:text-red-300 font-mono"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
+                <button
+                  type="button"
+                  onClick={() => setAnnouncementTarget('staff')}
+                  className={`px-2.5 py-1 text-[10px] font-mono rounded-md transition-all ${
+                    announcementTarget === 'staff' ? 'bg-blue-500 text-white font-bold shadow' : 'text-neutral-400 hover:text-neutral-200'
+                  }`}
+                >
+                  To Staff
+                </button>
+              </div>
             </div>
           </div>
 
+          <form onSubmit={handlePublishAnnouncement} className="flex gap-2 mb-3">
+            <input
+              type="text"
+              value={newAnnouncementText}
+              onChange={(e) => setNewAnnouncementText(e.target.value)}
+              placeholder={
+                announcementTarget === 'guest' 
+                  ? guestAnnouncementRoom !== 'all' 
+                    ? `Personalized message for Room ${guestAnnouncementRoom} (${roomToGuestNameMap[guestAnnouncementRoom] || 'Guest'}): e.g. We noticed you enjoyed our spa last time, shall we book it?` 
+                    : "Broadcast message to all guests..."
+                  : "Broadcast message to staff..."
+              }
+              className="flex-1 bg-[#121212] text-neutral-200 text-xs font-mono px-3 py-2 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400"
+            />
+            <button
+              type="submit"
+              className={`font-mono font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-md ${
+                announcementTarget === 'guest' ? 'bg-amber-500 hover:bg-amber-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'
+              }`}
+            >
+              Publish
+            </button>
+          </form>
+
+          {/* Active Announcements List */}
+          <div className="space-y-2 max-h-28 overflow-y-auto pr-1">
+            {announcements.length === 0 ? (
+              <p className="text-[11px] text-neutral-500 font-mono italic">No broadcasts created yet.</p>
+            ) : (
+              announcements.map((ann) => (
+                <div key={ann.id} className="flex items-center justify-between bg-[#121212] px-3 py-1.5 rounded-lg border border-white/[0.06]">
+                  <div className="flex items-center gap-2 truncate max-w-[700px]">
+                    <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded ${
+                      ann.target === 'staff' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    }`}>
+                      {ann.target === 'staff' 
+                        ? `Staff (${ann.staff_role || 'all'}${ann.staff_name && ann.staff_name !== 'all' ? ` ➔ ${ann.staff_name}` : ''})` 
+                        : `Guest ${ann.target_room && ann.target_room !== 'all' ? `(Room ${ann.target_room}${roomToGuestNameMap[ann.target_room] ? `: ${roomToGuestNameMap[ann.target_room]}` : ''})` : '(All)'}`}
+                    </span>
+                    <span className="text-xs text-neutral-200 truncate">{ann.message}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleAnnouncementStatus(ann.id, ann.is_active)}
+                      className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded ${
+                        ann.is_active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-neutral-800 text-neutral-400'
+                      }`}
+                    >
+                      {ann.is_active ? 'LIVE' : 'HIDDEN'}
+                    </button>
+                    <button
+                      onClick={() => deleteAnnouncement(ann.id)}
+                      className="text-[10px] text-red-400 hover:text-red-300 font-mono"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         {/* Kanban Columns Grid */}
@@ -484,6 +588,7 @@ export default function ManagerDashboard() {
                   ) : (
                     colRequests.map((req) => {
                       const isDelayed = req.status === 'Pending' && (now - new Date(req.created_at).getTime() > 10 * 60 * 1000);
+                      const guestName = roomToGuestNameMap[req.room];
 
                       return (
                         <div 
@@ -499,7 +604,7 @@ export default function ManagerDashboard() {
                           <div>
                             <div className="flex justify-between items-center mb-3">
                               <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-mono font-bold tracking-wide border border-amber-500/20">
-                                Room {req.room}
+                                Room {req.room} {guestName ? `(${guestName})` : ''}
                               </span>
                               {isDelayed ? (
                                 <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/40 px-2 py-0.5 rounded-full font-mono font-bold animate-pulse">
