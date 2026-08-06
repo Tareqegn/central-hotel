@@ -274,14 +274,12 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
       }
 
       try {
-        const now = new Date().toISOString();
         const { data, error } = await supabase
-          .from('room_sessions')
+          .from('guest_profiles')
           .select('*')
-          .eq('room_number', roomNumber)
+          .eq('room', roomNumber)
           .eq('session_token', token)
-          .eq('is_active', true)
-          .gt('expires_at', now) 
+          .eq('is_checked_in', true)
           .maybeSingle();
 
         if (error || !data) {
