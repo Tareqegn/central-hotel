@@ -53,7 +53,12 @@ export default function FrontDeskPortal() {
 
   const handleGuestNameChange = (val: string) => {
     setGuestName(val);
-    const existing = profiles.find(p => p.guest_name && p.guest_name.toLowerCase() === val.toLowerCase());
+    
+    // Only auto-fetch if the typed name matches an existing profile's guest name exactly (case-insensitive and trimmed)
+    const trimmedVal = val.trim().toLowerCase();
+    if (!trimmedVal) return;
+
+    const existing = profiles.find(p => p.guest_name && p.guest_name.trim().toLowerCase() === trimmedVal);
     if (existing && existing.preferences) {
       setPreferences(existing.preferences);
     }
