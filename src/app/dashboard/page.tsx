@@ -1,4 +1,3 @@
-// Improvement: Room-specific guest announcements combined with guest name and preference tracking.
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -195,7 +194,16 @@ export default function ManagerDashboard() {
     fetchData();
   };
 
-  const uniqueRooms = Array.from(new Set(requests.map(r => r.room))).sort((a, b) => {
+  // Dynamically aggregate all active rooms from both requests and guest profiles
+  const activeRoomsSet = new Set<string>();
+  requests.forEach(r => {
+    if (r.room) activeRoomsSet.add(r.room);
+  });
+  guestProfiles.forEach(p => {
+    if (p.room) activeRoomsSet.add(p.room);
+  });
+
+  const uniqueRooms = Array.from(activeRoomsSet).sort((a, b) => {
     return parseInt(a) - parseInt(b) || a.localeCompare(b);
   });
 
