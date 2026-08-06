@@ -113,7 +113,7 @@ const Icons = {
       case 'avocado': return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18m9-9H3" /></svg>;
       case 'sandwich': return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>;
       case 'burger': return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" /></svg>;
-      default: return <span className="text-lg">???</span>;
+      default: return <span className="text-lg">🍽️</span>;
     }
   }
 };
@@ -173,56 +173,56 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     ]
   },
   am: {
-    welcome: "???? ??? ??",
-    suiteLocked: "??? ?????",
-    securityMsg: "???? ??????? ???? QR ?? ??? ??? ??? ??? ?? ?????",
-    verifying: "?????? ????? ??...",
-    servicesTab: "???????",
-    menuTab: "??? ???",
-    folioTab: "???",
-    callWaiter: " ?????? ??",
-    roomCleaning: "???? ???",
-    laundryService: "???? ????",
-    taxiTransport: "???",
-    spaBooking: "??",
-    itemsSelected: "????",
-    confirmOrder: "???? ?????",
-    orderStatus: "???",
-    viewProgress: "??? ?????",
-    close: "??",
-    submit: "??",
-    specialInstructions: "?? ???????",
-    placeholderNotes: "???? ? ?????, ???? ??...",
-    departureTime: "?????? ???",
-    itemBreakdown: "????",
-    waiterAlert: "?????? ?? ???? ????? ??????",
-    pending: "?????? ?????",
-    inProgress: "???? ??",
-    completed: "?????",
-    subtotal: "??? ???",
-    serviceTax: "??????? ??? (10%)",
-    total: "????? ???",
-    clearCart: "?? ??",
-    viewCartAndPay: "???? ?????",
-    estimatedArrival: "???? ????? ???",
-    myFolioTitle: "????? ????",
-    myFolioSubtitle: "???? ??? ????? ????",
-    noChargesYet: " ????? ?????? ??? ???",
-    stayTotal: "????? ???? ???",
-    rateServicePrompt: "??????? ?????:",
-    feedbackPlaceholder: "?? ???? ?????? ???...",
-    submitFeedback: "?????? ??",
-    feedbackThankYou: "???? ?????? ????????!",
+    welcome: "እንኳን ደህና መጡ",
+    suiteLocked: "ክፍል ተቆልፏል",
+    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት ዴስክ መቀበያ ጋር ያረጋግጡ",
+    verifying: "ክፍለ-ጊዜውን በመፈተሽ ላይ...",
+    servicesTab: "አገልግሎቶች",
+    menuTab: "የምግብ ዝርዝር",
+    folioTab: "ሂሳብ",
+    callWaiter: " አስተናጋጅ ጥራ",
+    roomCleaning: "የክፍል ጽዳት",
+    laundryService: "የልብስ ማጠቢያ",
+    taxiTransport: "ታክሲ",
+    spaBooking: "ስፓ",
+    itemsSelected: "ምርቶች",
+    confirmOrder: "ትዕዛዝ አረጋግጥ",
+    orderStatus: "ሁኔታ",
+    viewProgress: "ሁኔታውን ተመልከት",
+    close: "ዝጋ",
+    submit: "ላክ",
+    specialInstructions: "ልዩ ማስታወሻዎች",
+    placeholderNotes: "ለምሳሌ ፡ አለርጂ, ተጨማሪ ፎጣዎች...",
+    departureTime: "የመነሻ ሰዓት",
+    itemBreakdown: "የእቃዎች ዝርዝር",
+    waiterAlert: "አስተናጋጅ ወደ ክፍልዎ እንዲመጣ ይፈልጋሉ?",
+    pending: "ጥያቄው ደርሷል",
+    inProgress: "በሂደት ላይ",
+    completed: "ተጠናቋል",
+    subtotal: "ንዑስ ድምር",
+    serviceTax: "የአገልግሎት ክፍያ (10%)",
+    total: "አጠቃላይ ድምር",
+    clearCart: "ካርት አጽዳ",
+    viewCartAndPay: "ካርት ይመልከቱ",
+    estimatedArrival: "ግምታዊ የመድረሻ ሰዓት",
+    myFolioTitle: "የክፍልዎ ሂሳብ",
+    myFolioSubtitle: "እስካሁን ያዘዟቸው አገልግሎቶች ዝርዝር",
+    noChargesYet: " እስካሁን የተመዘገበ ክፍያ የለም",
+    stayTotal: "አጠቃላይ የቆይታ ክፍያ",
+    rateServicePrompt: "አገልግሎቱን ይገምግሙ:",
+    feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይጻፉ...",
+    submitFeedback: "አስተያየት ላክ",
+    feedbackThankYou: "ስለ አስተያየትዎ እናመሰግናለን!",
     laundryItems: { 
-      shirts: { name: "???", price: 50 }, 
-      pants: { name: "??", price: 70 }, 
-      others: { name: "??? ????", price: 40 } 
+      shirts: { name: "ሸሚዝ", price: 50 }, 
+      pants: { name: "ሱሪ", price: 70 }, 
+      others: { name: "ሌሎች እቃዎች", price: 40 } 
     },
     menu: [
-      { id: 1, name: "???", price: 280, icon: "croissant", desc: "????, ?? ?? ??" },
-      { id: 2, name: "???? ???", price: 220, icon: "avocado", desc: "???? ?? ?????" },
-      { id: 3, name: "?????", price: 340, icon: "sandwich", desc: "??? ????? ???? ??? ??" },
-      { id: 4, name: "????", price: 410, icon: "burger", desc: "??? ???? ??? ?? ??? ??" },
+      { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "ዳቦ, የወቅቱ ፍራፍሬ እና ቡና" },
+      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "ዳቦ እና የተከተፈ አቮካዶ" },
+      { id: 3, name: "ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከ ድንች ጥብስ ጋር" },
+      { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የስጋ በርገር ከ አይብ እና ድንች ጥብስ ጋር" },
     ]
   }
 };
@@ -251,7 +251,8 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
 
-  // Live Announcement Banner State
+  // Live Announcement Banner State (Supports both localStorage and Database broadcasts)
+  const [announcements, setAnnouncements] = useState<any[]>([]);
   const [liveBroadcast, setLiveBroadcast] = useState<{
     message: string;
     priority: 'normal' | 'important' | 'urgent';
@@ -315,7 +316,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     };
   }, [roomNumber]);
 
-  // Real-time listener for guest broadcasts
+  // Real-time listener for guest broadcasts and Supabase announcements table
   useEffect(() => {
     const checkBroadcasts = () => {
       const activeBroadcast = localStorage.getItem('current_hotel_broadcast');
@@ -326,6 +327,36 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     const interval = setInterval(checkBroadcasts, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Fetch announcements from database matching room or 'all'
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .eq('is_active', true);
+
+      if (data) {
+        const relevant = data.filter(
+          (ann) => ann.target === 'guest' && (ann.target_room === 'all' || ann.target_room === roomNumber)
+        );
+        setAnnouncements(relevant);
+      }
+    };
+
+    fetchAnnouncements();
+
+    const announcementChannel = supabase
+      .channel(`announcements_realtime_${roomNumber}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+        fetchAnnouncements();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(announcementChannel);
+    };
+  }, [roomNumber]);
 
   const playGuestChime = () => {
     try {
@@ -594,7 +625,35 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
       darkMode ? 'bg-[#0b0d14] text-neutral-100' : 'bg-[#f7f8fa] text-neutral-900'
     }`}>
       
-      {/* Live Announcement Banner */}
+      {/* Live Database Announcements Banner */}
+      {announcements.map((ann) => (
+        <div key={ann.id} className="w-full max-w-md p-4 mb-4 bg-amber-500/20 border border-amber-500/40 rounded-2xl transition-all flex items-center justify-between z-50 text-amber-200">
+          <div className="flex items-center gap-3 max-w-5xl mx-auto">
+            <div className="w-8 h-8 rounded-lg bg-black/30 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 animate-pulse text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-black/40">
+                  Hotel Announcement
+                </span>
+                <span className="text-[10px] opacity-75">{new Date(ann.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <p className="text-xs font-medium mt-0.5 leading-relaxed text-neutral-100">{ann.message}</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setAnnouncements(prev => prev.filter(item => item.id !== ann.id))}
+            className="text-xs opacity-75 hover:opacity-100 p-1 ml-4"
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+
+      {/* Live Announcement Banner from Local Storage */}
       {liveBroadcast && (
         <div className={`w-full max-w-md p-4 mb-4 border rounded-2xl transition-all flex items-center justify-between z-50 ${
           liveBroadcast.priority === 'urgent' 
@@ -623,7 +682,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
             onClick={() => setLiveBroadcast(null)}
             className="text-xs opacity-75 hover:opacity-100 p-1 ml-4"
           >
-            ?
+            ✕
           </button>
         </div>
       )}
@@ -646,7 +705,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
                 darkMode ? 'bg-[#0b0d14] border-white/[0.06] text-amber-400/90 hover:bg-[#1a1e2e]' : 'bg-neutral-100 border-neutral-200 text-neutral-700 shadow-sm'
               }`}
             >
-              {lang === 'en' ? '????' : 'English'}
+              {lang === 'en' ? 'አማርኛ' : 'English'}
             </button>
             <button 
               onClick={() => setDarkMode(!darkMode)}
@@ -863,7 +922,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
                           : darkMode ? 'bg-[#0b0d14] border-white/10 text-neutral-400 hover:text-amber-400 hover:border-amber-500/40' : 'bg-white border-neutral-300 text-neutral-700 hover:border-amber-500'
                       }`}
                     >
-                      ? {star}
+                      ★ {star}
                     </button>
                   ))}
                 </div>
@@ -882,7 +941,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
               </div>
 
               {hasRated ? (
-                <p className="text-[11px] text-amber-400 font-medium text-center py-1">? {t.feedbackThankYou}</p>
+                <p className="text-[11px] text-amber-400 font-medium text-center py-1">✓ {t.feedbackThankYou}</p>
               ) : (
                 <button
                   onClick={handleFeedbackSubmit}
