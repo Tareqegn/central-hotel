@@ -98,6 +98,7 @@ export default function StaffDepartmentView() {
     const { data, error } = await supabase
       .from('requests')
       .select('*')
+      .eq('department', department) // Filter tasks specifically for this department route
       .neq('status', 'Completed')
       .order('created_at', { ascending: true });
 
@@ -112,7 +113,7 @@ export default function StaffDepartmentView() {
     const channel = supabase
       .channel(`staff_${department}_realtime`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, (payload: any) => {
-        if (payload.eventType === 'INSERT') {
+        if (payload.eventType === 'INSERT' && payload.new?.department === department) {
           playAlertChime();
         }
         fetchTasks();
@@ -159,7 +160,7 @@ export default function StaffDepartmentView() {
           </div>
 
           <p className="text-xs text-neutral-400 mb-6 leading-relaxed">
-            Enter your station PIN code to securely log in from any device. (Demo PIN for kitchen: <code className="text-amber-400 font-mono">1234</code>)
+            Enter your station PIN code to securely log in from any device.
           </p>
 
           <form onSubmit={handleDatabaseLogin} className="space-y-4">
