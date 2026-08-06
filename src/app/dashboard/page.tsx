@@ -351,7 +351,7 @@ export default function ManagerDashboard() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
-                  ⭐ Guest Identity & Preference CRM
+                  👤 Guest Identity & Preference CRM
                 </span>
                 <span className="text-[9px] text-neutral-500 font-mono">Stored in Supabase</span>
               </div>
@@ -538,7 +538,7 @@ export default function ManagerDashboard() {
                       ann.target === 'staff' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                     }`}>
                       {ann.target === 'staff' 
-                        ? `Staff (${ann.staff_role || 'all'}${ann.staff_name && ann.staff_name !== 'all' ? ` ➔ ${ann.staff_name}` : ''})` 
+                        ? `Staff (${ann.staff_role || 'all'}${ann.staff_name && ann.staff_name !== 'all' ? ` → ${ann.staff_name}` : ''})` 
                         : `Guest ${ann.target_room && ann.target_room !== 'all' ? `(Room ${ann.target_room}${roomToGuestNameMap[ann.target_room] ? `: ${roomToGuestNameMap[ann.target_room]}` : ''})` : '(All)'}`}
                     </span>
                     <span className="text-xs text-neutral-200 truncate">{ann.message}</span>
@@ -644,7 +644,7 @@ export default function ManagerDashboard() {
                           </div>
 
                           <div className="space-y-1.5 pt-3 border-t border-white/[0.06]">
-                            <p className="text-[9px] uppercase tracking-widest text-neutral-400 font-semibold font-mono">Move To:</p>
+                            <p className="text-[9px] uppercase tracking-widest text-neutral-400 font-semibold font-mono mb-1">Move To:</p>
                             <div className="grid grid-cols-2 gap-1.5">
                               {col.statusKey !== 'Pending' && (
                                 <button

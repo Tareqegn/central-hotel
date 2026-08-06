@@ -1,3 +1,4 @@
+// Front Desk Check-In & Smart Guest Memory Portal with SMS & Session Tokens
 "use client";
 
 import React, { Suspense, useState, useEffect } from 'react';
@@ -173,43 +174,43 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
   },
   am: {
     welcome: "እንኳን ደህና መጡ",
-    suiteLocked: "ክፍል ተረጋግጧል",
-    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት ዴስክ ጋር ያረጋግጡ",
-    verifying: "ክፍለ ጊዜ በመፈተሽ ላይ...",
+    suiteLocked: "ክፍል ተቆልፏል",
+    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊትዴስክ ተቀባይ ጋር ይመዝገቡ",
+    verifying: "ክፍለ-ጊዜውን እያረጋገጠ ነው...",
     servicesTab: "አገልግሎቶች",
-    menuTab: "ምግብ",
+    menuTab: "የምግብ ዝርዝር",
     folioTab: "ሂሳብ",
-    callWaiter: "አስተናጋጅ ጥራ",
-    roomCleaning: "ክፍል ማጽዳት",
+    callWaiter: " አስተናጋጅ ጥራ",
+    roomCleaning: "የክፍል ጽዳት",
     laundryService: "የልብስ ማጠቢያ",
     taxiTransport: "ታክሲ",
     spaBooking: "ስፓ",
-    itemsSelected: "ምረጣዎች",
-    confirmOrder: "ትዕዛዝ አረጋግጥ",
+    itemsSelected: "ምርቶች",
+    confirmOrder: "ትዕዛዝ ያስቀምጡ",
     orderStatus: "ሁኔታ",
-    viewProgress: "ሁኔታ ተመልከት",
+    viewProgress: "ሁኔታውን ይመልከቱ",
     close: "ዝጋ",
     submit: "ላክ",
     specialInstructions: "ልዩ ማስታወሻዎች",
-    placeholderNotes: "ለምሳሌ  አለርጂ፣ ተጨማሪ ፎጣ...",
+    placeholderNotes: "ለምሳሌ፦ አለርጂ፣ ተጨማሪ ፎጣ...",
     departureTime: "የመነሻ ሰዓት",
     itemBreakdown: "ዝርዝር",
-    waiterAlert: "አስተናጋጅ ወደ ክፍልዎ እንዲመጣ ይፈልጋሉ?",
-    pending: "ተቀባይነት አግኝቷል",
+    waiterAlert: "አስተናጋጅ ወደ ክፍልዎ ወዲያውኑ ይጠራ?",
+    pending: "ትዕዛዙ ደርሰዋል",
     inProgress: "በሂደት ላይ",
     completed: "ተጠናቋል",
     subtotal: "ንዑስ ድምር",
     serviceTax: "የአገልግሎት ክፍያ (10%)",
-    total: "ጠቅላላ ድምር",
-    clearCart: "ካርት ባዶ አድርግ",
-    viewCartAndPay: "ካርት ተመልከት እና ትዕዛዝ ላክ",
-    estimatedArrival: "የሚጠበቀው የመደርሻ ሰዓት",
-    myFolioTitle: "የእርስዎ ሂሳብ",
+    total: "አጠቃላይ ድምር",
+    clearCart: "ቅርጫቱን አጽዳ",
+    viewCartAndPay: "ቅርጫቱን ይመልከቱ",
+    estimatedArrival: "ግምታዊ የመድረሻ ሰዓት",
+    myFolioTitle: "የእርስዎ ክፍያዎች",
     myFolioSubtitle: "የሁሉም ቆይታ ትዕዛዞች መግለጫ",
     noChargesYet: " እስካሁን የተመዘገበ ክፍያ የለም",
-    stayTotal: "ጠቅላላ የቆይታ ክፍያ",
-    rateServicePrompt: "አገልግሎቱን ይገምግሙ እና አስተያየትዎን ይጻፉ:",
-    feedbackPlaceholder: "ስለ ቆይታዎ፣ ልዩ ጥያቄዎችዎ ወይም አስተያየትዎ ይጻፉ...",
+    stayTotal: "አጠቃላይ የቆይታ ክፍያ",
+    rateServicePrompt: "አገልግሎቱን ይገምግሙ:",
+    feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይስጡ...",
     submitFeedback: "አስተያየት ላክ",
     feedbackThankYou: "ለሰጡን አስተያየት እናመሰግናለን!",
     laundryItems: { 
@@ -218,10 +219,10 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
       others: { name: "ሌሎች እቃዎች", price: 40 } 
     },
     menu: [
-      { id: 1, name: "የመጀመሪያ ጧት ምግብ", price: 280, icon: "croissant", desc: "ትኩስ pastry፣ ወቅታዊ ፍራፍሬ እና ቡና" },
-      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "ሶርዶው እና የተፈጨ አቮካዶ" },
-      { id: 3, name: "ክለብ ሳንድዊች", price: 340, icon: "sandwich", desc: "ባለ ሶስት ዴክ ዶሮ ሳንድዊች" },
-      { id: 4, name: "ክላሲክ በርገር", price: 410, icon: "burger", desc: "ስጋ፣ ቼዳር ቺዝ፣ እና ድንች ፍራፍሬ" },
+      { id: 1, name: "የቁርስ እቃ", price: 280, icon: "croissant", desc: "እንጀራ፣ የወቅቱ ፍራፍሬ እና ቡና" },
+      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "የተፈጨ አቮካዶ እና እንቁላል" },
+      { id: 3, name: "ክለብ ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከድንች ጥብስ ጋር" },
+      { id: 4, name: "ክላሲክ በርገር", price: 410, icon: "burger", desc: "የስጋ ፓቲ፣ ቸዳር አይብ፣ ከድንች ጥብስ ጋር" },
     ]
   }
 };
@@ -250,7 +251,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
 
-  // States for Star Rating & Customer Feedback Text Area
   const [rating, setRating] = useState<number>(0);
   const [feedbackText, setFeedbackText] = useState<string>('');
   const [hasRated, setHasRated] = useState<boolean>(false);
@@ -260,33 +260,38 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   const [taxiTime, setTaxiTime] = useState<string>('');
   const [laundryCounts, setLaundryCounts] = useState<{ shirts: number; pants: number; others: number }>({ shirts: 0, pants: 0, others: 0 });
 
+  // Modified Dynamic Verification for Permanent Static Room Routes (e.g. /room/101)
+  const verifyRoomActive = async (targetRoom: string) => {
+    try {
+      const { data } = await supabase
+        .from('guest_profiles')
+        .select('*')
+        .eq('room_number', targetRoom)
+        .eq('is_active', true)
+        .single();
+
+      if (!data) {
+        setAccessDenied(true);
+      }
+    } catch (err) {
+      console.error("Active room verification error:", err);
+    }
+  };
+
   useEffect(() => {
     async function validateGuestSession() {
-      let token = searchParams.get('token');
-      const cachedToken = localStorage.getItem(`room_session_${roomNumber}`);
-      
-      if (!token && cachedToken) token = cachedToken;
-
-      if (!token) {
-        setAccessDenied(true);
-        setIsValidating(false);
-        return;
-      }
-
       try {
+        // Query Supabase directly for the active guest profile assigned to this room number
         const { data, error } = await supabase
           .from('guest_profiles')
           .select('*')
-          .eq('room', roomNumber)
-          .eq('session_token', token)
-          .eq('is_checked_in', true)
+          .eq('room_number', roomNumber)
+          .eq('is_active', true)
           .maybeSingle();
 
         if (error || !data) {
-          localStorage.removeItem(`room_session_${roomNumber}`);
           setAccessDenied(true);
         } else {
-          localStorage.setItem(`room_session_${roomNumber}`, token);
           setSessionData(data);
           setAccessDenied(false);
         }
@@ -298,7 +303,27 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     }
 
     validateGuestSession();
-  }, [roomNumber, searchParams]);
+  }, [roomNumber]);
+
+  // Realtime subscription to monitor active room state changes instantly
+  useEffect(() => {
+    if (accessDenied || isValidating) return;
+
+    verifyRoomActive(roomNumber);
+
+    const channel = supabase
+      .channel(`room_active_status_${roomNumber}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'guest_profiles', filter: `room_number=eq.${roomNumber}` }, (payload: any) => {
+        if (payload.new && payload.new.is_active === false) {
+          setAccessDenied(true);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomNumber, accessDenied, isValidating]);
 
   const playGuestChime = () => {
     try {
@@ -554,7 +579,9 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
           </div>
           <h1 className="text-lg font-serif text-white tracking-wide">Central Yamarech</h1>
           <p className="text-[9px] tracking-[0.2em] text-amber-500/85 uppercase mt-1 mb-6 font-medium">{t.suiteLocked}</p>
-          <p className="text-neutral-400 text-xs leading-relaxed font-light">{t.securityMsg}</p>
+          <p className="text-neutral-400 text-xs leading-relaxed font-light">
+            Room {roomNumber} is currently between guest stays. If you have just checked in, please contact front desk reception.
+          </p>
         </div>
       </div>
     );
@@ -819,7 +846,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
               </div>
 
               {hasRated ? (
-                <p className="text-[11px] text-amber-400 font-medium text-center py-1">⭐ {t.feedbackThankYou}</p>
+                <p className="text-[11px] text-amber-400 font-medium text-center py-1">✓ {t.feedbackThankYou}</p>
               ) : (
                 <button
                   onClick={handleFeedbackSubmit}

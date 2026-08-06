@@ -10,8 +10,10 @@ interface GuestProfile {
   guest_name: string;
   preferences: string;
   is_checked_in: boolean;
+  is_active: boolean;
   last_visited: string;
   session_token?: string;
+  checked_out_at?: string;
 }
 
 export default function FrontDeskPortal() {
@@ -70,8 +72,10 @@ export default function FrontDeskPortal() {
           guest_name: guestName.trim(), 
           preferences: preferences.trim() || 'No special preferences noted.',
           is_checked_in: true,
+          is_active: true,
           last_visited: new Date().toISOString(),
-          session_token: secureSessionToken
+          session_token: secureSessionToken,
+          checked_out_at: null
         }
       ], { onConflict: 'room' });
 
@@ -90,13 +94,26 @@ export default function FrontDeskPortal() {
     }
   };
 
-  const handleCheckOut = async (room: string) => {
+  const handleCheckOut = async (roomNumber: string) => {
     try {
-      await supabase
+      const { error } = await supabase
         .from('guest_profiles')
-        .update({ is_checked_in: false, guest_name: '', preferences: '', session_token: null })
-        .eq('room', room);
-      await fetchProfiles();
+        .update({ 
+          is_checked_in: false,
+          is_active: false, 
+          guest_name: '', 
+          preferences: '', 
+          session_token: null,
+          checked_out_at: new Date().toISOString() 
+        })
+        .eq('room', roomNumber);
+
+      if (error) {
+        alert('Checkout failed: ' + error.message);
+      } else {
+        alert(`Room ${roomNumber} checked out successfully.`);
+        await fetchProfiles();
+      }
     } catch (err) {
       console.error("Checkout exception:", err);
     }
