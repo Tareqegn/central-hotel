@@ -67,6 +67,7 @@ export default function ManagerDashboard() {
     return true;
   });
 
+  // Synchronized staff roster mapping existing staff names precisely
   const staffRoster: { [key: string]: string[] } = {
     waiters: ['John', 'Abebe', 'Sara', 'Michael'],
     housekeeping: ['Tigist', 'Hanna', 'Dawit'],
@@ -194,7 +195,6 @@ export default function ManagerDashboard() {
     fetchData();
   };
 
-  // Dynamically aggregate all active rooms from both requests and guest profiles
   const activeRoomsSet = new Set<string>();
   requests.forEach(r => {
     if (r.room) activeRoomsSet.add(r.room);
@@ -207,7 +207,6 @@ export default function ManagerDashboard() {
     return parseInt(a) - parseInt(b) || a.localeCompare(b);
   });
 
-  // Helper map for room -> guest name lookup
   const roomToGuestNameMap: { [room: string]: string } = {};
   guestProfiles.forEach(p => {
     if (p.guest_name) {
@@ -520,7 +519,11 @@ export default function ManagerDashboard() {
                   ? guestAnnouncementRoom !== 'all' 
                     ? `Personalized message for Room ${guestAnnouncementRoom} (${roomToGuestNameMap[guestAnnouncementRoom] || 'Guest'}): e.g. We noticed you enjoyed our spa last time, shall we book it?` 
                     : "Broadcast message to all guests..."
-                  : "Broadcast message to staff..."
+                  : selectedStaffName !== 'all' 
+                    ? `Direct message specifically for ${selectedStaffName} (${selectedStaffRole}): e.g. Please check Room 104 urgently.`
+                    : selectedStaffRole !== 'all'
+                    ? `Broadcast message to all ${selectedStaffRole}...`
+                    : "Broadcast message to all staff..."
               }
               className="flex-1 bg-[#121212] text-neutral-200 text-xs font-mono px-3 py-2 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400"
             />
