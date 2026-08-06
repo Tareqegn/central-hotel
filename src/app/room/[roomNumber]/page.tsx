@@ -173,56 +173,56 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     ]
   },
   am: {
-    welcome: "እንኳን ደህና መጡ",
-    suiteLocked: "ክፍል ተዘግቷል",
-    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት ዴስክ ጋር ያረጋግጡ",
-    verifying: "መረጃዎችን በማጣራት ላይ...",
-    servicesTab: "አገልግሎቶች",
-    menuTab: "ምግብ ምናሌ",
-    folioTab: "ሂሳብ",
-    callWaiter: " አስተናጋጅ ጥራ",
-    roomCleaning: "የክፍል ጽዳት",
-    laundryService: "የልብስ ማጠቢያ",
-    taxiTransport: "ታክሲ",
-    spaBooking: "ስፓ",
-    itemsSelected: "እቃዎች",
-    confirmOrder: "ትዕዛዝ አረጋግጥ",
-    orderStatus: "ሁኔታ",
-    viewProgress: "ሂደት ይመልከቱ",
-    close: "ዝጋ",
-    submit: "ላክ",
-    specialInstructions: "ልዩ ማስታወሻዎች",
-    placeholderNotes: "ለምሳሌ ፡ አለርጂክ, ተጨማሪ ፎጣ...",
-    departureTime: "የሚወጡበት ሰዓት",
-    itemBreakdown: "ዝርዝር",
-    waiterAlert: "አስተናጋጅ ወደ ክፍልዎ እንዲመጣ ይፈልጋሉ?",
-    pending: "ተቀባይነት አግኝቷል",
-    inProgress: "በሂደት ላይ",
-    completed: "ተጠናቋል",
-    subtotal: "ንዑስ ድምር",
-    serviceTax: "የአገልግሎት ክፍያ (10%)",
-    total: "አጠቃላይ ድምር",
-    clearCart: "ባዶ ጋሪ",
-    viewCartAndPay: "ትዕዛዝ ይመልከቱ",
-    estimatedArrival: "ግምታዊ የመድረሻ ሰዓት",
-    myFolioTitle: "የክፍልዎ ሂሳቦች",
-    myFolioSubtitle: "የሁሉም ቆይታ ትዕዛዞች ዝርዝር",
-    noChargesYet: " እስካሁን የተመዘገበ ክፍያ የለም",
-    stayTotal: "አጠቃላይ የቆይታ ሂሳብ",
-    rateServicePrompt: "አገልግሎቱን ይገመግሙ:",
-    feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይጻፉ...",
-    submitFeedback: "አስተያየት ላክ",
-    feedbackThankYou: "ለሰጡን አስተያየት እናመሰግናለን!",
+    welcome: "???? ??? ??",
+    suiteLocked: "??? ?????",
+    securityMsg: "???? ??????? ???? QR ?? ??? ??? ??? ??? ?? ?????",
+    verifying: "?????? ????? ??...",
+    servicesTab: "???????",
+    menuTab: "??? ???",
+    folioTab: "???",
+    callWaiter: " ?????? ??",
+    roomCleaning: "???? ???",
+    laundryService: "???? ????",
+    taxiTransport: "???",
+    spaBooking: "??",
+    itemsSelected: "????",
+    confirmOrder: "???? ?????",
+    orderStatus: "???",
+    viewProgress: "??? ?????",
+    close: "??",
+    submit: "??",
+    specialInstructions: "?? ???????",
+    placeholderNotes: "???? ? ?????, ???? ??...",
+    departureTime: "?????? ???",
+    itemBreakdown: "????",
+    waiterAlert: "?????? ?? ???? ????? ??????",
+    pending: "?????? ?????",
+    inProgress: "???? ??",
+    completed: "?????",
+    subtotal: "??? ???",
+    serviceTax: "??????? ??? (10%)",
+    total: "????? ???",
+    clearCart: "?? ??",
+    viewCartAndPay: "???? ?????",
+    estimatedArrival: "???? ????? ???",
+    myFolioTitle: "????? ????",
+    myFolioSubtitle: "???? ??? ????? ????",
+    noChargesYet: " ????? ?????? ??? ???",
+    stayTotal: "????? ???? ???",
+    rateServicePrompt: "??????? ?????:",
+    feedbackPlaceholder: "?? ???? ?????? ???...",
+    submitFeedback: "?????? ??",
+    feedbackThankYou: "???? ?????? ????????!",
     laundryItems: { 
-      shirts: { name: "ሸሚዝ", price: 50 }, 
-      pants: { name: "ሱሪ", price: 70 }, 
-      others: { name: "ሌሎች እቃዎች", price: 40 } 
+      shirts: { name: "???", price: 50 }, 
+      pants: { name: "??", price: 70 }, 
+      others: { name: "??? ????", price: 40 } 
     },
     menu: [
-      { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "እንጀራ, ዳቦ እና ቡና" },
-      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "አቮካዶ እና እንቁላል" },
-      { id: 3, name: "ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከድንች ጥብስ ጋር" },
-      { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የስጋ በርገር ከቺዝ እና ድንች ጋር" },
+      { id: 1, name: "???", price: 280, icon: "croissant", desc: "????, ?? ?? ??" },
+      { id: 2, name: "???? ???", price: 220, icon: "avocado", desc: "???? ?? ?????" },
+      { id: 3, name: "?????", price: 340, icon: "sandwich", desc: "??? ????? ???? ??? ??" },
+      { id: 4, name: "????", price: 410, icon: "burger", desc: "??? ???? ??? ?? ??? ??" },
     ]
   }
 };
@@ -272,7 +272,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
       const { data, error } = await supabase
         .from('guest_profiles')
         .select('*')
-        .eq('room_number', targetRoom)
+        .eq('room', targetRoom) // Fixed column name from room_number to room
         .eq('is_active', true)
         .maybeSingle();
 
@@ -299,7 +299,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         event: 'UPDATE', 
         schema: 'public', 
         table: 'guest_profiles', 
-        filter: `room_number=eq.${roomNumber}` 
+        filter: `room=eq.${roomNumber}` // Fixed column name from room_number to room
       }, (payload: any) => {
         if (payload.new && payload.new.is_active === false) {
           setAccessDenied(true);
@@ -623,7 +623,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
             onClick={() => setLiveBroadcast(null)}
             className="text-xs opacity-75 hover:opacity-100 p-1 ml-4"
           >
-            ✕
+            ?
           </button>
         </div>
       )}
@@ -646,7 +646,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
                 darkMode ? 'bg-[#0b0d14] border-white/[0.06] text-amber-400/90 hover:bg-[#1a1e2e]' : 'bg-neutral-100 border-neutral-200 text-neutral-700 shadow-sm'
               }`}
             >
-              {lang === 'en' ? 'አማርኛ' : 'English'}
+              {lang === 'en' ? '????' : 'English'}
             </button>
             <button 
               onClick={() => setDarkMode(!darkMode)}
@@ -863,7 +863,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
                           : darkMode ? 'bg-[#0b0d14] border-white/10 text-neutral-400 hover:text-amber-400 hover:border-amber-500/40' : 'bg-white border-neutral-300 text-neutral-700 hover:border-amber-500'
                       }`}
                     >
-                      ★ {star}
+                      ? {star}
                     </button>
                   ))}
                 </div>
@@ -882,7 +882,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
               </div>
 
               {hasRated ? (
-                <p className="text-[11px] text-amber-400 font-medium text-center py-1">✓ {t.feedbackThankYou}</p>
+                <p className="text-[11px] text-amber-400 font-medium text-center py-1">? {t.feedbackThankYou}</p>
               ) : (
                 <button
                   onClick={handleFeedbackSubmit}
