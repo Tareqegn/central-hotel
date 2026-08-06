@@ -16,6 +16,14 @@ interface GuestProfile {
   checked_out_at?: string;
 }
 
+interface Announcement {
+  id: string;
+  message: string;
+  target: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 export default function FrontDeskPortal() {
   const [profiles, setProfiles] = useState<GuestProfile[]>([]);
   const [roomNum, setRoomNum] = useState<string>('');
@@ -23,6 +31,9 @@ export default function FrontDeskPortal() {
   const [guestPhone, setGuestPhone] = useState<string>('');
   const [preferences, setPreferences] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  // Announcements state for staff view
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   const fetchProfiles = async () => {
     try {
@@ -37,17 +48,47 @@ export default function FrontDeskPortal() {
     }
   };
 
+  const fetchAnnouncements = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .eq('is_active', true);
+
+      if (error) {
+        console.error("Announcement fetch error:", error.message);
+      } else if (data) {
+        const staffAnnouncements = data.filter(
+          (ann) => ann.target === 'staff' || ann.target === 'all'
+        );
+        setAnnouncements(staffAnnouncements);
+      }
+    } catch (err) {
+      console.error("Announcement fetch exception:", err);
+    }
+  };
+
   useEffect(() => {
     fetchProfiles();
-    const channel = supabase
+    fetchAnnouncements();
+
+    const roomChannel = supabase
       .channel('front_desk_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_profiles' }, () => {
         fetchProfiles();
       })
       .subscribe();
 
+    const announcementChannel = supabase
+      .channel('front_desk_announcements_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+        fetchAnnouncements();
+      })
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(roomChannel);
+      supabase.removeChannel(announcementChannel);
     };
   }, []);
 
@@ -170,6 +211,38 @@ export default function FrontDeskPortal() {
           </div>
         </div>
 
+        {/* Staff Announcements Display Banner */}
+        {announcements.length > 0 && (
+          <div className="mb-8 space-y-3">
+            {announcements.map((ann) => (
+              <div key={ann.id} className="p-4 bg-amber-500/15 border border-amber-500/30 rounded-2xl flex items-center justify-between text-amber-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-black/30 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 animate-pulse text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-black/40 text-amber-300 font-bold">
+                        Staff Announcement
+                      </span>
+                      <span className="text-[10px] font-mono opacity-75">{new Date(ann.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <p className="text-xs font-mono mt-1 text-neutral-100">{ann.message}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setAnnouncements(prev => prev.filter(item => item.id !== ann.id))}
+                  className="text-xs opacity-75 hover:opacity-100 p-1 font-mono"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Quick KPI stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <div className="bg-[#18181b] border border-white/[0.08] p-4 rounded-xl shadow-lg">
@@ -195,7 +268,7 @@ export default function FrontDeskPortal() {
           {/* Check-In Form */}
           <div className="bg-[#18181b] border border-white/[0.08] p-6 rounded-2xl shadow-xl h-fit">
             <h2 className="text-xs font-mono uppercase tracking-widest text-amber-400 font-semibold mb-4 flex items-center gap-2">
-              <span>🏨</span> Check-In New Guest & Sync CRM
+              <span>📌</span> Check-In New Guest & Sync CRM
             </h2>
 
             <form onSubmit={handleCheckIn} className="space-y-4">
