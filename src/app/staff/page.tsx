@@ -2,6 +2,12 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase Client (Ensure your env variables are set in .env.local)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const departments = [
   { 
@@ -9,7 +15,7 @@ const departments = [
     name: 'Kitchen & Room Service', 
     desc: 'Manage live food orders and kitchen preparation tickets.', 
     activeCount: '4 active orders',
-    pin: '1111',
+    defaultPin: '1111',
     theme: 'from-amber-500/10 via-amber-500/5 to-transparent border-amber-500/20 hover:border-amber-500/40 text-amber-400',
     badgeBg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     icon: (
@@ -23,7 +29,7 @@ const departments = [
     name: 'Housekeeping', 
     desc: 'Track room sanitization status, linens, and guest amenities.', 
     activeCount: '12 rooms pending',
-    pin: '2222',
+    defaultPin: '2222',
     theme: 'from-emerald-500/10 via-emerald-500/5 to-transparent border-emerald-500/20 hover:border-emerald-500/40 text-emerald-400',
     badgeBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     icon: (
@@ -37,7 +43,7 @@ const departments = [
     name: 'Front Desk & Concierge', 
     desc: 'Oversee VIP requests, taxi bookings, spa, and guest check-ins.', 
     activeCount: '2 urgent inquiries',
-    pin: '3333',
+    defaultPin: '3333',
     theme: 'from-indigo-500/10 via-indigo-500/5 to-transparent border-indigo-500/20 hover:border-indigo-500/40 text-indigo-400',
     badgeBg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
     icon: (
@@ -51,7 +57,7 @@ const departments = [
     name: 'Maintenance', 
     desc: 'Handle room repairs, electrical fixtures, and technical facility issues.', 
     activeCount: '1 ticket open',
-    pin: '4444',
+    defaultPin: '4444',
     theme: 'from-rose-500/10 via-rose-500/5 to-transparent border-rose-500/20 hover:border-rose-500/40 text-rose-400',
     badgeBg: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
     icon: (
@@ -69,6 +75,7 @@ export default function StaffHubPage() {
   const [activeModal, setActiveModal] = useState<'manager' | 'broadcast' | string | null>(null);
   const [pin, setPin] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Manager Broadcast Control States
   const [broadcastMessage, setBroadcastMessage] = useState('');
@@ -77,54 +84,101 @@ export default function StaffHubPage() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [broadcastSuccess, setBroadcastSuccess] = useState(false);
 
-  const MANAGER_PIN = "1234";
-
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (activeModal === 'manager') {
-      if (pin === MANAGER_PIN) {
-        router.push('/dashboard');
+    setIsLoading(true);
+    setErrorMsg('');
+
+    try {
+      if (activeModal === 'manager') {
+        // Query Supabase for a manager profile with this PIN
+        const { data, error } = await supabase
+          .from('staff_members') // Change table name if yours differs
+          .select('*')
+          .eq('pin', pin)
+          .in('role', ['manager', 'admin', 'Executive']) // Adjust based on your role naming schema
+          .single();
+
+        if (error || !data) {
+          setErrorMsg('Invalid Master Manager PIN');
+          setPin('');
+        } else {
+          router.push('/dashboard');
+        }
       } else {
-        setErrorMsg('Invalid Master Manager PIN');
-        setPin('');
+        const currentDept = departments.find(d => d.id === activeModal);
+        if (!currentDept) return;
+
+        // Query Supabase to verify department pin/staff code
+        const { data, error } = await supabase
+          .from('staff_members')
+          .select('*')
+          .eq('pin', pin)
+          .ilike('department', `%${currentDept.id}%`)
+          .single();
+
+        if (error || !data) {
+          setErrorMsg('Incorrect Station PIN');
+          setPin('');
+        } else {
+          router.push(`/staff/${currentDept.id}`);
+        }
       }
-    } else {
-      const currentDept = departments.find(d => d.id === activeModal);
-      if (currentDept && pin === currentDept.pin) {
-        router.push(`/staff/${currentDept.id}`);
-      } else {
-        setErrorMsg('Incorrect Station PIN');
-        setPin('');
-      }
+    } catch (err) {
+      setErrorMsg('Authentication error. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleBroadcastSubmit = (e: React.FormEvent) => {
+  const handleBroadcastSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin !== MANAGER_PIN) {
-      setErrorMsg('Invalid Master Manager PIN for Broadcast');
-      setPin('');
-      return;
-    }
     if (!broadcastMessage.trim()) {
       setErrorMsg('Please enter a broadcast message');
       return;
     }
 
-    setIsBroadcasting(true);
+    setIsLoading(true);
     setErrorMsg('');
 
-    // Simulate sending live announcement broadcast
-    setTimeout(() => {
-      setIsBroadcasting(false);
-      setBroadcastSuccess(true);
-      setTimeout(() => {
-        setBroadcastSuccess(false);
-        setActiveModal(null);
-        setBroadcastMessage('');
+    try {
+      // Verify manager PIN in Supabase first before broadcasting
+      const { data, error } = await supabase
+        .from('staff_members')
+        .select('*')
+        .eq('pin', pin)
+        .in('role', ['manager', 'admin', 'Executive'])
+        .single();
+
+      if (error || !data) {
+        setErrorMsg('Invalid Master Manager PIN for Broadcast');
         setPin('');
-      }, 2000);
-    }, 800);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsBroadcasting(true);
+      
+      // Optional: Insert broadcast into a supabase announcements table if you have one
+      // await supabase.from('announcements').insert([{ message: broadcastMessage, target: broadcastTarget, priority: broadcastPriority }]);
+
+      setTimeout(() => {
+        setIsBroadcasting(false);
+        setIsLoading(false);
+        setBroadcastSuccess(true);
+        setTimeout(() => {
+          setBroadcastSuccess(false);
+          setActiveModal(null);
+          setBroadcastMessage('');
+          setPin('');
+        }, 2000);
+      }, 800);
+
+    } catch (err) {
+      setErrorMsg('Failed to process broadcast authorization.');
+      setIsLoading(false);
+      setIsBroadcasting(false);
+    }
   };
 
   return (
@@ -190,7 +244,7 @@ export default function StaffHubPage() {
               </div>
 
               <div className="mt-6 pt-4 border-t border-white/[0.04] flex items-center justify-between text-[10px] uppercase font-bold tracking-widest text-neutral-400 group-hover:text-white transition-colors">
-                <span>Secure PIN ({dept.pin})</span>
+                <span>Secure PIN Access</span>
                 <span className="transform group-hover:translate-x-1.5 transition-transform text-amber-400 font-black text-sm">→</span>
               </div>
             </div>
@@ -289,7 +343,7 @@ export default function StaffHubPage() {
 
                   <div>
                     <label className="block text-[11px] font-medium text-neutral-300 uppercase tracking-wider mb-1.5">
-                      Master Manager PIN (<span className="text-amber-400 font-mono">1234</span>)
+                      Master Manager PIN
                     </label>
                     <input 
                       type="password" 
@@ -313,10 +367,10 @@ export default function StaffHubPage() {
                     </button>
                     <button 
                       type="submit" 
-                      disabled={isBroadcasting}
+                      disabled={isBroadcasting || isLoading}
                       className="flex-1 py-2.5 bg-amber-500 text-neutral-950 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-400 disabled:opacity-50"
                     >
-                      {isBroadcasting ? 'Broadcasting...' : 'Broadcast Now'}
+                      {isBroadcasting || isLoading ? 'Broadcasting...' : 'Broadcast Now'}
                     </button>
                   </div>
                 </form>
@@ -335,8 +389,8 @@ export default function StaffHubPage() {
               
               <p className="text-[11px] text-neutral-400 mb-4 font-light">
                 {activeModal === 'manager' 
-                  ? <>Enter master PIN (<span className="text-amber-400 font-mono font-bold">1234</span>) to access all 102 rooms.</>
-                  : <>Enter station PIN (<span className="text-amber-400 font-mono font-bold">{departments.find(d => d.id === activeModal)?.pin}</span>) to sign in.</>
+                  ? 'Enter master manager PIN to access all 102 rooms.'
+                  : 'Enter assigned station PIN to sign in.'
                 }
               </p>
               
@@ -362,9 +416,10 @@ export default function StaffHubPage() {
                   </button>
                   <button 
                     type="submit" 
-                    className="flex-1 py-2.5 bg-amber-500 text-neutral-950 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-400"
+                    disabled={isLoading}
+                    className="flex-1 py-2.5 bg-amber-500 text-neutral-950 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-400 disabled:opacity-50"
                   >
-                    Authorize
+                    {isLoading ? 'Verifying...' : 'Authorize'}
                   </button>
                 </div>
               </form>

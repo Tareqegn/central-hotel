@@ -33,10 +33,16 @@ interface GuestProfile {
   preferences: string;
 }
 
+interface StaffMember {
+  name: string;
+  department: string;
+}
+
 export default function ManagerDashboard() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [guestProfiles, setGuestProfiles] = useState<GuestProfile[]>([]);
+  const [dbStaffMembers, setDbStaffMembers] = useState<StaffMember[]>([]);
   
   const [newAnnouncementText, setNewAnnouncementText] = useState<string>('');
   const [announcementTarget, setAnnouncementTarget] = useState<'guest' | 'staff'>('guest');
@@ -66,14 +72,6 @@ export default function ManagerDashboard() {
     }
     return true;
   });
-
-  // Synchronized staff roster mapping existing staff names precisely
-  const staffRoster: { [key: string]: string[] } = {
-    waiters: ['John', 'Abebe', 'Sara', 'Michael'],
-    housekeeping: ['Tigist', 'Hanna', 'Dawit'],
-    kitchen: ['Chef Markos', 'Chef Leah', 'Samson'],
-    'front desk': ['Edom', 'Natnael']
-  };
 
   const handleToggleSound = () => {
     const newState = !soundEnabled;
@@ -124,6 +122,11 @@ export default function ManagerDashboard() {
       .from('guest_profiles')
       .select('*');
     if (profileData) setGuestProfiles(profileData);
+
+    const { data: staffData } = await supabase
+      .from('staff_members')
+      .select('name, department');
+    if (staffData) setDbStaffMembers(staffData);
   };
 
   useEffect(() => {
@@ -138,6 +141,9 @@ export default function ManagerDashboard() {
         fetchData();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_profiles' }, () => {
+        fetchData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_members' }, () => {
         fetchData();
       })
       .subscribe();
@@ -194,6 +200,14 @@ export default function ManagerDashboard() {
     await supabase.from('announcements').delete().eq('id', id);
     fetchData();
   };
+
+  // Derive unique departments dynamically from database staff records
+  const availableDepartments = Array.from(new Set(dbStaffMembers.map(s => s.department))).sort();
+  
+  // Filter staff names based on selected role/department
+  const filteredStaffNames = selectedStaffRole === 'all' 
+    ? dbStaffMembers.map(s => s.name)
+    : dbStaffMembers.filter(s => s.department.toLowerCase() === selectedStaffRole.toLowerCase()).map(s => s.name);
 
   const activeRoomsSet = new Set<string>();
   requests.forEach(r => {
@@ -448,27 +462,24 @@ export default function ManagerDashboard() {
                       setSelectedStaffRole(e.target.value);
                       setSelectedStaffName('all');
                     }}
-                    className="bg-[#121212] text-blue-400 font-mono text-[10px] px-2 py-1 rounded-lg border border-blue-500/30 focus:outline-none focus:border-blue-400"
+                    className="bg-[#121212] text-blue-400 font-mono text-[10px] px-2 py-1 rounded-lg border border-blue-500/30 focus:outline-none focus:border-blue-400 capitalize"
                   >
                     <option value="all">All Departments</option>
-                    <option value="kitchen">Kitchen</option>
-                    <option value="housekeeping">Housekeeping</option>
-                    <option value="waiters">Waiters</option>
-                    <option value="front desk">Front Desk</option>
+                    {availableDepartments.map((dept) => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
                   </select>
 
-                  {selectedStaffRole !== 'all' && staffRoster[selectedStaffRole] && (
-                    <select
-                      value={selectedStaffName}
-                      onChange={(e) => setSelectedStaffName(e.target.value)}
-                      className="bg-[#121212] text-emerald-400 font-mono text-[10px] px-2 py-1 rounded-lg border border-emerald-500/30 focus:outline-none focus:border-emerald-400"
-                    >
-                      <option value="all">All {selectedStaffRole}</option>
-                      {staffRoster[selectedStaffRole].map((name) => (
-                        <option key={name} value={name}>{name}</option>
-                      ))}
-                    </select>
-                  )}
+                  <select
+                    value={selectedStaffName}
+                    onChange={(e) => setSelectedStaffName(e.target.value)}
+                    className="bg-[#121212] text-emerald-400 font-mono text-[10px] px-2 py-1 rounded-lg border border-emerald-500/30 focus:outline-none focus:border-emerald-400"
+                  >
+                    <option value="all">All Staff ({selectedStaffRole === 'all' ? 'All Depts' : selectedStaffRole})</option>
+                    {filteredStaffNames.map((name) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
                 </>
               ) : (
                 <select
