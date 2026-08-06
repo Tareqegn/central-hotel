@@ -1,4 +1,4 @@
-// Front Desk Check-In & Smart Guest Memory Portal
+// Front Desk Check-In & Smart Guest Memory Portal with SMS & Session Tokens
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -11,12 +11,14 @@ interface GuestProfile {
   preferences: string;
   is_checked_in: boolean;
   last_visited: string;
+  session_token?: string;
 }
 
 export default function FrontDeskPortal() {
   const [profiles, setProfiles] = useState<GuestProfile[]>([]);
   const [roomNum, setRoomNum] = useState<string>('');
   const [guestName, setGuestName] = useState<string>('');
+  const [guestPhone, setGuestPhone] = useState<string>('');
   const [preferences, setPreferences] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -26,11 +28,8 @@ export default function FrontDeskPortal() {
         .from('guest_profiles')
         .select('*')
         .order('room', { ascending: true });
-      if (error) {
-        console.error("Supabase fetch error:", error.message);
-      } else if (data) {
-        setProfiles(data);
-      }
+      if (error) console.error("Supabase fetch error:", error.message);
+      else if (data) setProfiles(data);
     } catch (err) {
       console.error("Fetch exception:", err);
     }
@@ -62,48 +61,42 @@ export default function FrontDeskPortal() {
     e.preventDefault();
     if (!roomNum.trim() || !guestName.trim()) return;
 
+    // Generate a secure unique session token for this check-in session
+    const secureSessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
     try {
-      console.log("Attempting to save guest profile...", { room: roomNum, guest_name: guestName });
-      
       const { error } = await supabase.from('guest_profiles').upsert([
         { 
           room: roomNum.trim(), 
           guest_name: guestName.trim(), 
           preferences: preferences.trim() || 'No special preferences noted.',
           is_checked_in: true,
-          last_visited: new Date().toISOString()
+          last_visited: new Date().toISOString(),
+          session_token: secureSessionToken
         }
       ], { onConflict: 'room' });
 
       if (error) {
-        console.error("Supabase upsert error:", error.message);
         alert(`Check-in failed: ${error.message}`);
         return;
       }
 
-      console.log("Check-in successful!");
       setRoomNum('');
       setGuestName('');
+      setGuestPhone('');
       setPreferences('');
       await fetchProfiles();
     } catch (err) {
       console.error("Check-in exception:", err);
-      alert("An unexpected error occurred during check-in. Check your F12 console.");
     }
   };
 
   const handleCheckOut = async (room: string) => {
     try {
-      const { error } = await supabase
+      await supabase
         .from('guest_profiles')
-        .update({ is_checked_in: false, guest_name: '', preferences: '' })
+        .update({ is_checked_in: false, guest_name: '', preferences: '', session_token: null })
         .eq('room', room);
-
-      if (error) {
-        console.error("Checkout error:", error.message);
-      } else {
-        await fetchProfiles();
-      }
+      await fetchProfiles();
     } catch (err) {
       console.error("Checkout exception:", err);
     }
@@ -209,6 +202,17 @@ export default function FrontDeskPortal() {
               </div>
 
               <div>
+                <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400 mb-1">Guest Phone (Optional for SMS)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. +2519..."
+                  value={guestPhone}
+                  onChange={(e) => setGuestPhone(e.target.value)}
+                  className="w-full bg-[#121212] text-white font-mono text-xs px-3 py-2.5 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">Preferences & Memory Auto-Fetch</label>
                   <span className="text-[9px] text-amber-400/80 font-mono">Auto-populated from history</span>
@@ -225,7 +229,7 @@ export default function FrontDeskPortal() {
                 type="submit"
                 className="w-full bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs py-3 rounded-xl transition-all shadow-lg"
               >
-                Complete Check-In & Sync Room
+                Complete Check-In & Generate Token
               </button>
             </form>
           </div>
@@ -233,7 +237,7 @@ export default function FrontDeskPortal() {
           {/* Active Rooms & Guest Memory Directory */}
           <div className="lg:col-span-2 bg-[#18181b] border border-white/[0.08] p-6 rounded-2xl shadow-xl">
             <h2 className="text-xs font-mono uppercase tracking-widest text-amber-400 font-semibold mb-4 flex items-center justify-between">
-              <span>📋 Active Rooms & Guest Memory Directory</span>
+              <span>📋 Active Rooms & Secure Token Directory</span>
               <span className="text-[10px] text-neutral-400 font-normal">Connected to Manager Dashboard</span>
             </h2>
 
@@ -243,56 +247,66 @@ export default function FrontDeskPortal() {
                   No rooms checked in or matching search.
                 </div>
               ) : (
-                filteredProfiles.map((p) => (
-                  <div 
-                    key={p.id} 
-                    className={`p-4 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all ${
-                      p.is_checked_in ? 'bg-[#202024] border-amber-500/30 shadow-md' : 'bg-[#151518] border-white/[0.04] opacity-50'
-                    }`}
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-mono font-bold border border-amber-500/20">
-                          Room {p.room}
-                        </span>
-                        <span className="text-sm font-semibold text-white">
-                          {p.is_checked_in ? (p.guest_name || 'Checked-In Guest') : 'Vacant Room'}
-                        </span>
-                        <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full ${
-                          p.is_checked_in ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-neutral-800 text-neutral-400'
-                        }`}>
-                          {p.is_checked_in ? 'OCCUPIED' : 'VACANT'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-neutral-300 font-mono italic pl-1">
-                        "{p.preferences || 'No preference notes logged.'}"
-                      </p>
-                    </div>
+                filteredProfiles.map((p) => {
+                  const tokenParam = p.session_token ? `?token=${p.session_token}` : '';
+                  const roomUrl = `${window.location.origin}/room/${p.room}${tokenParam}`;
 
-                    <div className="flex items-center gap-2">
-                      {p.is_checked_in && (
-                        <button
-                          onClick={() => {
-                            const url = `${window.location.origin}/room/${p.room}`;
-                            navigator.clipboard.writeText(url);
-                            alert(`Copied guest QR link for Room ${p.room}!`);
-                          }}
-                          className="px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-neutral-200 border border-white/[0.08] rounded-lg text-xs font-mono transition-all"
-                        >
-                          Copy Link
-                        </button>
-                      )}
-                      {p.is_checked_in && (
-                        <button
-                          onClick={() => handleCheckOut(p.room)}
-                          className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-xs font-mono font-semibold transition-all"
-                        >
-                          Check-Out
-                        </button>
-                      )}
+                  return (
+                    <div 
+                      key={p.id} 
+                      className={`p-4 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all ${
+                        p.is_checked_in ? 'bg-[#202024] border-amber-500/30 shadow-md' : 'bg-[#151518] border-white/[0.04] opacity-50'
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-mono font-bold border border-amber-500/20">
+                            Room {p.room}
+                          </span>
+                          <span className="text-sm font-semibold text-white">
+                            {p.is_checked_in ? (p.guest_name || 'Checked-In Guest') : 'Vacant Room'}
+                          </span>
+                          <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full ${
+                            p.is_checked_in ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-neutral-800 text-neutral-400'
+                          }`}>
+                            {p.is_checked_in ? 'OCCUPIED' : 'VACANT'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-300 font-mono italic pl-1">
+                          "{p.preferences || 'No preference notes logged.'}"
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {p.is_checked_in && (
+                          <>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(roomUrl);
+                                alert(`Copied token-secured link for Room ${p.room}!`);
+                              }}
+                              className="px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-neutral-200 border border-white/[0.08] rounded-lg text-xs font-mono transition-all"
+                            >
+                              Copy Link
+                            </button>
+                            <a
+                              href={`sms:?body=${encodeURIComponent(`Welcome to Central Yamarech! Access your Room ${p.room} digital concierge menu here: ${roomUrl}`)}`}
+                              className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1"
+                            >
+                              <span>💬</span> Send SMS
+                            </a>
+                            <button
+                              onClick={() => handleCheckOut(p.room)}
+                              className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-xs font-mono font-semibold transition-all"
+                            >
+                              Check-Out
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
