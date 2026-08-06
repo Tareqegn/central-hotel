@@ -251,7 +251,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
 
-  // Live Announcement Banner State (Supports both localStorage and Database broadcasts)
+  // Live Announcement Banner State
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [liveBroadcast, setLiveBroadcast] = useState<{
     message: string;
@@ -273,7 +273,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
       const { data, error } = await supabase
         .from('guest_profiles')
         .select('*')
-        .eq('room', targetRoom) // Fixed column name from room_number to room
+        .eq('room', targetRoom)
         .eq('is_active', true)
         .maybeSingle();
 
@@ -300,7 +300,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         event: 'UPDATE', 
         schema: 'public', 
         table: 'guest_profiles', 
-        filter: `room=eq.${roomNumber}` // Fixed column name from room_number to room
+        filter: `room=eq.${roomNumber}` 
       }, (payload: any) => {
         if (payload.new && payload.new.is_active === false) {
           setAccessDenied(true);
@@ -316,7 +316,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     };
   }, [roomNumber]);
 
-  // Real-time listener for guest broadcasts and Supabase announcements table
   useEffect(() => {
     const checkBroadcasts = () => {
       const activeBroadcast = localStorage.getItem('current_hotel_broadcast');
@@ -328,7 +327,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch announcements from database matching room or 'all'
   useEffect(() => {
     const fetchAnnouncements = async () => {
       const { data, error } = await supabase
@@ -625,7 +623,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
       darkMode ? 'bg-[#0b0d14] text-neutral-100' : 'bg-[#f7f8fa] text-neutral-900'
     }`}>
       
-      {/* Live Database Announcements Banner */}
       {announcements.map((ann) => (
         <div key={ann.id} className="w-full max-w-md p-4 mb-4 bg-amber-500/20 border border-amber-500/40 rounded-2xl transition-all flex items-center justify-between z-50 text-amber-200">
           <div className="flex items-center gap-3 max-w-5xl mx-auto">
@@ -653,7 +650,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </div>
       ))}
 
-      {/* Live Announcement Banner from Local Storage */}
       {liveBroadcast && (
         <div className={`w-full max-w-md p-4 mb-4 border rounded-2xl transition-all flex items-center justify-between z-50 ${
           liveBroadcast.priority === 'urgent' 
@@ -730,7 +726,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
           </div>
         </header>
 
-        {/* 3-Tab Navigation */}
         <div className={`w-full flex p-1.5 rounded-2xl mb-6 border backdrop-blur-md ${
           darkMode ? 'bg-white/[0.02] border-white/[0.04]' : 'bg-neutral-100 border-neutral-200'
         }`}>
@@ -845,7 +840,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
           </div>
         )}
 
-        {/* My Charges / Folio Tab Content with Rating & Custom Text Feedback Box */}
         {activeTab === 'folio' && (
           <div className="w-full flex flex-col pb-28 max-h-[380px] overflow-y-auto pr-1 space-y-4">
             <div>
@@ -906,9 +900,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
               </div>
             )}
 
-            {/* --- Stay Feedback & Custom Text Input Widget --- */}
             <div className={`p-4 rounded-2xl border space-y-3 ${darkMode ? 'bg-white/[0.01] border-white/[0.04]' : 'bg-neutral-50 border-neutral-200'}`}>
-              
               <div>
                 <h3 className="text-xs font-medium text-neutral-200 mb-2">{t.rateServicePrompt}</h3>
                 <div className="flex gap-2">
@@ -953,7 +945,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
 
               <hr className={darkMode ? 'border-white/[0.04]' : 'border-neutral-200'} />
 
-              {/* Express Checkout */}
               <div>
                 <button
                   onClick={handleCheckoutRequest}
@@ -975,7 +966,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
 
       </div>
 
-      {/* Floating Collapsible Cart Pill */}
       {Object.keys(cart).length > 0 && !isModalOpen && !isCartOpen && (
         <div className={`fixed ${trackedOrder ? 'bottom-20' : 'bottom-6'} left-5 right-5 max-w-md mx-auto z-30 transition-all duration-300`}>
           <button 
@@ -993,7 +983,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </div>
       )}
 
-      {/* Expanded Cart Sheet Modal */}
       {isCartOpen && (
         <>
           <div onClick={() => setIsCartOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
@@ -1062,7 +1051,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </>
       )}
 
-      {/* Active Tracking Banner */}
       {trackedOrder && trackedOrder.category !== 'Feedback' && trackedOrder.category !== 'Checkout' && !isModalOpen && (
         <div className={`fixed bottom-6 left-5 right-5 max-w-md mx-auto p-4 rounded-2xl flex items-center justify-between shadow-2xl border backdrop-blur-xl z-30 ${
           trackedOrder.status === 'Completed'
