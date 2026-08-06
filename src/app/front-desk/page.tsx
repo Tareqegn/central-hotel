@@ -21,11 +21,19 @@ export default function FrontDeskPortal() {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const fetchProfiles = async () => {
-    const { data } = await supabase
-      .from('guest_profiles')
-      .select('*')
-      .order('room', { ascending: true });
-    if (data) setProfiles(data);
+    try {
+      const { data, error } = await supabase
+        .from('guest_profiles')
+        .select('*')
+        .order('room', { ascending: true });
+      if (error) {
+        console.error("Supabase fetch error:", error.message);
+      } else if (data) {
+        setProfiles(data);
+      }
+    } catch (err) {
+      console.error("Fetch exception:", err);
+    }
   };
 
   useEffect(() => {
@@ -42,7 +50,6 @@ export default function FrontDeskPortal() {
     };
   }, []);
 
-  // Smart Auto-Fill: Check if guest exists in past history when name is typed
   const handleGuestNameChange = (val: string) => {
     setGuestName(val);
     const existing = profiles.find(p => p.guest_name && p.guest_name.toLowerCase() === val.toLowerCase());
@@ -55,28 +62,51 @@ export default function FrontDeskPortal() {
     e.preventDefault();
     if (!roomNum.trim() || !guestName.trim()) return;
 
-    await supabase.from('guest_profiles').upsert([
-      { 
-        room: roomNum.trim(), 
-        guest_name: guestName.trim(), 
-        preferences: preferences.trim() || 'No special preferences noted.',
-        is_checked_in: true,
-        last_visited: new Date().toISOString()
-      }
-    ], { onConflict: 'room' });
+    try {
+      console.log("Attempting to save guest profile...", { room: roomNum, guest_name: guestName });
+      
+      const { error } = await supabase.from('guest_profiles').upsert([
+        { 
+          room: roomNum.trim(), 
+          guest_name: guestName.trim(), 
+          preferences: preferences.trim() || 'No special preferences noted.',
+          is_checked_in: true,
+          last_visited: new Date().toISOString()
+        }
+      ], { onConflict: 'room' });
 
-    setRoomNum('');
-    setGuestName('');
-    setPreferences('');
-    fetchProfiles();
+      if (error) {
+        console.error("Supabase upsert error:", error.message);
+        alert(`Check-in failed: ${error.message}`);
+        return;
+      }
+
+      console.log("Check-in successful!");
+      setRoomNum('');
+      setGuestName('');
+      setPreferences('');
+      await fetchProfiles();
+    } catch (err) {
+      console.error("Check-in exception:", err);
+      alert("An unexpected error occurred during check-in. Check your F12 console.");
+    }
   };
 
   const handleCheckOut = async (room: string) => {
-    await supabase
-      .from('guest_profiles')
-      .update({ is_checked_in: false, guest_name: '', preferences: '' })
-      .eq('room', room);
-    fetchProfiles();
+    try {
+      const { error } = await supabase
+        .from('guest_profiles')
+        .update({ is_checked_in: false, guest_name: '', preferences: '' })
+        .eq('room', room);
+
+      if (error) {
+        console.error("Checkout error:", error.message);
+      } else {
+        await fetchProfiles();
+      }
+    } catch (err) {
+      console.error("Checkout exception:", err);
+    }
   };
 
   const filteredProfiles = profiles.filter(p => 
