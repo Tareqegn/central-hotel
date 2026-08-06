@@ -351,7 +351,7 @@ export default function ManagerDashboard() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
-                  👤 Guest Identity & Preference CRM
+                  Guest Identity & Preference CRM
                 </span>
                 <span className="text-[9px] text-neutral-500 font-mono">Stored in Supabase</span>
               </div>
@@ -410,7 +410,7 @@ export default function ManagerDashboard() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
-                  📝 Shift Notes & Handover Log
+                  Shift Notes & Handover Log
                 </span>
                 <span className="text-[9px] text-neutral-500 font-mono">Auto-saved locally</span>
               </div>
@@ -429,7 +429,7 @@ export default function ManagerDashboard() {
         <div className="bg-[#18181b] border border-white/[0.08] p-5 rounded-2xl shadow-lg mb-8">
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
-              📢 Granular Broadcast Command Center
+              Granular Broadcast Command Center
             </span>
             
             <div className="flex items-center gap-2 flex-wrap">
@@ -538,7 +538,7 @@ export default function ManagerDashboard() {
                       ann.target === 'staff' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                     }`}>
                       {ann.target === 'staff' 
-                        ? `Staff (${ann.staff_role || 'all'}${ann.staff_name && ann.staff_name !== 'all' ? ` → ${ann.staff_name}` : ''})` 
+                        ? `Staff (${ann.staff_role || 'all'}${ann.staff_name && ann.staff_name !== 'all' ? ` — ${ann.staff_name}` : ''})` 
                         : `Guest ${ann.target_room && ann.target_room !== 'all' ? `(Room ${ann.target_room}${roomToGuestNameMap[ann.target_room] ? `: ${roomToGuestNameMap[ann.target_room]}` : ''})` : '(All)'}`}
                     </span>
                     <span className="text-xs text-neutral-200 truncate">{ann.message}</span>
@@ -626,7 +626,7 @@ export default function ManagerDashboard() {
                               <div className="mb-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-l-2 border-amber-400 p-3 rounded-r-xl shadow-inner">
                                 <div className="flex items-center justify-between mb-1.5">
                                   <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-bold flex items-center gap-1.5">
-                                    ★ Guest Feedback
+                                    Guest Feedback
                                   </span>
                                   {req.rating && (
                                     <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] px-2 py-0.5 rounded-md font-mono font-bold">

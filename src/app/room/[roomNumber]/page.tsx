@@ -1,4 +1,4 @@
-// Front Desk Check-In & Smart Guest Memory Portal with SMS & Session Tokens
+// Front Desk Check-In & Smart Guest Memory Portal with SMS & Session Tokens[cite: 3]
 "use client";
 
 import React, { Suspense, useState, useEffect } from 'react';
@@ -174,43 +174,43 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
   },
   am: {
     welcome: "እንኳን ደህና መጡ",
-    suiteLocked: "ክፍል ተቆልፏል",
-    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊትዴስክ ተቀባይ ጋር ይመዝገቡ",
-    verifying: "ክፍለ-ጊዜውን እያረጋገጠ ነው...",
+    suiteLocked: "ክፍል ተዘግቷል",
+    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት ዴስክ ጋር ያረጋግጡ",
+    verifying: "መረጃዎችን በማጣራት ላይ...",
     servicesTab: "አገልግሎቶች",
-    menuTab: "የምግብ ዝርዝር",
+    menuTab: "ምግብ ምናሌ",
     folioTab: "ሂሳብ",
     callWaiter: " አስተናጋጅ ጥራ",
     roomCleaning: "የክፍል ጽዳት",
     laundryService: "የልብስ ማጠቢያ",
     taxiTransport: "ታክሲ",
     spaBooking: "ስፓ",
-    itemsSelected: "ምርቶች",
-    confirmOrder: "ትዕዛዝ ያስቀምጡ",
+    itemsSelected: "እቃዎች",
+    confirmOrder: "ትዕዛዝ አረጋግጥ",
     orderStatus: "ሁኔታ",
-    viewProgress: "ሁኔታውን ይመልከቱ",
+    viewProgress: "ሂደት ይመልከቱ",
     close: "ዝጋ",
     submit: "ላክ",
     specialInstructions: "ልዩ ማስታወሻዎች",
-    placeholderNotes: "ለምሳሌ፦ አለርጂ፣ ተጨማሪ ፎጣ...",
-    departureTime: "የመነሻ ሰዓት",
+    placeholderNotes: "ለምሳሌ ፡ አለርጂክ, ተጨማሪ ፎጣ...",
+    departureTime: "የሚወጡበት ሰዓት",
     itemBreakdown: "ዝርዝር",
-    waiterAlert: "አስተናጋጅ ወደ ክፍልዎ ወዲያውኑ ይጠራ?",
-    pending: "ትዕዛዙ ደርሰዋል",
+    waiterAlert: "አስተናጋጅ ወደ ክፍልዎ እንዲመጣ ይፈልጋሉ?",
+    pending: "ተቀባይነት አግኝቷል",
     inProgress: "በሂደት ላይ",
     completed: "ተጠናቋል",
     subtotal: "ንዑስ ድምር",
     serviceTax: "የአገልግሎት ክፍያ (10%)",
     total: "አጠቃላይ ድምር",
-    clearCart: "ቅርጫቱን አጽዳ",
-    viewCartAndPay: "ቅርጫቱን ይመልከቱ",
+    clearCart: "ባዶ ጋሪ",
+    viewCartAndPay: "ትዕዛዝ ይመልከቱ",
     estimatedArrival: "ግምታዊ የመድረሻ ሰዓት",
-    myFolioTitle: "የእርስዎ ክፍያዎች",
-    myFolioSubtitle: "የሁሉም ቆይታ ትዕዛዞች መግለጫ",
+    myFolioTitle: "የክፍልዎ ሂሳቦች",
+    myFolioSubtitle: "የሁሉም ቆይታ ትዕዛዞች ዝርዝር",
     noChargesYet: " እስካሁን የተመዘገበ ክፍያ የለም",
-    stayTotal: "አጠቃላይ የቆይታ ክፍያ",
-    rateServicePrompt: "አገልግሎቱን ይገምግሙ:",
-    feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይስጡ...",
+    stayTotal: "አጠቃላይ የቆይታ ሂሳብ",
+    rateServicePrompt: "አገልግሎቱን ይገመግሙ:",
+    feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይጻፉ...",
     submitFeedback: "አስተያየት ላክ",
     feedbackThankYou: "ለሰጡን አስተያየት እናመሰግናለን!",
     laundryItems: { 
@@ -219,10 +219,10 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
       others: { name: "ሌሎች እቃዎች", price: 40 } 
     },
     menu: [
-      { id: 1, name: "የቁርስ እቃ", price: 280, icon: "croissant", desc: "እንጀራ፣ የወቅቱ ፍራፍሬ እና ቡና" },
-      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "የተፈጨ አቮካዶ እና እንቁላል" },
-      { id: 3, name: "ክለብ ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከድንች ጥብስ ጋር" },
-      { id: 4, name: "ክላሲክ በርገር", price: 410, icon: "burger", desc: "የስጋ ፓቲ፣ ቸዳር አይብ፣ ከድንች ጥብስ ጋር" },
+      { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "እንጀራ, ዳቦ እና ቡና" },
+      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "አቮካዶ እና እንቁላል" },
+      { id: 3, name: "ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከድንች ጥብስ ጋር" },
+      { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የስጋ በርገር ከቺዝ እና ድንች ጋር" },
     ]
   }
 };
@@ -251,6 +251,13 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
 
+  // Live Announcement Banner State
+  const [liveBroadcast, setLiveBroadcast] = useState<{
+    message: string;
+    priority: 'normal' | 'important' | 'urgent';
+    timestamp: string;
+  } | null>(null);
+
   const [rating, setRating] = useState<number>(0);
   const [feedbackText, setFeedbackText] = useState<string>('');
   const [hasRated, setHasRated] = useState<boolean>(false);
@@ -260,62 +267,45 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   const [taxiTime, setTaxiTime] = useState<string>('');
   const [laundryCounts, setLaundryCounts] = useState<{ shirts: number; pants: number; others: number }>({ shirts: 0, pants: 0, others: 0 });
 
-  // Modified Dynamic Verification for Permanent Static Room Routes (e.g. /room/101)
-  const verifyRoomActive = async (targetRoom: string) => {
+  const validateGuestSession = async (targetRoom: string) => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('guest_profiles')
         .select('*')
         .eq('room_number', targetRoom)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      if (!data) {
+      if (error || !data) {
         setAccessDenied(true);
+      } else {
+        setSessionData(data);
+        setAccessDenied(false);
       }
     } catch (err) {
-      console.error("Active room verification error:", err);
+      console.error("Session validation error:", err);
+      setAccessDenied(true);
+    } finally {
+      setIsValidating(false);
     }
   };
 
   useEffect(() => {
-    async function validateGuestSession() {
-      try {
-        // Query Supabase directly for the active guest profile assigned to this room number
-        const { data, error } = await supabase
-          .from('guest_profiles')
-          .select('*')
-          .eq('room_number', roomNumber)
-          .eq('is_active', true)
-          .maybeSingle();
-
-        if (error || !data) {
-          setAccessDenied(true);
-        } else {
-          setSessionData(data);
-          setAccessDenied(false);
-        }
-      } catch (err) {
-        setAccessDenied(true);
-      } finally {
-        setIsValidating(false);
-      }
-    }
-
-    validateGuestSession();
-  }, [roomNumber]);
-
-  // Realtime subscription to monitor active room state changes instantly
-  useEffect(() => {
-    if (accessDenied || isValidating) return;
-
-    verifyRoomActive(roomNumber);
+    validateGuestSession(roomNumber);
 
     const channel = supabase
       .channel(`room_active_status_${roomNumber}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'guest_profiles', filter: `room_number=eq.${roomNumber}` }, (payload: any) => {
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'guest_profiles', 
+        filter: `room_number=eq.${roomNumber}` 
+      }, (payload: any) => {
         if (payload.new && payload.new.is_active === false) {
           setAccessDenied(true);
+        } else if (payload.new) {
+          setSessionData(payload.new);
+          setAccessDenied(false);
         }
       })
       .subscribe();
@@ -323,7 +313,19 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomNumber, accessDenied, isValidating]);
+  }, [roomNumber]);
+
+  // Real-time listener for guest broadcasts
+  useEffect(() => {
+    const checkBroadcasts = () => {
+      const activeBroadcast = localStorage.getItem('current_hotel_broadcast');
+      if (activeBroadcast) setLiveBroadcast(JSON.parse(activeBroadcast));
+    };
+
+    checkBroadcasts();
+    const interval = setInterval(checkBroadcasts, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const playGuestChime = () => {
     try {
@@ -588,10 +590,44 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   }
 
   return (
-    <div className={`min-h-screen w-full flex items-center justify-center p-4 sm:p-6 relative overflow-hidden transition-colors duration-500 font-sans antialiased tracking-tight ${
+    <div className={`min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden transition-colors duration-500 font-sans antialiased tracking-tight ${
       darkMode ? 'bg-[#0b0d14] text-neutral-100' : 'bg-[#f7f8fa] text-neutral-900'
     }`}>
       
+      {/* Live Announcement Banner */}
+      {liveBroadcast && (
+        <div className={`w-full max-w-md p-4 mb-4 border rounded-2xl transition-all flex items-center justify-between z-50 ${
+          liveBroadcast.priority === 'urgent' 
+            ? 'bg-rose-500/20 border-rose-500/50 text-rose-200' 
+            : liveBroadcast.priority === 'important'
+            ? 'bg-amber-500/20 border-amber-500/50 text-amber-200'
+            : 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200'
+        }`}>
+          <div className="flex items-center gap-3 max-w-5xl mx-auto">
+            <div className="w-8 h-8 rounded-lg bg-black/30 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 animate-pulse text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-black/40">
+                  Hotel Announcement ({liveBroadcast.priority})
+                </span>
+                <span className="text-[10px] opacity-75">{liveBroadcast.timestamp}</span>
+              </div>
+              <p className="text-xs font-medium mt-0.5 leading-relaxed">{liveBroadcast.message}</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setLiveBroadcast(null)}
+            className="text-xs opacity-75 hover:opacity-100 p-1 ml-4"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/[0.05] blur-[140px] pointer-events-none rounded-full" />
 
       <div className={`w-full max-w-md rounded-[2rem] border p-6 sm:p-8 shadow-2xl relative z-10 transition-colors duration-300 ${
