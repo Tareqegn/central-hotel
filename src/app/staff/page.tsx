@@ -66,9 +66,16 @@ const departments = [
 export default function StaffHubPage() {
   const router = useRouter();
   
-  const [activeModal, setActiveModal] = useState<'manager' | string | null>(null);
+  const [activeModal, setActiveModal] = useState<'manager' | 'broadcast' | string | null>(null);
   const [pin, setPin] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Manager Broadcast Control States
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcastTarget, setBroadcastTarget] = useState('all_guests');
+  const [broadcastPriority, setBroadcastPriority] = useState('normal');
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [broadcastSuccess, setBroadcastSuccess] = useState(false);
 
   const MANAGER_PIN = "1234";
 
@@ -92,6 +99,34 @@ export default function StaffHubPage() {
     }
   };
 
+  const handleBroadcastSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pin !== MANAGER_PIN) {
+      setErrorMsg('Invalid Master Manager PIN for Broadcast');
+      setPin('');
+      return;
+    }
+    if (!broadcastMessage.trim()) {
+      setErrorMsg('Please enter a broadcast message');
+      return;
+    }
+
+    setIsBroadcasting(true);
+    setErrorMsg('');
+
+    // Simulate sending live announcement broadcast
+    setTimeout(() => {
+      setIsBroadcasting(false);
+      setBroadcastSuccess(true);
+      setTimeout(() => {
+        setBroadcastSuccess(false);
+        setActiveModal(null);
+        setBroadcastMessage('');
+        setPin('');
+      }, 2000);
+    }, 800);
+  };
+
   return (
     <div className="min-h-screen w-full bg-[#0d0f17] text-neutral-100 p-6 sm:p-12 flex items-center justify-center font-sans antialiased relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/[0.03] blur-[150px] pointer-events-none rounded-full" />
@@ -106,8 +141,8 @@ export default function StaffHubPage() {
           <h1 className="text-2xl font-serif tracking-wide text-white">Central Yamarech</h1>
           <p className="text-[10px] tracking-[0.3em] text-amber-400 uppercase mt-1 font-semibold">Operations & Staff Portal Hub</p>
           
-          {/* Refined Luxury Executive Management Button */}
-          <div className="mt-5">
+          {/* Action Buttons Hub */}
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={() => { setActiveModal('manager'); setPin(''); setErrorMsg(''); }}
               className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-[#131622] hover:bg-[#1a1e2e] border border-amber-500/30 hover:border-amber-500/60 text-amber-400 rounded-full shadow-lg shadow-amber-500/5 transition-all active:scale-95 group"
@@ -117,6 +152,17 @@ export default function StaffHubPage() {
               </svg>
               <span className="text-xs font-semibold tracking-wider uppercase text-white">Executive Management Dashboard</span>
               <span className="text-neutral-500 text-xs">→</span>
+            </button>
+
+            {/* Manager Live Broadcast Control Button */}
+            <button
+              onClick={() => { setActiveModal('broadcast'); setPin(''); setErrorMsg(''); setBroadcastMessage(''); }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-400 rounded-full shadow-lg transition-all active:scale-95 group"
+            >
+              <svg className="w-4 h-4 animate-pulse text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+              </svg>
+              <span className="text-xs font-semibold tracking-wider uppercase text-amber-300">Live Broadcast Control</span>
             </button>
           </div>
         </div>
@@ -152,54 +198,179 @@ export default function StaffHubPage() {
         </div>
       </div>
 
-      {/* Universal Secure PIN Verification Modal */}
+      {/* Universal Secure PIN Verification Modal or Manager Broadcast Control Modal */}
       {activeModal && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="max-w-xs w-full bg-[#131622] border border-white/10 p-6 rounded-3xl shadow-2xl text-center relative">
-            <div className="w-10 h-10 mx-auto mb-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-400 text-sm">
-              {activeModal === 'manager' ? '👑' : '🔐'}
-            </div>
-            
-            <h3 className="text-sm font-semibold tracking-wide uppercase text-amber-400 mb-1">
-              {activeModal === 'manager' ? 'Executive Authorization' : `${activeModal.toUpperCase()} Station`}
-            </h3>
-            
-            <p className="text-[11px] text-neutral-400 mb-4 font-light">
-              {activeModal === 'manager' 
-                ? <>Enter master PIN (<span className="text-amber-400 font-mono font-bold">1234</span>) to access all 102 rooms.</>
-                : <>Enter station PIN (<span className="text-amber-400 font-mono font-bold">{departments.find(d => d.id === activeModal)?.pin}</span>) to sign in.</>
-              }
-            </p>
-            
-            <form onSubmit={handleLoginSubmit}>
-              <input 
-                type="password" 
-                maxLength={4}
-                value={pin}
-                onChange={(e) => { setPin(e.target.value); setErrorMsg(''); }}
-                placeholder="••••"
-                autoFocus
-                className="w-full text-center tracking-[0.5em] text-lg py-3 rounded-xl bg-[#0b0d14] border border-white/10 text-white focus:outline-none focus:border-amber-500 mb-3"
-              />
-              {errorMsg && <p className="text-[10px] text-rose-400 mb-3 font-medium">{errorMsg}</p>}
-
-              <div className="flex gap-2">
+          
+          {activeModal === 'broadcast' ? (
+            /* Manager Broadcast Component Modal View */
+            <div className="max-w-md w-full bg-[#131622] border border-amber-500/30 p-6 rounded-3xl shadow-2xl relative text-left">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-400">
+                    <svg className="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-semibold tracking-widest uppercase text-amber-400">Manager Broadcast Control</h3>
+                    <p className="text-[10px] text-neutral-400">Dispatch live announcements across guest rooms & stations</p>
+                  </div>
+                </div>
                 <button 
-                  type="button" 
-                  onClick={() => { setActiveModal(null); setPin(''); setErrorMsg(''); }}
-                  className="flex-1 py-2.5 bg-white/5 text-neutral-300 rounded-xl text-xs font-medium hover:bg-white/10"
+                  onClick={() => setActiveModal(null)}
+                  className="text-neutral-400 hover:text-white text-sm p-1"
                 >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  className="flex-1 py-2.5 bg-amber-500 text-neutral-950 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-400"
-                >
-                  Authorize
+                  ✕
                 </button>
               </div>
-            </form>
-          </div>
+
+              {broadcastSuccess ? (
+                <div className="py-8 text-center">
+                  <div className="w-12 h-12 mx-auto mb-3 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center text-emerald-400 text-lg font-bold">
+                    ✓
+                  </div>
+                  <h4 className="text-sm font-bold text-white tracking-wide">Broadcast Dispatched Successfully</h4>
+                  <p className="text-xs text-neutral-400 mt-1">Live announcement is now active on target client portals.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleBroadcastSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-[11px] font-medium text-neutral-300 uppercase tracking-wider mb-1.5">
+                      Target Audience / Rooms
+                    </label>
+                    <select 
+                      value={broadcastTarget}
+                      onChange={(e) => setBroadcastTarget(e.target.value)}
+                      className="w-full bg-[#0b0d14] border border-white/10 text-neutral-200 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-500"
+                    >
+                      <option value="all_guests">All Active Rooms (102 Rooms)</option>
+                      <option value="vip_guests">VIP Guests Only</option>
+                      <option value="all_staff">All Staff Stations</option>
+                      <option value="kitchen">Kitchen & Room Service Staff Only</option>
+                      <option value="housekeeping">Housekeeping Staff Only</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-neutral-300 uppercase tracking-wider mb-1.5">
+                      Priority Level
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {['normal', 'important', 'urgent'].map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setBroadcastPriority(p)}
+                          className={`py-2 text-[10px] uppercase font-bold tracking-wider rounded-xl border transition-all ${
+                            broadcastPriority === p 
+                              ? p === 'urgent' ? 'bg-rose-500/20 border-rose-500 text-rose-400' : 'bg-amber-500/20 border-amber-500 text-amber-400'
+                              : 'bg-[#0b0d14] border-white/10 text-neutral-400 hover:border-white/20'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-neutral-300 uppercase tracking-wider mb-1.5">
+                      Announcement Message
+                    </label>
+                    <textarea 
+                      rows={3}
+                      value={broadcastMessage}
+                      onChange={(e) => setBroadcastMessage(e.target.value)}
+                      placeholder="Type official hotel announcement here (e.g. Pool maintenance schedule update...)"
+                      className="w-full bg-[#0b0d14] border border-white/10 text-neutral-100 text-xs rounded-xl p-3 focus:outline-none focus:border-amber-500 resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-neutral-300 uppercase tracking-wider mb-1.5">
+                      Master Manager PIN (<span className="text-amber-400 font-mono">1234</span>)
+                    </label>
+                    <input 
+                      type="password" 
+                      maxLength={4}
+                      value={pin}
+                      onChange={(e) => { setPin(e.target.value); setErrorMsg(''); }}
+                      placeholder="••••"
+                      className="w-full text-center tracking-[0.5em] text-base py-2.5 rounded-xl bg-[#0b0d14] border border-white/10 text-white focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  {errorMsg && <p className="text-[10px] text-rose-400 font-medium">{errorMsg}</p>}
+
+                  <div className="flex gap-2 pt-2">
+                    <button 
+                      type="button" 
+                      onClick={() => setActiveModal(null)}
+                      className="flex-1 py-2.5 bg-white/5 text-neutral-300 rounded-xl text-xs font-medium hover:bg-white/10"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      disabled={isBroadcasting}
+                      className="flex-1 py-2.5 bg-amber-500 text-neutral-950 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-400 disabled:opacity-50"
+                    >
+                      {isBroadcasting ? 'Broadcasting...' : 'Broadcast Now'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          ) : (
+            /* Standard PIN Verification Modal */
+            <div className="max-w-xs w-full bg-[#131622] border border-white/10 p-6 rounded-3xl shadow-2xl text-center relative">
+              <div className="w-10 h-10 mx-auto mb-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-400 text-sm">
+                {activeModal === 'manager' ? '👑' : '🔐'}
+              </div>
+              
+              <h3 className="text-sm font-semibold tracking-wide uppercase text-amber-400 mb-1">
+                {activeModal === 'manager' ? 'Executive Authorization' : `${activeModal.toUpperCase()} Station`}
+              </h3>
+              
+              <p className="text-[11px] text-neutral-400 mb-4 font-light">
+                {activeModal === 'manager' 
+                  ? <>Enter master PIN (<span className="text-amber-400 font-mono font-bold">1234</span>) to access all 102 rooms.</>
+                  : <>Enter station PIN (<span className="text-amber-400 font-mono font-bold">{departments.find(d => d.id === activeModal)?.pin}</span>) to sign in.</>
+                }
+              </p>
+              
+              <form onSubmit={handleLoginSubmit}>
+                <input 
+                  type="password" 
+                  maxLength={4}
+                  value={pin}
+                  onChange={(e) => { setPin(e.target.value); setErrorMsg(''); }}
+                  placeholder="••••"
+                  autoFocus
+                  className="w-full text-center tracking-[0.5em] text-lg py-3 rounded-xl bg-[#0b0d14] border border-white/10 text-white focus:outline-none focus:border-amber-500 mb-3"
+                />
+                {errorMsg && <p className="text-[10px] text-rose-400 mb-3 font-medium">{errorMsg}</p>}
+
+                <div className="flex gap-2">
+                  <button 
+                    type="button" 
+                    onClick={() => { setActiveModal(null); setPin(''); setErrorMsg(''); }}
+                    className="flex-1 py-2.5 bg-white/5 text-neutral-300 rounded-xl text-xs font-medium hover:bg-white/10"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="flex-1 py-2.5 bg-amber-500 text-neutral-950 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-400"
+                  >
+                    Authorize
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
         </div>
       )}
     </div>
