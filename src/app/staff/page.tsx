@@ -94,7 +94,7 @@ export default function StaffHubPage() {
         const { data, error } = await supabase
           .from('staff_members')
           .select('*')
-          .eq('pin', pin)
+          .eq('pin_code', pin)
           .in('role', ['manager', 'admin', 'Executive'])
           .single();
 
@@ -111,7 +111,7 @@ export default function StaffHubPage() {
         const { data, error } = await supabase
           .from('staff_members')
           .select('*')
-          .eq('pin', pin)
+          .eq('pin_code', pin)
           .ilike('department', `%${currentDept.id}%`)
           .single();
 
@@ -143,7 +143,7 @@ export default function StaffHubPage() {
       const { data, error } = await supabase
         .from('staff_members')
         .select('*')
-        .eq('pin', pin)
+        .eq('pin_code', pin)
         .in('role', ['manager', 'admin', 'Executive'])
         .single();
 
@@ -376,7 +376,7 @@ export default function StaffHubPage() {
               </div>
               
               <h3 className="text-sm font-semibold tracking-wide uppercase text-amber-400 mb-1">
-                {activeModal === 'manager' ? 'Executive Authorization' : `${activeModal.toUpperCase()} Station`}
+                {activeModal === 'manager' ? 'Executive Authorization' : `${activeModal?.toUpperCase()} Station`}
               </h3>
               
               <p className="text-[11px] text-neutral-400 mb-4 font-light">
