@@ -4,9 +4,9 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase Client (Ensure your env variables are set in .env.local)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Initialize Supabase Client with build-safe fallbacks matching your .env.local keys
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_KEY || 'placeholder-key';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const departments = [
@@ -91,12 +91,11 @@ export default function StaffHubPage() {
 
     try {
       if (activeModal === 'manager') {
-        // Query Supabase for a manager profile with this PIN
         const { data, error } = await supabase
-          .from('staff_members') // Change table name if yours differs
+          .from('staff_members')
           .select('*')
           .eq('pin', pin)
-          .in('role', ['manager', 'admin', 'Executive']) // Adjust based on your role naming schema
+          .in('role', ['manager', 'admin', 'Executive'])
           .single();
 
         if (error || !data) {
@@ -109,7 +108,6 @@ export default function StaffHubPage() {
         const currentDept = departments.find(d => d.id === activeModal);
         if (!currentDept) return;
 
-        // Query Supabase to verify department pin/staff code
         const { data, error } = await supabase
           .from('staff_members')
           .select('*')
@@ -142,7 +140,6 @@ export default function StaffHubPage() {
     setErrorMsg('');
 
     try {
-      // Verify manager PIN in Supabase first before broadcasting
       const { data, error } = await supabase
         .from('staff_members')
         .select('*')
@@ -159,9 +156,6 @@ export default function StaffHubPage() {
 
       setIsBroadcasting(true);
       
-      // Optional: Insert broadcast into a supabase announcements table if you have one
-      // await supabase.from('announcements').insert([{ message: broadcastMessage, target: broadcastTarget, priority: broadcastPriority }]);
-
       setTimeout(() => {
         setIsBroadcasting(false);
         setIsLoading(false);
@@ -257,7 +251,6 @@ export default function StaffHubPage() {
         <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
           
           {activeModal === 'broadcast' ? (
-            /* Manager Broadcast Component Modal View */
             <div className="max-w-md w-full bg-[#131622] border border-amber-500/30 p-6 rounded-3xl shadow-2xl relative text-left">
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
                 <div className="flex items-center gap-2.5">
@@ -377,7 +370,6 @@ export default function StaffHubPage() {
               )}
             </div>
           ) : (
-            /* Standard PIN Verification Modal */
             <div className="max-w-xs w-full bg-[#131622] border border-white/10 p-6 rounded-3xl shadow-2xl text-center relative">
               <div className="w-10 h-10 mx-auto mb-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-400 text-sm">
                 {activeModal === 'manager' ? '👑' : '🔐'}
