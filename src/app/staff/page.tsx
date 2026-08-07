@@ -15,7 +15,7 @@ const departments = [
     name: 'Kitchen & Room Service', 
     desc: 'Manage live food orders and kitchen preparation tickets.', 
     activeCount: '4 active orders',
-    defaultPin: '1111',
+    defaultPin: '0000',
     theme: 'from-amber-500/10 via-amber-500/5 to-transparent border-amber-500/20 hover:border-amber-500/40 text-amber-400',
     badgeBg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     icon: (
@@ -29,7 +29,7 @@ const departments = [
     name: 'Housekeeping', 
     desc: 'Track room sanitization status, linens, and guest amenities.', 
     activeCount: '12 rooms pending',
-    defaultPin: '2222',
+    defaultPin: '0000',
     theme: 'from-emerald-500/10 via-emerald-500/5 to-transparent border-emerald-500/20 hover:border-emerald-500/40 text-emerald-400',
     badgeBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     icon: (
@@ -43,7 +43,7 @@ const departments = [
     name: 'Front Desk & Concierge', 
     desc: 'Oversee VIP requests, taxi bookings, spa, and guest check-ins.', 
     activeCount: '2 urgent inquiries',
-    defaultPin: '3333',
+    defaultPin: '0000',
     theme: 'from-indigo-500/10 via-indigo-500/5 to-transparent border-indigo-500/20 hover:border-indigo-500/40 text-indigo-400',
     badgeBg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
     icon: (
@@ -57,7 +57,7 @@ const departments = [
     name: 'Maintenance', 
     desc: 'Handle room repairs, electrical fixtures, and technical facility issues.', 
     activeCount: '1 ticket open',
-    defaultPin: '4444',
+    defaultPin: '0000',
     theme: 'from-rose-500/10 via-rose-500/5 to-transparent border-rose-500/20 hover:border-rose-500/40 text-rose-400',
     badgeBg: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
     icon: (
@@ -73,6 +73,7 @@ export default function StaffHubPage() {
   const router = useRouter();
   
   const [activeModal, setActiveModal] = useState<'manager' | 'broadcast' | string | null>(null);
+  const [authStep, setAuthStep] = useState<'dept_pin' | 'staff_pin'>('dept_pin');
   const [pin, setPin] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -96,9 +97,9 @@ export default function StaffHubPage() {
           .select('*')
           .eq('pin_code', pin)
           .in('role', ['manager', 'admin', 'Executive'])
-          .single();
+          .limit(1);
 
-        if (error || !data) {
+        if (error || !data || data.length === 0) {
           setErrorMsg('Invalid Master Manager PIN');
           setPin('');
         } else {
@@ -108,18 +109,31 @@ export default function StaffHubPage() {
         const currentDept = departments.find(d => d.id === activeModal);
         if (!currentDept) return;
 
-        const { data, error } = await supabase
-          .from('staff_members')
-          .select('*')
-          .eq('pin_code', pin)
-          .ilike('department', `%${currentDept.id}%`)
-          .single();
-
-        if (error || !data) {
-          setErrorMsg('Incorrect Station PIN');
-          setPin('');
+        if (authStep === 'dept_pin') {
+          // Step 1: Validate Department Station PIN (now 0000)
+          if (pin === currentDept.defaultPin) {
+            setPin('');
+            setAuthStep('staff_pin');
+            setErrorMsg('');
+          } else {
+            setErrorMsg('Incorrect Department Station PIN');
+            setPin('');
+          }
         } else {
-          router.push(`/staff/${currentDept.id}`);
+          // Step 2: Validate Individual Staff PIN (0000) against Supabase table for this department
+          const { data, error } = await supabase
+            .from('staff_members')
+            .select('*')
+            .eq('pin_code', pin)
+            .ilike('department', `%${currentDept.id}%`)
+            .limit(1);
+
+          if (error || !data || data.length === 0) {
+            setErrorMsg('Incorrect Staff PIN');
+            setPin('');
+          } else {
+            router.push(`/staff/${currentDept.id}`);
+          }
         }
       }
     } catch (err) {
@@ -145,9 +159,9 @@ export default function StaffHubPage() {
         .select('*')
         .eq('pin_code', pin)
         .in('role', ['manager', 'admin', 'Executive'])
-        .single();
+        .limit(1);
 
-      if (error || !data) {
+      if (error || !data || data.length === 0) {
         setErrorMsg('Invalid Master Manager PIN for Broadcast');
         setPin('');
         setIsLoading(false);
@@ -192,7 +206,7 @@ export default function StaffHubPage() {
           {/* Action Buttons Hub */}
           <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
             <button
-              onClick={() => { setActiveModal('manager'); setPin(''); setErrorMsg(''); }}
+              onClick={() => { setActiveModal('manager'); setAuthStep('dept_pin'); setPin(''); setErrorMsg(''); }}
               className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-[#131622] hover:bg-[#1a1e2e] border border-amber-500/30 hover:border-amber-500/60 text-amber-400 rounded-full shadow-lg shadow-amber-500/5 transition-all active:scale-95 group"
             >
               <svg className="w-4 h-4 text-amber-400 group-hover:rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -204,7 +218,7 @@ export default function StaffHubPage() {
 
             {/* Manager Live Broadcast Control Button */}
             <button
-              onClick={() => { setActiveModal('broadcast'); setPin(''); setErrorMsg(''); setBroadcastMessage(''); }}
+              onClick={() => { setActiveModal('broadcast'); setAuthStep('dept_pin'); setPin(''); setErrorMsg(''); setBroadcastMessage(''); }}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-400 rounded-full shadow-lg transition-all active:scale-95 group"
             >
               <svg className="w-4 h-4 animate-pulse text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -220,7 +234,7 @@ export default function StaffHubPage() {
           {departments.map((dept) => (
             <div
               key={dept.id}
-              onClick={() => { setActiveModal(dept.id); setPin(''); setErrorMsg(''); }}
+              onClick={() => { setActiveModal(dept.id); setAuthStep('dept_pin'); setPin(''); setErrorMsg(''); }}
               className={`cursor-pointer bg-gradient-to-br ${dept.theme} bg-[#131622] hover:bg-[#171a29] border p-6 rounded-3xl shadow-xl transition-all group flex flex-col justify-between relative overflow-hidden`}
             >
               <div>
@@ -238,7 +252,7 @@ export default function StaffHubPage() {
               </div>
 
               <div className="mt-6 pt-4 border-t border-white/[0.04] flex items-center justify-between text-[10px] uppercase font-bold tracking-widest text-neutral-400 group-hover:text-white transition-colors">
-                <span>Secure PIN Access</span>
+                <span>Secure Station Access</span>
                 <span className="transform group-hover:translate-x-1.5 transition-transform text-amber-400 font-black text-sm">→</span>
               </div>
             </div>
@@ -376,13 +390,19 @@ export default function StaffHubPage() {
               </div>
               
               <h3 className="text-sm font-semibold tracking-wide uppercase text-amber-400 mb-1">
-                {activeModal === 'manager' ? 'Executive Authorization' : `${activeModal?.toUpperCase()} Station`}
+                {activeModal === 'manager' 
+                  ? 'Executive Authorization' 
+                  : authStep === 'dept_pin' 
+                    ? `${activeModal?.toUpperCase()} Station PIN` 
+                    : `${activeModal?.toUpperCase()} Staff PIN`}
               </h3>
               
               <p className="text-[11px] text-neutral-400 mb-4 font-light">
                 {activeModal === 'manager' 
                   ? 'Enter master manager PIN to access all 102 rooms.'
-                  : 'Enter assigned station PIN to sign in.'
+                  : authStep === 'dept_pin'
+                    ? `Enter station PIN (0000) for ${activeModal}.`
+                    : 'Enter your individual staff PIN (0000).'
                 }
               </p>
               
@@ -401,17 +421,27 @@ export default function StaffHubPage() {
                 <div className="flex gap-2">
                   <button 
                     type="button" 
-                    onClick={() => { setActiveModal(null); setPin(''); setErrorMsg(''); }}
+                    onClick={() => { 
+                      if (authStep === 'staff_pin') {
+                        setAuthStep('dept_pin');
+                        setPin('');
+                        setErrorMsg('');
+                      } else {
+                        setActiveModal(null); 
+                        setPin(''); 
+                        setErrorMsg(''); 
+                      }
+                    }}
                     className="flex-1 py-2.5 bg-white/5 text-neutral-300 rounded-xl text-xs font-medium hover:bg-white/10"
                   >
-                    Cancel
+                    {authStep === 'staff_pin' ? 'Back' : 'Cancel'}
                   </button>
                   <button 
                     type="submit" 
                     disabled={isLoading}
                     className="flex-1 py-2.5 bg-amber-500 text-neutral-950 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-400 disabled:opacity-50"
                   >
-                    {isLoading ? 'Verifying...' : 'Authorize'}
+                    {isLoading ? 'Verifying...' : authStep === 'dept_pin' ? 'Next' : 'Authorize'}
                   </button>
                 </div>
               </form>
