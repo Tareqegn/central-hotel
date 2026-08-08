@@ -36,6 +36,8 @@ interface GuestProfile {
 interface StaffMember {
   name: string;
   department: string;
+  role?: string;
+  pin?: string;
 }
 
 export default function ManagerDashboard() {
@@ -44,6 +46,12 @@ export default function ManagerDashboard() {
   const [guestProfiles, setGuestProfiles] = useState<GuestProfile[]>([]);
   const [dbStaffMembers, setDbStaffMembers] = useState<StaffMember[]>([]);
   
+  // New Staff Management Form State
+  const [newStaffName, setNewStaffName] = useState<string>('');
+  const [newStaffDept, setNewStaffDept] = useState<string>('kitchen');
+  const [newStaffRole, setNewStaffRole] = useState<string>('Staff');
+  const [newStaffPin, setNewStaffPin] = useState<string>('');
+
   const [newAnnouncementText, setNewAnnouncementText] = useState<string>('');
   const [announcementTarget, setAnnouncementTarget] = useState<'guest' | 'staff'>('guest');
   const [selectedStaffRole, setSelectedStaffRole] = useState<string>('all');
@@ -125,7 +133,7 @@ export default function ManagerDashboard() {
 
     const { data: staffData } = await supabase
       .from('staff_members')
-      .select('name, department');
+      .select('name, department, role, pin');
     if (staffData) setDbStaffMembers(staffData);
   };
 
@@ -155,6 +163,29 @@ export default function ManagerDashboard() {
 
   const updateStatus = async (id: string, newStatus: string) => {
     await supabase.from('requests').update({ status: newStatus }).eq('id', id);
+    fetchData();
+  };
+
+  const handleAddStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStaffName.trim() || !newStaffPin.trim()) return;
+
+    await supabase.from('staff_members').insert([
+      {
+        name: newStaffName.trim(),
+        department: newStaffDept.trim(),
+        role: newStaffRole.trim(),
+        pin: newStaffPin.trim()
+      }
+    ]);
+
+    setNewStaffName('');
+    setNewStaffPin('');
+    fetchData();
+  };
+
+  const handleDeleteStaff = async (name: string, department: string) => {
+    await supabase.from('staff_members').delete().eq('name', name).eq('department', department);
     fetchData();
   };
 
@@ -361,6 +392,79 @@ export default function ManagerDashboard() {
           <div className="bg-[#18181b] border border-white/[0.08] p-4 rounded-xl flex flex-col justify-between shadow-lg">
             <p className="text-[10px] uppercase font-mono tracking-widest text-neutral-400 mb-2">Resp. Time</p>
             <span className="text-lg font-serif text-emerald-400">3m 45s</span>
+          </div>
+        </div>
+
+        {/* Staff Management Section */}
+        <div className="bg-[#18181b] border border-white/[0.08] p-5 rounded-2xl shadow-lg mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 font-semibold flex items-center gap-1.5">
+              Staff Member & Roster Control
+            </span>
+            <span className="text-[9px] text-neutral-500 font-mono">Database Synced</span>
+          </div>
+
+          <form onSubmit={handleAddStaff} className="grid grid-cols-1 sm:grid-cols-5 gap-2 mb-4">
+            <input
+              type="text"
+              placeholder="Staff Name (e.g. Chef Markos)"
+              value={newStaffName}
+              onChange={(e) => setNewStaffName(e.target.value)}
+              className="bg-[#121212] text-neutral-200 text-xs font-mono px-3 py-2 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400"
+            />
+            <select
+              value={newStaffDept}
+              onChange={(e) => setNewStaffDept(e.target.value)}
+              className="bg-[#121212] text-amber-400 text-xs font-mono px-3 py-2 rounded-xl border border-amber-500/30 focus:outline-none focus:border-amber-400 capitalize"
+            >
+              <option value="kitchen">Kitchen</option>
+              <option value="housekeeping">Housekeeping</option>
+              <option value="front desk">Front Desk</option>
+              <option value="maintenance">Maintenance</option>
+            </select>
+            <input
+              type="text"
+              placeholder="Role (e.g. Head Chef)"
+              value={newStaffRole}
+              onChange={(e) => setNewStaffRole(e.target.value)}
+              className="bg-[#121212] text-neutral-200 text-xs font-mono px-3 py-2 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400"
+            />
+            <input
+              type="text"
+              placeholder="PIN Code (e.g. 1234)"
+              value={newStaffPin}
+              onChange={(e) => setNewStaffPin(e.target.value)}
+              className="bg-[#121212] text-amber-400 text-xs font-mono px-3 py-2 rounded-xl border border-white/[0.08] focus:outline-none focus:border-amber-400"
+            />
+            <button
+              type="submit"
+              className="bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs py-2 px-3 rounded-xl transition-all shadow-md"
+            >
+              Add Staff Member
+            </button>
+          </form>
+
+          {/* Active Staff List Table / Chips */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-40 overflow-y-auto pr-1">
+            {dbStaffMembers.length === 0 ? (
+              <p className="text-[11px] text-neutral-500 font-mono italic">No staff members registered yet.</p>
+            ) : (
+              dbStaffMembers.map((staff, idx) => (
+                <div key={idx} className="flex items-center justify-between bg-[#121212] px-3 py-2 rounded-xl border border-white/[0.06] text-xs">
+                  <div>
+                    <span className="font-mono font-bold text-white block">{staff.name}</span>
+                    <span className="text-[10px] text-amber-400 font-mono capitalize">{staff.department} {staff.role ? `— ${staff.role}` : ''}</span>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteStaff(staff.name, staff.department)}
+                    className="text-neutral-500 hover:text-red-400 font-mono text-xs px-1.5 py-0.5 rounded"
+                    title="Remove Staff"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
