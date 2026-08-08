@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { supabase } from '../../supabaseClient';
 
 interface RequestItem {
@@ -14,6 +14,13 @@ interface RequestItem {
   created_at: string;
 }
 
+interface StaffMember {
+  id: string;
+  name: string;
+  department: string;
+  role?: string;
+}
+
 export default function StaffDepartmentView() {
   const params = useParams();
   const department = (params?.department as string) || 'general';
@@ -23,42 +30,67 @@ export default function StaffDepartmentView() {
   const [tasks, setTasks] = useState<RequestItem[]>([]);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   
-  // Database Staff Login State
+  // Database Staff Login State & Roster
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [staffName, setStaffName] = useState<string>('');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [pinInput, setPinInput] = useState<string>('');
   const [loginError, setLoginError] = useState<string>('');
   const [loadingLogin, setLoadingLogin] = useState<boolean>(false);
+  const [loadingRoster, setLoadingRoster] = useState<boolean>(true);
 
-  // Check session storage (persists per browser tab session)
+  // Check session storage on load
   useEffect(() => {
     const savedStaff = sessionStorage.getItem(`hotel_db_staff_${department}`);
     if (savedStaff) {
       setStaffName(savedStaff);
       setIsLoggedIn(true);
     }
+    fetchDepartmentStaff();
   }, [department]);
+
+  const fetchDepartmentStaff = async () => {
+    setLoadingRoster(true);
+    try {
+      const { data, error } = await supabase
+        .from('staff_members')
+        .select('*')
+        .ilike('department', `%${department}%`);
+
+      if (data && !error) {
+        setStaffList(data);
+      }
+    } catch (err) {
+      console.error('Error fetching staff roster:', err);
+    } finally {
+      setLoadingRoster(false);
+    }
+  };
 
   const handleDatabaseLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedStaff) return;
     setLoginError('');
     setLoadingLogin(true);
 
     try {
-      // Query Supabase staff table matching department and PIN
+      // Verify the entered PIN matches the selected staff member's record in Supabase
       const { data, error } = await supabase
         .from('staff_members')
-        .select('name')
-        .eq('department', department)
+        .select('*')
+        .eq('id', selectedStaff.id)
         .eq('pin_code', pinInput.trim())
         .single();
 
       if (error || !data) {
-        setLoginError('Invalid PIN code or staff not registered for this station.');
+        setLoginError('Incorrect PIN code for this staff member.');
       } else {
         sessionStorage.setItem(`hotel_db_staff_${department}`, data.name);
         setStaffName(data.name);
         setIsLoggedIn(true);
+        setSelectedStaff(null);
+        setPinInput('');
       }
     } catch (err) {
       setLoginError('Database connection error during login.');
@@ -72,6 +104,7 @@ export default function StaffDepartmentView() {
     setStaffName('');
     setIsLoggedIn(false);
     setPinInput('');
+    setSelectedStaff(null);
   };
 
   const playAlertChime = () => {
@@ -98,7 +131,7 @@ export default function StaffDepartmentView() {
     const { data, error } = await supabase
       .from('requests')
       .select('*')
-      .eq('department', department) // Filter tasks specifically for this department route
+      .eq('department', department)
       .neq('status', 'Completed')
       .order('created_at', { ascending: true });
 
@@ -142,7 +175,7 @@ export default function StaffDepartmentView() {
     fetchTasks();
   };
 
-  // Database Login Screen Modal
+  // Staff Roster & PIN Login Screen
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-[#121212] text-neutral-100 flex items-center justify-center p-6 font-sans antialiased relative">
@@ -154,43 +187,95 @@ export default function StaffDepartmentView() {
               <img src="/logo.png" alt="Hotel Logo" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
             </div>
             <div>
-              <span className="text-[10px] tracking-[0.2em] uppercase font-mono text-amber-400 font-semibold">Secure Database Auth</span>
+              <span className="text-[10px] tracking-[0.2em] uppercase font-mono text-amber-400 font-semibold">Select Staff Roster</span>
               <h2 className="text-xl font-serif text-white">{formattedDeptName} Station</h2>
             </div>
           </div>
 
-          <p className="text-xs text-neutral-400 mb-6 leading-relaxed">
-            Enter your station PIN code to securely log in from any device.
-          </p>
-
-          <form onSubmit={handleDatabaseLogin} className="space-y-4">
+          {!selectedStaff ? (
             <div>
-              <label className="block text-[10px] uppercase font-mono tracking-wider text-neutral-400 mb-2">Staff PIN Code</label>
-              <input
-                type="password"
-                maxLength={6}
-                required
-                placeholder="••••"
-                value={pinInput}
-                onChange={(e) => setPinInput(e.target.value)}
-                className="w-full bg-[#121212] border border-white/[0.1] rounded-xl px-4 py-3 text-center tracking-[0.5em] text-lg text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500/50 transition-all font-mono"
-              />
-            </div>
-
-            {loginError && (
-              <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg font-mono">
-                {loginError}
+              <p className="text-xs text-neutral-400 mb-4 leading-relaxed">
+                Click your name below to sign in with your individual PIN code.
               </p>
-            )}
 
-            <button
-              type="submit"
-              disabled={loadingLogin}
-              className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-xl text-xs uppercase tracking-wider font-mono transition-all shadow-lg active:scale-95 disabled:opacity-50"
-            >
-              {loadingLogin ? 'Verifying...' : 'Authorize Station Login →'}
-            </button>
-          </form>
+              {loadingRoster ? (
+                <div className="py-12 text-center text-xs text-neutral-500 font-mono">Loading staff members...</div>
+              ) : staffList.length === 0 ? (
+                <div className="py-8 text-center text-xs text-amber-400/80 bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 font-mono">
+                  No staff members registered for this department yet. Please check the Manager Dashboard to add staff.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                  {staffList.map((staff) => (
+                    <button
+                      key={staff.id}
+                      onClick={() => { setSelectedStaff(staff); setPinInput(''); setLoginError(''); }}
+                      className="w-full text-left bg-[#121212] hover:bg-white/[0.04] border border-white/[0.06] hover:border-amber-500/40 p-3.5 rounded-xl transition-all flex items-center justify-between group"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-white group-hover:text-amber-400 transition-colors">{staff.name}</p>
+                        {staff.role && <p className="text-[10px] text-neutral-500 uppercase font-mono mt-0.5">{staff.role}</p>}
+                      </div>
+                      <span className="text-neutral-600 group-hover:text-amber-400 text-xs font-mono transition-transform group-hover:translate-x-1">→</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <form onSubmit={handleDatabaseLogin} className="space-y-4">
+              <div className="bg-[#121212] p-3.5 rounded-xl border border-white/[0.06] flex items-center justify-between">
+                <div>
+                  <span className="text-[9px] uppercase font-mono text-neutral-500 tracking-wider">Signing in as</span>
+                  <p className="text-sm font-semibold text-amber-400">{selectedStaff.name}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedStaff(null)}
+                  className="text-[10px] font-mono text-neutral-400 hover:text-white underline"
+                >
+                  Change
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase font-mono tracking-wider text-neutral-400 mb-2">Enter Your Individual PIN Code</label>
+                <input
+                  type="password"
+                  maxLength={6}
+                  required
+                  autoFocus
+                  placeholder="••••"
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value)}
+                  className="w-full bg-[#121212] border border-white/[0.1] rounded-xl px-4 py-3 text-center tracking-[0.5em] text-lg text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500/50 transition-all font-mono"
+                />
+              </div>
+
+              {loginError && (
+                <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg font-mono">
+                  {loginError}
+                </p>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedStaff(null)}
+                  className="flex-1 py-3 bg-white/[0.05] hover:bg-white/[0.1] text-neutral-300 font-semibold rounded-xl text-xs uppercase tracking-wider font-mono transition-all"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={loadingLogin}
+                  className="flex-1 py-3 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-xl text-xs uppercase tracking-wider font-mono transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                >
+                  {loadingLogin ? 'Verifying...' : 'Authorize →'}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     );
