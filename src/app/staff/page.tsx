@@ -1,6 +1,6 @@
 "use client";
 export const dynamic = 'force-dynamic';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -8,6 +8,14 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_KEY || 'placeholder-key';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+interface VoiceMessage {
+  id: string;
+  sender_name: string;
+  recipient_target: string;
+  audio_url: string;
+  created_at: string;
+}
 
 const departments = [
   { 
@@ -78,12 +86,34 @@ export default function StaffHubPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Voice Messages Feed State
+  const [voiceMessages, setVoiceMessages] = useState<VoiceMessage[]>([]);
+
   // Manager Broadcast Control States
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [broadcastTarget, setBroadcastTarget] = useState('all_guests');
   const [broadcastPriority, setBroadcastPriority] = useState('normal');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [broadcastSuccess, setBroadcastSuccess] = useState(false);
+
+  // Fetch voice notes in real time so staff hub displays them live
+  useEffect(() => {
+    const fetchVoiceMessages = async () => {
+      const { data } = await supabase.from('voice_messages').select('*').order('created_at', { ascending: false });
+      if (data) setVoiceMessages(data);
+    };
+
+    fetchVoiceMessages();
+
+    const channel = supabase
+      .channel('staff_hub_voice_messages')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'voice_messages' }, () => fetchVoiceMessages())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +140,6 @@ export default function StaffHubPage() {
         if (!currentDept) return;
 
         if (authStep === 'dept_pin') {
-          // Step 1: Validate Department Station PIN (now 0000)
           if (pin === currentDept.defaultPin) {
             setPin('');
             setAuthStep('staff_pin');
@@ -120,7 +149,6 @@ export default function StaffHubPage() {
             setPin('');
           }
         } else {
-          // Step 2: Validate Individual Staff PIN (0000) against Supabase table for this department
           const { data, error } = await supabase
             .from('staff_members')
             .select('*')
@@ -193,10 +221,10 @@ export default function StaffHubPage() {
     <div className="min-h-screen w-full bg-[#0d0f17] text-neutral-100 p-6 sm:p-12 flex items-center justify-center font-sans antialiased relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/[0.03] blur-[150px] pointer-events-none rounded-full" />
 
-      <div className="max-w-3xl w-full relative z-10">
+      <div className="max-w-3xl w-full relative z-10 space-y-6">
         
         {/* Header Section */}
-        <div className="text-center mb-10">
+        <div className="text-center">
           <div className="w-14 h-14 mx-auto mb-3 flex items-center justify-center drop-shadow-md">
             <img src="/logo.png" alt="Central Yamarech Logo" className="w-full h-full object-contain" />
           </div>
@@ -228,6 +256,31 @@ export default function StaffHubPage() {
             </button>
           </div>
         </div>
+
+        {/* Live Audio Intercom Feed for Staff */}
+        {voiceMessages.length > 0 && (
+          <div className="bg-[#131622] border border-cyan-500/30 p-5 rounded-3xl shadow-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                🎙️ Management Audio Voice Notes Feed
+              </span>
+              <span className="text-[10px] text-neutral-400 font-mono">{voiceMessages.length} active notes</span>
+            </div>
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+              {voiceMessages.map(msg => (
+                <div key={msg.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-[#0b0d14] px-4 py-3 rounded-2xl border border-cyan-500/20 gap-2">
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <span className="text-[10px] font-mono text-amber-400 font-bold whitespace-nowrap">From {msg.sender_name}</span>
+                    <audio controls src={msg.audio_url} className="h-8 w-full sm:w-64" />
+                  </div>
+                  <span className="text-[10px] text-cyan-400 font-mono uppercase bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                    Target: {msg.recipient_target}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Departments Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -343,7 +396,7 @@ export default function StaffHubPage() {
                       rows={3}
                       value={broadcastMessage}
                       onChange={(e) => setBroadcastMessage(e.target.value)}
-                      placeholder="Type official hotel announcement here (e.g. Pool maintenance schedule update...)"
+                      placeholder="Type official hotel announcement here..."
                       className="w-full bg-[#0b0d14] border border-white/10 text-neutral-100 text-xs rounded-xl p-3 focus:outline-none focus:border-amber-500 resize-none"
                     />
                   </div>
@@ -399,11 +452,10 @@ export default function StaffHubPage() {
               
               <p className="text-[11px] text-neutral-400 mb-4 font-light">
                 {activeModal === 'manager' 
-                  ? 'Enter master manager PIN to access all 102 rooms.'
+                  ? 'Enter master manager PIN to access dashboard.'
                   : authStep === 'dept_pin'
                     ? `Enter station PIN (0000) for ${activeModal}.`
-                    : 'Enter your individual staff PIN (0000).'
-                }
+                    : 'Enter your individual staff PIN (0000).'}
               </p>
               
               <form onSubmit={handleLoginSubmit}>
