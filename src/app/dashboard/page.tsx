@@ -259,7 +259,7 @@ export default function ManagerDashboard() {
   return (
     <div className="min-h-screen bg-[#070a14] text-neutral-100 p-4 sm:p-8 font-sans relative overflow-x-hidden selection:bg-amber-500 selection:text-black">
       
-      {/* Ambient background lighting glows (Bluish / Obsidian theme) */}
+      {/* Ambient background lighting glows */}
       <div className="absolute top-0 left-1/4 w-[700px] h-[350px] bg-blue-600/[0.04] blur-[140px] pointer-events-none rounded-full" />
       <div className="absolute top-20 right-1/4 w-[600px] h-[300px] bg-cyan-500/[0.03] blur-[120px] pointer-events-none rounded-full" />
 
@@ -281,7 +281,6 @@ export default function ManagerDashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
-            {/* View Switcher Tabs */}
             <div className="flex bg-[#090d19] p-1 rounded-2xl border border-blue-500/[0.1]">
               <button
                 onClick={() => setActiveTab('operations')}
@@ -439,85 +438,90 @@ export default function ManagerDashboard() {
           </div>
         )}
 
-        {/* TAB 2: STAFF, CRM, BROADCASTS & HANDOVER MANAGEMENT */}
+        {/* TAB 2: UNIFIED MANAGEMENT & BROADCAST SUITE */}
         {activeTab === 'management' && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn">
             
-            {/* Staff Member & Roster Control */}
-            <div className="bg-[#0e1322]/70 backdrop-blur-xl border border-blue-500/[0.1] p-6 rounded-3xl shadow-2xl">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[11px] uppercase font-mono tracking-widest text-amber-400 font-bold">Staff Member & Roster Control</span>
-                <span className="text-[10px] text-neutral-500 font-mono bg-white/[0.03] px-2.5 py-1 rounded-xl border border-white/[0.05]">Supabase Sync Active</span>
-              </div>
+            {/* Left Column: Staff Management & Roster */}
+            <div className="bg-[#0e1322]/70 backdrop-blur-xl border border-blue-500/[0.1] p-6 rounded-3xl shadow-2xl flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] uppercase font-mono tracking-widest text-amber-400 font-bold">Staff Member & Roster Control</span>
+                  <span className="text-[10px] text-neutral-500 font-mono bg-white/[0.03] px-2.5 py-1 rounded-xl border border-white/[0.05]">Supabase Sync Active</span>
+                </div>
 
-              <form onSubmit={handleAddStaff} className="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-4">
-                <input
-                  type="text"
-                  placeholder="Staff Name (e.g. Chef Markos)"
-                  value={newStaffName}
-                  onChange={(e) => setNewStaffName(e.target.value)}
-                  className="bg-[#090d19] text-neutral-200 text-xs font-mono px-3.5 py-3 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none"
-                />
-                <select
-                  value={newStaffDept}
-                  onChange={(e) => setNewStaffDept(e.target.value)}
-                  className="bg-[#090d19] text-amber-400 text-xs font-mono px-3.5 py-3 rounded-2xl border border-amber-500/30 focus:outline-none capitalize cursor-pointer"
-                >
-                  <option value="kitchen">Kitchen</option>
-                  <option value="housekeeping">Housekeeping</option>
-                  <option value="front desk">Front Desk</option>
-                  <option value="maintenance">Maintenance</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Role (e.g. Head Chef)"
-                  value={newStaffRole}
-                  onChange={(e) => setNewStaffRole(e.target.value)}
-                  className="bg-[#090d19] text-neutral-200 text-xs font-mono px-3.5 py-3 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="PIN Code (e.g. 1234)"
-                  value={newStaffPin}
-                  onChange={(e) => setNewStaffPin(e.target.value)}
-                  className="bg-[#090d19] text-amber-400 text-xs font-mono px-3.5 py-3 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs py-3 px-4 rounded-2xl transition-all shadow-md active:scale-95"
-                >
-                  Add Staff Member
-                </button>
-              </form>
+                <form onSubmit={handleAddStaff} className="space-y-3 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Staff Name (e.g. Chef Markos)"
+                      value={newStaffName}
+                      onChange={(e) => setNewStaffName(e.target.value)}
+                      className="bg-[#090d19] text-neutral-200 text-xs font-mono px-3.5 py-3 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none"
+                    />
+                    <select
+                      value={newStaffDept}
+                      onChange={(e) => setNewStaffDept(e.target.value)}
+                      className="bg-[#090d19] text-amber-400 text-xs font-mono px-3.5 py-3 rounded-2xl border border-amber-500/30 focus:outline-none capitalize cursor-pointer"
+                    >
+                      <option value="kitchen">Kitchen</option>
+                      <option value="housekeeping">Housekeeping</option>
+                      <option value="front desk">Front Desk</option>
+                      <option value="maintenance">Maintenance</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Role (e.g. Head Chef)"
+                      value={newStaffRole}
+                      onChange={(e) => setNewStaffRole(e.target.value)}
+                      className="bg-[#090d19] text-neutral-200 text-xs font-mono px-3.5 py-3 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      placeholder="PIN Code (e.g. 1234)"
+                      value={newStaffPin}
+                      onChange={(e) => setNewStaffPin(e.target.value)}
+                      className="bg-[#090d19] text-amber-400 text-xs font-mono px-3.5 py-3 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs py-3 px-4 rounded-2xl transition-all shadow-md active:scale-95"
+                    >
+                      Add Staff
+                    </button>
+                  </div>
+                </form>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-48 overflow-y-auto pr-1">
-                {dbStaffMembers.length === 0 ? (
-                  <p className="text-xs text-neutral-500 font-mono italic p-2">No staff registered yet.</p>
-                ) : (
-                  dbStaffMembers.map((staff, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-[#090d19] px-4 py-3 rounded-2xl border border-blue-500/[0.08] shadow">
-                      <div>
-                        <span className="font-mono font-bold text-white block text-xs">{staff.name}</span>
-                        <span className="text-[10px] text-amber-400 font-mono capitalize">{staff.department} {staff.role ? `• ${staff.role}` : ''}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-52 overflow-y-auto pr-1">
+                  {dbStaffMembers.length === 0 ? (
+                    <p className="text-xs text-neutral-500 font-mono italic p-2">No staff registered yet.</p>
+                  ) : (
+                    dbStaffMembers.map((staff, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-[#090d19] px-4 py-3 rounded-2xl border border-blue-500/[0.08] shadow">
+                        <div>
+                          <span className="font-mono font-bold text-white block text-xs">{staff.name}</span>
+                          <span className="text-[10px] text-amber-400 font-mono capitalize">{staff.department} {staff.role ? `• ${staff.role}` : ''}</span>
+                        </div>
+                        <button onClick={() => handleDeleteStaff(staff.name, staff.department)} className="text-neutral-500 hover:text-red-400 font-mono text-xs p-1">✕</button>
                       </div>
-                      <button onClick={() => handleDeleteStaff(staff.name, staff.department)} className="text-neutral-500 hover:text-red-400 font-mono text-xs p-1">✕</button>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* CRM & Shift Handover Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              
-              <div className="bg-[#0e1322]/70 backdrop-blur-xl border border-blue-500/[0.1] p-6 rounded-3xl shadow-2xl flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[11px] uppercase font-mono tracking-widest text-amber-400 font-bold">Guest Identity & Preference CRM</span>
-                    <span className="text-[10px] text-neutral-500 font-mono bg-white/[0.03] px-2.5 py-1 rounded-xl border border-white/[0.05]">Persistent Memory</span>
-                  </div>
+            {/* Right Column: CRM & Shift Handover Log */}
+            <div className="space-y-6">
+              <div className="bg-[#0e1322]/70 backdrop-blur-xl border border-blue-500/[0.1] p-6 rounded-3xl shadow-2xl">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] uppercase font-mono tracking-widest text-amber-400 font-bold">Guest CRM Memory</span>
+                  <span className="text-[10px] text-neutral-500 font-mono bg-white/[0.03] px-2.5 py-1 rounded-xl border border-white/[0.05]">Persistent</span>
+                </div>
 
-                  <form onSubmit={handleSaveGuestProfile} className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                <form onSubmit={handleSaveGuestProfile} className="space-y-3 mb-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input
                       type="text"
                       placeholder="Room (e.g. 104)"
@@ -532,54 +536,53 @@ export default function ManagerDashboard() {
                       onChange={(e) => setCrmGuestName(e.target.value)}
                       className="bg-[#090d19] text-neutral-200 text-xs font-mono px-3.5 py-3 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none"
                     />
-                    <button type="submit" className="bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs py-3 px-4 rounded-2xl transition-all shadow-md">
-                      Save Profile
+                  </div>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      placeholder="Preferences (e.g., Prefers extra pillows)"
+                      value={crmPreferences}
+                      onChange={(e) => setCrmPreferences(e.target.value)}
+                      className="flex-1 bg-[#090d19] text-neutral-200 text-xs font-mono px-3.5 py-3 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none"
+                    />
+                    <button type="submit" className="bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs py-3 px-5 rounded-2xl transition-all shadow-md">
+                      Save
                     </button>
-                  </form>
-                  <input
-                    type="text"
-                    placeholder="Preferences (e.g., Prefers extra pillows, red wine)"
-                    value={crmPreferences}
-                    onChange={(e) => setCrmPreferences(e.target.value)}
-                    className="w-full bg-[#090d19] text-neutral-200 text-xs font-mono px-3.5 py-3 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none mb-4"
-                  />
-                </div>
+                  </div>
+                </form>
 
-                <div className="space-y-2 max-h-32 overflow-y-auto">
+                <div className="space-y-2 max-h-28 overflow-y-auto">
                   {guestProfiles.length === 0 ? (
                     <p className="text-xs text-neutral-500 font-mono italic">No profiles stored.</p>
                   ) : (
                     guestProfiles.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between bg-[#090d19] px-3.5 py-2.5 rounded-2xl border border-blue-500/[0.08] text-xs">
+                      <div key={p.id} className="flex items-center justify-between bg-[#090d19] px-3.5 py-2 rounded-2xl border border-blue-500/[0.08] text-xs">
                         <span className="font-mono font-bold text-amber-400">Room {p.room} — <span className="text-white font-normal">{p.guest_name || 'Guest'}</span>:</span>
-                        <span className="text-neutral-300 truncate max-w-[200px] italic">"{p.preferences}"</span>
+                        <span className="text-neutral-300 truncate max-w-[180px] italic">"{p.preferences}"</span>
                       </div>
                     ))
                   )}
                 </div>
               </div>
 
-              <div className="bg-[#0e1322]/70 backdrop-blur-xl border border-blue-500/[0.1] p-6 rounded-3xl shadow-2xl flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[11px] uppercase font-mono tracking-widest text-amber-400 font-bold">Shift Notes & Handover Log</span>
-                    <span className="text-[10px] text-neutral-500 font-mono bg-white/[0.03] px-2.5 py-1 rounded-xl border border-white/[0.05]">Auto-saved locally</span>
-                  </div>
-                  <textarea
-                    value={shiftNotes}
-                    onChange={handleShiftNotesChange}
-                    placeholder="Type hand-over notes for incoming shift managers..."
-                    className="w-full bg-[#090d19] text-neutral-200 text-xs font-mono p-4 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none h-36 resize-none leading-relaxed"
-                  />
+              <div className="bg-[#0e1322]/70 backdrop-blur-xl border border-blue-500/[0.1] p-6 rounded-3xl shadow-2xl">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] uppercase font-mono tracking-widest text-amber-400 font-bold">Shift Notes & Handover Log</span>
+                  <span className="text-[10px] text-neutral-500 font-mono bg-white/[0.03] px-2.5 py-1 rounded-xl border border-white/[0.05]">Auto-saved</span>
                 </div>
+                <textarea
+                  value={shiftNotes}
+                  onChange={handleShiftNotesChange}
+                  placeholder="Type hand-over notes for incoming shift managers..."
+                  className="w-full bg-[#090d19] text-neutral-200 text-xs font-mono p-4 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none h-28 resize-none leading-relaxed"
+                />
               </div>
-
             </div>
 
-            {/* Broadcast Command Center */}
-            <div className="bg-[#0e1322]/70 backdrop-blur-xl border border-blue-500/[0.1] p-6 rounded-3xl shadow-2xl">
+            {/* Full-Width Bottom Span: Broadcast Command Center */}
+            <div className="lg:col-span-2 bg-[#0e1322]/70 backdrop-blur-xl border border-blue-500/[0.1] p-6 rounded-3xl shadow-2xl">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                <span className="text-[11px] uppercase font-mono tracking-widest text-amber-400 font-bold">Granular Broadcast Command Center</span>
+                <span className="text-[11px] uppercase font-mono tracking-widest text-amber-400 font-bold">Granular Broadcast & Direct Messaging Center</span>
                 
                 <div className="flex items-center gap-2.5 flex-wrap">
                   {announcementTarget === 'staff' ? (
@@ -635,11 +638,11 @@ export default function ManagerDashboard() {
                   type="text"
                   value={newAnnouncementText}
                   onChange={(e) => setNewAnnouncementText(e.target.value)}
-                  placeholder="Type broadcast announcement message..."
+                  placeholder={selectedStaffName !== 'all' ? `Send private announcement directly to ${selectedStaffName}...` : "Type broadcast announcement message..."}
                   className="flex-1 bg-[#090d19] text-neutral-200 text-xs font-mono px-4 py-3 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none"
                 />
                 <button type="submit" className={`font-mono font-bold text-xs px-6 py-3 rounded-2xl transition-all shadow-md ${announcementTarget === 'guest' ? 'bg-amber-500 hover:bg-amber-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}>
-                  Publish
+                  {selectedStaffName !== 'all' ? 'Send Direct' : 'Publish'}
                 </button>
               </form>
 
@@ -649,9 +652,11 @@ export default function ManagerDashboard() {
                 ) : (
                   announcements.map((ann) => (
                     <div key={ann.id} className="flex items-center justify-between bg-[#090d19] px-4 py-2.5 rounded-2xl border border-blue-500/[0.08]">
-                      <div className="flex items-center gap-3 truncate max-w-[750px]">
+                      <div className="flex items-center gap-3 truncate max-w-[850px]">
                         <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-xl ${ann.target === 'staff' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
-                          {ann.target === 'staff' ? `Staff (${ann.staff_role || 'all'})` : `Guest Room ${ann.target_room || 'All'}`}
+                          {ann.target === 'staff' 
+                            ? (ann.staff_name && ann.staff_name !== 'all' ? `Staff (${ann.staff_name})` : `Staff (${ann.staff_role || 'all'})`) 
+                            : `Guest Room ${ann.target_room || 'All'}`}
                         </span>
                         <span className="text-xs text-neutral-200 truncate font-mono">{ann.message}</span>
                       </div>
