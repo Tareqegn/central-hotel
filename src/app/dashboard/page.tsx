@@ -58,6 +58,10 @@ export default function ManagerDashboard() {
   // Navigation Tab State
   const [activeTab, setActiveTab] = useState<'operations' | 'management'>('operations');
 
+  // Live Chat Reply State
+  const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
+  const [replyText, setReplyText] = useState<string>('');
+
   // New Staff Management Form State
   const [newStaffName, setNewStaffName] = useState<string>('');
   const [newStaffDept, setNewStaffDept] = useState<string>('kitchen');
@@ -132,7 +136,13 @@ export default function ManagerDashboard() {
 
   const fetchData = async () => {
     const { data: reqData } = await supabase.from('requests').select('*').order('created_at', { ascending: false });
-    if (reqData) setRequests(reqData);
+    if (reqData) {
+      setRequests(reqData);
+      if (selectedRequest) {
+        const updatedCurrent = reqData.find(r => r.id === selectedRequest.id);
+        if (updatedCurrent) setSelectedRequest(updatedCurrent);
+      }
+    }
 
     const { data: annData } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
     if (annData) setAnnouncements(annData);
@@ -164,11 +174,32 @@ export default function ManagerDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [soundEnabled]);
+  }, [soundEnabled, selectedRequest]);
 
   const updateStatus = async (id: string, newStatus: string) => {
     await supabase.from('requests').update({ status: newStatus }).eq('id', id);
     fetchData();
+  };
+
+  const handleSendReply = async () => {
+    if (!selectedRequest || !replyText.trim()) return;
+
+    const updatedNote = `${selectedRequest.note} | Staff Reply: ${replyText.trim()}`;
+
+    try {
+      await supabase
+        .from('requests')
+        .update({ 
+          note: updatedNote,
+          status: 'In Progress' 
+        })
+        .eq('id', selectedRequest.id);
+
+      setReplyText('');
+      fetchData();
+    } catch (err) {
+      console.error('Error sending reply:', err);
+    }
   };
 
   const handleAddStaff = async (e: React.FormEvent) => {
@@ -223,7 +254,6 @@ export default function ManagerDashboard() {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const fileName = `voice_${Date.now()}.webm`;
         
-        // Upload to Supabase Storage bucket 'voice-notes'
         const { error: uploadError } = await supabase.storage.from('voice-notes').upload(fileName, audioBlob);
         if (uploadError) {
           alert('Error uploading audio clip: ' + uploadError.message);
@@ -255,7 +285,6 @@ export default function ManagerDashboard() {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-      // Stop media tracks
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
     }
   };
@@ -432,91 +461,168 @@ export default function ManagerDashboard() {
           </div>
         </div>
 
-        {/* TAB 1: LIVE OPERATIONS */}
+        {/* TAB 1: LIVE OPERATIONS & CHAT REPLY */}
         {activeTab === 'operations' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 animate-fadeIn">
-            {columns.map((col) => {
-              const colRequests = filteredRequests.filter(r => r.status === col.statusKey);
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+            
+            {/* Columns Pipeline (2 Columns Width) */}
+            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {columns.map((col) => {
+                const colRequests = filteredRequests.filter(r => r.status === col.statusKey);
 
-              return (
-                <div key={col.statusKey} className="bg-[#0e1322]/70 backdrop-blur-xl rounded-3xl border border-blue-500/[0.1] p-4 flex flex-col min-h-[600px] shadow-2xl">
-                  
-                  <div className={`flex justify-between items-center p-3.5 rounded-2xl border mb-4 ${col.color}`}>
-                    <h2 className="text-xs font-bold uppercase tracking-wider font-mono">{col.title}</h2>
-                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-xl bg-black/40 shadow-inner">
-                      {colRequests.length}
-                    </span>
-                  </div>
+                return (
+                  <div key={col.statusKey} className="bg-[#0e1322]/70 backdrop-blur-xl rounded-3xl border border-blue-500/[0.1] p-4 flex flex-col min-h-[550px] shadow-2xl">
+                    
+                    <div className={`flex justify-between items-center p-3.5 rounded-2xl border mb-4 ${col.color}`}>
+                      <h2 className="text-xs font-bold uppercase tracking-wider font-mono">{col.title}</h2>
+                      <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-xl bg-black/40 shadow-inner">
+                        {colRequests.length}
+                      </span>
+                    </div>
 
-                  <div className="space-y-3.5 flex-1">
-                    {colRequests.length === 0 ? (
-                      <div className="h-44 flex items-center justify-center text-neutral-500 text-xs font-mono border border-dashed border-blue-500/[0.08] rounded-2xl">
-                        No requests
-                      </div>
-                    ) : (
-                      colRequests.map((req) => {
-                        const isDelayed = req.status === 'Pending' && (now - new Date(req.created_at).getTime() > 10 * 60 * 1000);
-                        const guestName = roomToGuestNameMap[req.room];
+                    <div className="space-y-3.5 flex-1 overflow-y-auto max-h-[500px] pr-1">
+                      {colRequests.length === 0 ? (
+                        <div className="h-44 flex items-center justify-center text-neutral-500 text-xs font-mono border border-dashed border-blue-500/[0.08] rounded-2xl">
+                          No requests
+                        </div>
+                      ) : (
+                        colRequests.map((req) => {
+                          const isDelayed = req.status === 'Pending' && (now - new Date(req.created_at).getTime() > 10 * 60 * 1000);
+                          const guestName = roomToGuestNameMap[req.room];
+                          const isSelected = selectedRequest?.id === req.id;
 
-                        return (
-                          <div 
-                            key={req.id} 
-                            className={`p-4 rounded-2xl border flex flex-col justify-between shadow-lg transition-all ${
-                              isDelayed 
-                                ? 'bg-red-950/30 border-red-500/60 shadow-red-500/10' 
-                                : req.status === 'Pending' 
-                                ? 'bg-[#141b2f] border-amber-500/40' 
-                                : 'bg-[#090d19]/80 border-blue-500/[0.08] hover:border-amber-500/30'
-                            }`}
-                          >
-                            <div>
-                              <div className="flex justify-between items-center mb-2.5">
-                                <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 text-xs font-mono font-bold border border-amber-500/20 shadow-sm">
-                                  Room {req.room} {guestName ? `(${guestName})` : ''}
-                                </span>
-                                {isDelayed ? (
-                                  <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/40 px-2 py-0.5 rounded-full font-mono font-bold animate-pulse">
-                                    OVERDUE
+                          return (
+                            <div 
+                              key={req.id} 
+                              onClick={() => setSelectedRequest(req)}
+                              className={`p-4 rounded-2xl border flex flex-col justify-between shadow-lg transition-all cursor-pointer ${
+                                isSelected 
+                                  ? 'bg-amber-500/15 border-amber-500 shadow-amber-500/20' 
+                                  : isDelayed 
+                                  ? 'bg-red-950/30 border-red-500/60 shadow-red-500/10' 
+                                  : req.status === 'Pending' 
+                                  ? 'bg-[#141b2f] border-amber-500/40' 
+                                  : 'bg-[#090d19]/80 border-blue-500/[0.08] hover:border-amber-500/30'
+                              }`}
+                            >
+                              <div>
+                                <div className="flex justify-between items-center mb-2.5">
+                                  <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 text-xs font-mono font-bold border border-amber-500/20 shadow-sm">
+                                    Room {req.room} {guestName ? `(${guestName})` : ''}
                                   </span>
-                                ) : (
-                                  <span className="text-[10px] text-neutral-400 font-mono">
-                                    {new Date(req.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                  </span>
+                                  {isDelayed ? (
+                                    <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/40 px-2 py-0.5 rounded-full font-mono font-bold animate-pulse">
+                                      OVERDUE
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] text-neutral-400 font-mono">
+                                      {new Date(req.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <h3 className="text-xs font-semibold text-white mb-1.5">{req.category}</h3>
+                                <p className="text-[11px] text-neutral-300 mb-3 bg-[#0a0f1d]/80 p-2.5 rounded-xl border border-blue-500/[0.05] leading-relaxed">
+                                  {req.note}
+                                </p>
+
+                                {(req.rating || req.feedback) && (
+                                  <div className="mb-3 bg-amber-500/10 border-l-2 border-amber-400 p-2.5 rounded-r-xl">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-[9px] uppercase font-mono tracking-widest text-amber-400 font-bold">Feedback</span>
+                                      {req.rating && <span className="bg-amber-400/20 text-amber-300 text-[9px] px-1.5 py-0.5 rounded font-mono font-bold">{req.rating}★</span>}
+                                    </div>
+                                    {req.feedback && <p className="text-[11px] text-neutral-100 italic">"{req.feedback}"</p>}
+                                  </div>
                                 )}
                               </div>
 
-                              <h3 className="text-xs font-semibold text-white mb-1.5">{req.category}</h3>
-                              <p className="text-[11px] text-neutral-300 mb-3 bg-[#0a0f1d]/80 p-2.5 rounded-xl border border-blue-500/[0.05] leading-relaxed">
-                                {req.note}
-                              </p>
+                              <div className="grid grid-cols-2 gap-1.5 pt-3 border-t border-blue-500/[0.08]" onClick={(e) => e.stopPropagation()}>
+                                {col.statusKey !== 'Pending' && <button onClick={() => updateStatus(req.id, 'Pending')} className="py-1.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-[10px] text-neutral-300 font-mono transition-all">Pending</button>}
+                                {col.statusKey !== 'In Progress' && <button onClick={() => updateStatus(req.id, 'In Progress')} className="py-1.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-[10px] text-neutral-300 font-mono transition-all">Progress</button>}
+                                {col.statusKey !== 'On the Way' && <button onClick={() => updateStatus(req.id, 'On the Way')} className="py-1.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-[10px] text-neutral-300 font-mono transition-all">On Way</button>}
+                                {col.statusKey !== 'Completed' && <button onClick={() => updateStatus(req.id, 'Completed')} className="py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-[10px] font-bold font-mono col-span-2 transition-all shadow-sm">Mark Done</button>}
+                              </div>
 
-                              {(req.rating || req.feedback) && (
-                                <div className="mb-3 bg-amber-500/10 border-l-2 border-amber-400 p-2.5 rounded-r-xl">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="text-[9px] uppercase font-mono tracking-widest text-amber-400 font-bold">Feedback</span>
-                                    {req.rating && <span className="bg-amber-400/20 text-amber-300 text-[9px] px-1.5 py-0.5 rounded font-mono font-bold">{req.rating}★</span>}
-                                  </div>
-                                  {req.feedback && <p className="text-[11px] text-neutral-100 italic">"{req.feedback}"</p>}
-                                </div>
-                              )}
                             </div>
+                          );
+                        })
+                      )}
+                    </div>
 
-                            <div className="grid grid-cols-2 gap-1.5 pt-3 border-t border-blue-500/[0.08]">
-                              {col.statusKey !== 'Pending' && <button onClick={() => updateStatus(req.id, 'Pending')} className="py-1.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-[10px] text-neutral-300 font-mono transition-all">Pending</button>}
-                              {col.statusKey !== 'In Progress' && <button onClick={() => updateStatus(req.id, 'In Progress')} className="py-1.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-[10px] text-neutral-300 font-mono transition-all">Progress</button>}
-                              {col.statusKey !== 'On the Way' && <button onClick={() => updateStatus(req.id, 'On the Way')} className="py-1.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-[10px] text-neutral-300 font-mono transition-all">On Way</button>}
-                              {col.statusKey !== 'Completed' && <button onClick={() => updateStatus(req.id, 'Completed')} className="py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-[10px] font-bold font-mono col-span-2 transition-all shadow-sm">Mark Done</button>}
-                            </div>
+                  </div>
+                );
+              })}
+            </div>
 
-                          </div>
-                        );
-                      })
-                    )}
+            {/* Right Column: Live Chat & Direct Reply Panel */}
+            <div className="bg-[#0e1322]/70 backdrop-blur-xl border border-blue-500/[0.1] p-6 rounded-3xl shadow-2xl flex flex-col h-[600px]">
+              <div className="flex items-center justify-between pb-4 border-b border-blue-500/[0.1] mb-4">
+                <span className="text-[11px] uppercase font-mono tracking-widest text-amber-400 font-bold">💬 Live Guest Chat & Reply</span>
+                <span className="text-[10px] text-neutral-500 font-mono">Real-time sync</span>
+              </div>
+
+              {selectedRequest ? (
+                <div className="flex-1 flex flex-col justify-between overflow-hidden">
+                  <div className="space-y-4 overflow-y-auto pr-2 flex-1">
+                    <div className="flex justify-between items-center bg-[#090d19] p-3 rounded-2xl border border-amber-500/30">
+                      <div>
+                        <span className="text-xs font-mono font-bold text-amber-400 block">Room {selectedRequest.room}</span>
+                        <span className="text-[11px] text-white">{selectedRequest.category}</span>
+                      </div>
+                      <span className="text-[10px] uppercase px-2 py-0.5 rounded font-mono bg-amber-500/20 text-amber-300">
+                        {selectedRequest.status}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-[#090d19] border border-blue-500/[0.08]">
+                      <span className="text-[9px] uppercase font-mono text-neutral-400 block mb-1">Original Request Content</span>
+                      <p className="text-xs text-neutral-200 leading-relaxed">{selectedRequest.note}</p>
+                      <span className="text-[9px] text-neutral-500 mt-2 block font-mono">
+                        {new Date(selectedRequest.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => updateStatus(selectedRequest.id, 'In Progress')}
+                        className="flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-white/[0.04] hover:bg-white/[0.08] text-amber-400 border border-white/10 transition-all font-mono"
+                      >
+                        Mark Progress
+                      </button>
+                      <button 
+                        onClick={() => updateStatus(selectedRequest.id, 'Completed')}
+                        className="flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition-all font-mono"
+                      >
+                        Mark Completed
+                      </button>
+                    </div>
                   </div>
 
+                  <div className="pt-4 border-t border-blue-500/[0.1] mt-4 flex items-center gap-2">
+                    <input 
+                      type="text"
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendReply()}
+                      placeholder="Type reply to guest room..."
+                      className="flex-1 bg-[#090d19] text-xs font-mono text-white focus:outline-none px-3.5 py-3 rounded-xl border border-blue-500/[0.1] focus:border-amber-400"
+                    />
+                    <button 
+                      onClick={handleSendReply}
+                      className="px-4 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl text-xs uppercase tracking-wider font-mono shadow-md transition-all"
+                    >
+                      Send
+                    </button>
+                  </div>
                 </div>
-              );
-            })}
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-neutral-500 font-mono text-xs">
+                  <p>Select any ticket card from the live pipeline to open the chat reply interface.</p>
+                </div>
+              )}
+            </div>
+
           </div>
         )}
 

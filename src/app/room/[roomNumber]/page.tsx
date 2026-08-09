@@ -1,4 +1,4 @@
-// Front Desk Check-In & Smart Guest Memory Portal with SMS & Session Tokens[cite: 3]
+// Front Desk Check-In & Smart Guest Memory Portal with SMS & Session Tokens
 "use client";
 
 import React, { Suspense, useState, useEffect } from 'react';
@@ -113,7 +113,7 @@ const Icons = {
       case 'avocado': return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18m9-9H3" /></svg>;
       case 'sandwich': return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>;
       case 'burger': return <svg className={baseClass} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" /></svg>;
-      default: return <span className="text-lg">🍽️</span>;
+      default: return <span className="text-lg">???</span>;
     }
   }
 };
@@ -174,9 +174,9 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
   },
   am: {
     welcome: "እንኳን ደህና መጡ",
-    suiteLocked: "ክፍል ተቆልፏል",
-    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት ዴስክ መቀበያ ጋር ያረጋግጡ",
-    verifying: "ክፍለ-ጊዜውን በመፈተሽ ላይ...",
+    suiteLocked: "ክፍል ተዘግቷል",
+    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት ዴስክ መቀበያ ጋር ይፈትሹ",
+    verifying: "ክፍለ-ጊዜ በመፈተሽ ላይ...",
     servicesTab: "አገልግሎቶች",
     menuTab: "የምግብ ዝርዝር",
     folioTab: "ሂሳብ",
@@ -185,44 +185,44 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     laundryService: "የልብስ ማጠቢያ",
     taxiTransport: "ታክሲ",
     spaBooking: "ስፓ",
-    itemsSelected: "ምርቶች",
+    itemsSelected: "እቃዎች",
     confirmOrder: "ትዕዛዝ አረጋግጥ",
     orderStatus: "ሁኔታ",
-    viewProgress: "ሁኔታውን ተመልከት",
+    viewProgress: "ሂደት ይመልከቱ",
     close: "ዝጋ",
     submit: "ላክ",
-    specialInstructions: "ልዩ ማስታወሻዎች",
-    placeholderNotes: "ለምሳሌ ፡ አለርጂ, ተጨማሪ ፎጣዎች...",
+    specialInstructions: "ለየት ያሉ ማስታወሻዎች",
+    placeholderNotes: "ለምሳሌ የአለርጂ ሁኔታ, ተጨማሪ ፎጣዎች...",
     departureTime: "የመነሻ ሰዓት",
     itemBreakdown: "የእቃዎች ዝርዝር",
-    waiterAlert: "አስተናጋጅ ወደ ክፍልዎ እንዲመጣ ይፈልጋሉ?",
-    pending: "ጥያቄው ደርሷል",
+    waiterAlert: "አስተናጋጅ ወዲያውኑ ወደ ክፍሎ ይምጣ?",
+    pending: "መጠባበቂያ ላይ",
     inProgress: "በሂደት ላይ",
     completed: "ተጠናቋል",
     subtotal: "ንዑስ ድምር",
     serviceTax: "የአገልግሎት ክፍያ (10%)",
-    total: "አጠቃላይ ድምር",
-    clearCart: "ካርት አጽዳ",
-    viewCartAndPay: "ካርት ይመልከቱ",
+    total: "ጠቅላላ ድምር",
+    clearCart: "ጋሪ ባዶ አድርግ",
+    viewCartAndPay: "ጋሪ ማየት እና ማዘዝ",
     estimatedArrival: "ግምታዊ የመድረሻ ሰዓት",
-    myFolioTitle: "የክፍልዎ ሂሳብ",
-    myFolioSubtitle: "እስካሁን ያዘዟቸው አገልግሎቶች ዝርዝር",
+    myFolioTitle: "የእርስዎ ሂሳብ",
+    myFolioSubtitle: "የሁሉም ቆይታ ትዕዛዞች መግለጫ",
     noChargesYet: " እስካሁን የተመዘገበ ክፍያ የለም",
-    stayTotal: "አጠቃላይ የቆይታ ክፍያ",
-    rateServicePrompt: "አገልግሎቱን ይገምግሙ:",
-    feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይጻፉ...",
+    stayTotal: "ጠቅላላ የቆይታ ክፍያ",
+    rateServicePrompt: "የአገልግሎት አሰጣጡን ይገምግሙ:",
+    feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይስጡ...",
     submitFeedback: "አስተያየት ላክ",
-    feedbackThankYou: "ስለ አስተያየትዎ እናመሰግናለን!",
+    feedbackThankYou: "ለሰጡን አስተያየት እናመሰግናለን!",
     laundryItems: { 
       shirts: { name: "ሸሚዝ", price: 50 }, 
       pants: { name: "ሱሪ", price: 70 }, 
       others: { name: "ሌሎች እቃዎች", price: 40 } 
     },
     menu: [
-      { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "ዳቦ, የወቅቱ ፍራፍሬ እና ቡና" },
+      { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "ዳቦ, ወቅታዊ ፍራፍሬ እና ቡና" },
       { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "ዳቦ እና የተከተፈ አቮካዶ" },
-      { id: 3, name: "ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከ ድንች ጥብስ ጋር" },
-      { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የስጋ በርገር ከ አይብ እና ድንች ጥብስ ጋር" },
+      { id: 3, name: "ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከድንች ጥብስ ጋር" },
+      { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የስጋ በርገር ከቺዝ እና ድንች ጥብስ ጋር" },
     ]
   }
 };
@@ -251,7 +251,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
 
-  // Live Announcement Banner State
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [liveBroadcast, setLiveBroadcast] = useState<{
     message: string;
