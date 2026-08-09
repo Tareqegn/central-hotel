@@ -58,6 +58,7 @@ export default function ManagerDashboard() {
   const [newAnnouncementText, setNewAnnouncementText] = useState<string>('');
   const [announcementTarget, setAnnouncementTarget] = useState<'guest' | 'staff'>('guest');
   const [selectedStaffRole, setSelectedStaffRole] = useState<string>('all');
+  const [selectedBroadcastDept, setSelectedBroadcastDept] = useState<string>('all');
   const [selectedStaffName, setSelectedStaffName] = useState<string>('all');
   const [guestAnnouncementRoom, setGuestAnnouncementRoom] = useState<string>('all');
 
@@ -179,7 +180,7 @@ export default function ManagerDashboard() {
       message: newAnnouncementText.trim(),
       is_active: true,
       target: announcementTarget,
-      staff_role: announcementTarget === 'staff' ? selectedStaffRole : 'all',
+      staff_role: announcementTarget === 'staff' ? selectedBroadcastDept : 'all',
       staff_name: announcementTarget === 'staff' ? selectedStaffName : 'all',
       target_room: announcementTarget === 'guest' ? guestAnnouncementRoom : 'all'
     }]);
@@ -213,10 +214,10 @@ export default function ManagerDashboard() {
 
   const availableDepartments = Array.from(new Set(dbStaffMembers.map(s => s.department))).sort();
 
-  // Filter staff members based on department dropdown selection for the individual picker
+  // Filter staff members based on the selected broadcast department dropdown
   const filteredStaffForDropdown = dbStaffMembers.filter(s => {
-    if (selectedStaffRole === 'all') return true;
-    return s.department.toLowerCase() === selectedStaffRole.toLowerCase();
+    if (selectedBroadcastDept === 'all') return true;
+    return s.department.toLowerCase() === selectedBroadcastDept.toLowerCase();
   });
 
   const activeRoomsSet = new Set<string>();
@@ -594,8 +595,11 @@ export default function ManagerDashboard() {
                   {announcementTarget === 'staff' ? (
                     <>
                       <select
-                        value={selectedStaffRole}
-                        onChange={(e) => { setSelectedStaffRole(e.target.value); setSelectedStaffName('all'); }}
+                        value={selectedBroadcastDept}
+                        onChange={(e) => { 
+                          setSelectedBroadcastDept(e.target.value); 
+                          setSelectedStaffName('all'); 
+                        }}
                         className="bg-[#090d19] text-cyan-400 font-mono text-xs px-3.5 py-2 rounded-xl border border-cyan-500/30 focus:outline-none capitalize cursor-pointer"
                       >
                         <option value="all">All Departments</option>

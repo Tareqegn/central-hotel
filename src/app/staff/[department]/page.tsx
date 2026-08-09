@@ -21,6 +21,16 @@ interface StaffMember {
   role?: string;
 }
 
+interface Announcement {
+  id: string;
+  message: string;
+  is_active: boolean;
+  target: 'guest' | 'staff';
+  staff_role?: string;
+  staff_name?: string;
+  created_at: string;
+}
+
 export default function StaffDepartmentView() {
   const params = useParams();
   const department = (params?.department as string) || 'general';
@@ -28,6 +38,7 @@ export default function StaffDepartmentView() {
   const formattedDeptName = department.charAt(0).toUpperCase() + department.slice(1);
 
   const [tasks, setTasks] = useState<RequestItem[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   
   // Database Staff Login State & Roster
@@ -75,7 +86,6 @@ export default function StaffDepartmentView() {
     setLoadingLogin(true);
 
     try {
-      // Verify the entered PIN matches the selected staff member's record in Supabase
       const { data, error } = await supabase
         .from('staff_members')
         .select('*')
@@ -110,7 +120,7 @@ export default function StaffDepartmentView() {
   const playAlertChime = () => {
     if (!soundEnabled) return;
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioContext) return;
       const ctx = new AudioContext();
       [587.33, 880].forEach((freq, index) => {
@@ -127,36 +137,60 @@ export default function StaffDepartmentView() {
     } catch (e) {}
   };
 
-  const fetchTasks = async () => {
-    const { data, error } = await supabase
+  const fetchTasksAndAnnouncements = async () => {
+    // Fetch active tasks
+    const { data: taskData, error: taskError } = await supabase
       .from('requests')
       .select('*')
       .eq('department', department)
       .neq('status', 'Completed')
       .order('created_at', { ascending: true });
 
-    if (data && !error) {
-      setTasks(data);
+    if (taskData && !taskError) {
+      setTasks(taskData);
+    }
+
+    // Fetch active announcements targeted to staff
+    const { data: annData, error: annError } = await supabase
+      .from('announcements')
+      .select('*')
+      .eq('target', 'staff')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    if (annData && !annError) {
+      // Filter relevant announcements for this specific workstation & logged-in staff member
+      const relevant = annData.filter((ann) => {
+        const matchesRole = !ann.staff_role || ann.staff_role === 'all' || ann.staff_role.toLowerCase() === department.toLowerCase();
+        const matchesName = !ann.staff_name || ann.staff_name === 'all' || ann.staff_name.toLowerCase() === staffName.toLowerCase();
+        return matchesRole && matchesName;
+      });
+      setAnnouncements(relevant);
     }
   };
 
   useEffect(() => {
     if (!isLoggedIn) return;
-    fetchTasks();
+    fetchTasksAndAnnouncements();
+
     const channel = supabase
       .channel(`staff_${department}_realtime`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, (payload: any) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, (payload: { eventType: string; new?: { department?: string } }) => {
         if (payload.eventType === 'INSERT' && payload.new?.department === department) {
           playAlertChime();
         }
-        fetchTasks();
+        fetchTasksAndAnnouncements();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+        playAlertChime();
+        fetchTasksAndAnnouncements();
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [department, soundEnabled, isLoggedIn]);
+  }, [department, soundEnabled, isLoggedIn, staffName]);
 
   const advanceStatus = async (id: string, currentStatus: string) => {
     let nextStatus = 'In Progress';
@@ -172,7 +206,7 @@ export default function StaffDepartmentView() {
       })
       .eq('id', id);
     
-    fetchTasks();
+    fetchTasksAndAnnouncements();
   };
 
   // Staff Roster & PIN Login Screen
@@ -288,7 +322,7 @@ export default function StaffDepartmentView() {
       <div className="max-w-3xl mx-auto relative z-10">
         
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-white/[0.08] pb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-white/[0.08] pb-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-[#18181b] border border-white/[0.08] flex items-center justify-center p-2 shadow-md overflow-hidden">
               <img src="/logo.png" alt="Hotel Logo" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
@@ -329,6 +363,28 @@ export default function StaffDepartmentView() {
             </button>
           </div>
         </div>
+
+        {/* Live Announcements & Direct Messages Banner */}
+        {announcements.length > 0 && (
+          <div className="mb-6 space-y-3">
+            {announcements.map((ann) => (
+              <div key={ann.id} className="bg-amber-500/10 border border-amber-500/40 p-4 rounded-2xl shadow-xl flex items-start gap-3">
+                <span className="text-xl">📢</span>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400">
+                      {ann.staff_name && ann.staff_name !== 'all' ? `Direct Message for ${ann.staff_name}` : `Broadcast to ${formattedDeptName}`}
+                    </span>
+                    <span className="text-[10px] font-mono text-neutral-400">
+                      {new Date(ann.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <p className="text-xs text-white font-medium leading-relaxed">{ann.message}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Task List */}
         <div className="space-y-4">
