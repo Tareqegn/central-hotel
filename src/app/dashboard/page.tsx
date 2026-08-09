@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 
 interface RequestItem {
@@ -40,11 +40,20 @@ interface StaffMember {
   pin_code?: string;
 }
 
+interface VoiceMessage {
+  id: string;
+  sender_name: string;
+  recipient_target: string;
+  audio_url: string;
+  created_at: string;
+}
+
 export default function ManagerDashboard() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [guestProfiles, setGuestProfiles] = useState<GuestProfile[]>([]);
   const [dbStaffMembers, setDbStaffMembers] = useState<StaffMember[]>([]);
+  const [voiceMessages, setVoiceMessages] = useState<VoiceMessage[]>([]);
   
   // Navigation Tab State
   const [activeTab, setActiveTab] = useState<'operations' | 'management'>('operations');
@@ -63,6 +72,11 @@ export default function ManagerDashboard() {
 
   const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Voice Recording State
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   // Guest CRM Note State
   const [crmRoom, setCrmRoom] = useState<string>('');
@@ -128,6 +142,9 @@ export default function ManagerDashboard() {
 
     const { data: staffData } = await supabase.from('staff_members').select('name, department, role, pin_code');
     if (staffData) setDbStaffMembers(staffData);
+
+    const { data: voiceData } = await supabase.from('voice_messages').select('*').order('created_at', { ascending: false });
+    if (voiceData) setVoiceMessages(voiceData);
   };
 
   useEffect(() => {
@@ -141,6 +158,7 @@ export default function ManagerDashboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_profiles' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_members' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'voice_messages' }, () => fetchData())
       .subscribe();
 
     return () => {
@@ -187,6 +205,66 @@ export default function ManagerDashboard() {
     fetchData();
   };
 
+  // Voice Recording Handlers
+  const startRecording = async () => {
+    audioChunksRef.current = [];
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const fileName = `voice_${Date.now()}.webm`;
+        
+        // Upload to Supabase Storage bucket 'voice-notes'
+        const { error: uploadError } = await supabase.storage.from('voice-notes').upload(fileName, audioBlob);
+        if (uploadError) {
+          alert('Error uploading audio clip: ' + uploadError.message);
+          return;
+        }
+
+        const { data: publicUrlData } = supabase.storage.from('voice-notes').getPublicUrl(fileName);
+        const audioUrl = publicUrlData.publicUrl;
+
+        const recipientTarget = selectedStaffName !== 'all' ? selectedStaffName : selectedBroadcastDept;
+
+        await supabase.from('voice_messages').insert([{
+          sender_name: 'Manager Hub',
+          recipient_target: recipientTarget,
+          audio_url: audioUrl
+        }]);
+
+        fetchData();
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      alert('Microphone access denied or not available.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      // Stop media tracks
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  const deleteVoiceMessage = async (id: string) => {
+    await supabase.from('voice_messages').delete().eq('id', id);
+    fetchData();
+  };
+
   const handleSaveGuestProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!crmRoom.trim() || !crmPreferences.trim()) return;
@@ -212,8 +290,6 @@ export default function ManagerDashboard() {
   };
 
   const availableDepartments = Array.from(new Set(dbStaffMembers.map(s => s.department))).sort();
-
-  // Filter staff members based on the selected broadcast department dropdown (case-insensitive and trimmed)
   const filteredStaffForDropdown = dbStaffMembers.filter(s => {
     if (selectedBroadcastDept === 'all') return true;
     return s.department?.trim().toLowerCase() === selectedBroadcastDept?.trim().toLowerCase();
@@ -585,98 +661,152 @@ export default function ManagerDashboard() {
               </div>
             </div>
 
-            {/* Full-Width Bottom Span: Broadcast Command Center */}
-            <div className="lg:col-span-2 bg-[#0e1322]/70 backdrop-blur-xl border border-blue-500/[0.1] p-6 rounded-3xl shadow-2xl">
-              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                <span className="text-[11px] uppercase font-mono tracking-widest text-amber-400 font-bold">Granular Broadcast & Direct Messaging Center</span>
-                
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  {announcementTarget === 'staff' ? (
-                    <>
-                      <select
-                        value={selectedBroadcastDept}
-                        onChange={(e) => { 
-                          setSelectedBroadcastDept(e.target.value); 
-                          setSelectedStaffName('all'); 
-                        }}
-                        className="bg-[#090d19] text-cyan-400 font-mono text-xs px-3.5 py-2 rounded-xl border border-cyan-500/30 focus:outline-none capitalize cursor-pointer"
-                      >
-                        <option value="all">All Departments</option>
-                        <option value="kitchen">Kitchen</option>
-                        <option value="housekeeping">Housekeeping</option>
-                        <option value="front desk">Front Desk</option>
-                        <option value="maintenance">Maintenance</option>
-                        {availableDepartments.filter(d => !['kitchen', 'housekeeping', 'front desk', 'maintenance'].includes(d.toLowerCase())).map((dept) => (
-                          <option key={dept} value={dept}>{dept}</option>
-                        ))}
-                      </select>
+            {/* Full-Width Bottom Span: Broadcast & Walkie-Talkie Center */}
+            <div className="lg:col-span-2 bg-[#0e1322]/70 backdrop-blur-xl border border-blue-500/[0.1] p-6 rounded-3xl shadow-2xl space-y-6">
+              
+              {/* Text Announcements Section */}
+              <div>
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                  <span className="text-[11px] uppercase font-mono tracking-widest text-amber-400 font-bold">Granular Broadcast & Direct Messaging Center</span>
+                  
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    {announcementTarget === 'staff' ? (
+                      <>
+                        <select
+                          value={selectedBroadcastDept}
+                          onChange={(e) => { 
+                            setSelectedBroadcastDept(e.target.value); 
+                            setSelectedStaffName('all'); 
+                          }}
+                          className="bg-[#090d19] text-cyan-400 font-mono text-xs px-3.5 py-2 rounded-xl border border-cyan-500/30 focus:outline-none capitalize cursor-pointer"
+                        >
+                          <option value="all">All Departments</option>
+                          <option value="kitchen">Kitchen</option>
+                          <option value="housekeeping">Housekeeping</option>
+                          <option value="front desk">Front Desk</option>
+                          <option value="maintenance">Maintenance</option>
+                          {availableDepartments.filter(d => !['kitchen', 'housekeeping', 'front desk', 'maintenance'].includes(d.toLowerCase())).map((dept) => (
+                            <option key={dept} value={dept}>{dept}</option>
+                          ))}
+                        </select>
 
+                        <select
+                          value={selectedStaffName}
+                          onChange={(e) => setSelectedStaffName(e.target.value)}
+                          className="bg-[#090d19] text-emerald-400 font-mono text-xs px-3.5 py-2 rounded-xl border border-emerald-500/30 focus:outline-none cursor-pointer"
+                        >
+                          <option value="all">All Staff in Dept ({filteredStaffForDropdown.length} available)</option>
+                          {filteredStaffForDropdown.map((s) => (
+                            <option key={s.name} value={s.name}>{s.name} {s.role ? `(${s.role})` : ''}</option>
+                          ))}
+                        </select>
+                      </>
+                    ) : (
                       <select
-                        value={selectedStaffName}
-                        onChange={(e) => setSelectedStaffName(e.target.value)}
-                        className="bg-[#090d19] text-emerald-400 font-mono text-xs px-3.5 py-2 rounded-xl border border-emerald-500/30 focus:outline-none cursor-pointer"
+                        value={guestAnnouncementRoom}
+                        onChange={(e) => setGuestAnnouncementRoom(e.target.value)}
+                        className="bg-[#090d19] text-amber-400 font-mono text-xs px-3.5 py-2 rounded-xl border border-amber-500/30 focus:outline-none cursor-pointer"
                       >
-                        <option value="all">All Staff in Dept ({filteredStaffForDropdown.length} available)</option>
-                        {filteredStaffForDropdown.map((s) => (
-                          <option key={s.name} value={s.name}>{s.name} {s.role ? `(${s.role})` : ''}</option>
-                        ))}
+                        <option value="all">All Guests (Lobby / General)</option>
+                        {uniqueRooms.map((roomNum) => <option key={roomNum} value={roomNum}>Room {roomNum}</option>)}
                       </select>
-                    </>
-                  ) : (
-                    <select
-                      value={guestAnnouncementRoom}
-                      onChange={(e) => setGuestAnnouncementRoom(e.target.value)}
-                      className="bg-[#090d19] text-amber-400 font-mono text-xs px-3.5 py-2 rounded-xl border border-amber-500/30 focus:outline-none cursor-pointer"
-                    >
-                      <option value="all">All Guests (Lobby / General)</option>
-                      {uniqueRooms.map((roomNum) => <option key={roomNum} value={roomNum}>Room {roomNum}</option>)}
-                    </select>
-                  )}
+                    )}
 
-                  <div className="flex bg-[#090d19] p-1 rounded-xl border border-blue-500/[0.1]">
-                    <button type="button" onClick={() => setAnnouncementTarget('guest')} className={`px-3 py-1.5 text-xs font-mono rounded-lg transition-all ${announcementTarget === 'guest' ? 'bg-amber-500 text-black font-bold' : 'text-neutral-400'}`}>Guests</button>
-                    <button type="button" onClick={() => setAnnouncementTarget('staff')} className={`px-3 py-1.5 text-xs font-mono rounded-lg transition-all ${announcementTarget === 'staff' ? 'bg-blue-600 text-white font-bold' : 'text-neutral-400'}`}>Staff</button>
+                    <div className="flex bg-[#090d19] p-1 rounded-xl border border-blue-500/[0.1]">
+                      <button type="button" onClick={() => setAnnouncementTarget('guest')} className={`px-3 py-1.5 text-xs font-mono rounded-lg transition-all ${announcementTarget === 'guest' ? 'bg-amber-500 text-black font-bold' : 'text-neutral-400'}`}>Guests</button>
+                      <button type="button" onClick={() => setAnnouncementTarget('staff')} className={`px-3 py-1.5 text-xs font-mono rounded-lg transition-all ${announcementTarget === 'staff' ? 'bg-blue-600 text-white font-bold' : 'text-neutral-400'}`}>Staff</button>
+                    </div>
                   </div>
+                </div>
+
+                <form onSubmit={handlePublishAnnouncement} className="flex gap-3 mb-4">
+                  <input
+                    type="text"
+                    value={newAnnouncementText}
+                    onChange={(e) => setNewAnnouncementText(e.target.value)}
+                    placeholder={selectedStaffName !== 'all' ? `Send private message directly to ${selectedStaffName}...` : "Type broadcast announcement message..."}
+                    className="flex-1 bg-[#090d19] text-neutral-200 text-xs font-mono px-4 py-3 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none"
+                  />
+                  <button type="submit" className={`font-mono font-bold text-xs px-6 py-3 rounded-2xl transition-all shadow-md ${announcementTarget === 'guest' ? 'bg-amber-500 hover:bg-amber-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}>
+                    {selectedStaffName !== 'all' ? 'Send Direct' : 'Publish'}
+                  </button>
+                </form>
+
+                <div className="space-y-2 max-h-36 overflow-y-auto">
+                  {announcements.length === 0 ? (
+                    <p className="text-xs text-neutral-500 font-mono italic">No broadcasts created.</p>
+                  ) : (
+                    announcements.map((ann) => (
+                      <div key={ann.id} className="flex items-center justify-between bg-[#090d19] px-4 py-2.5 rounded-2xl border border-blue-500/[0.08]">
+                        <div className="flex items-center gap-3 truncate max-w-[850px]">
+                          <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-xl ${ann.target === 'staff' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
+                            {ann.target === 'staff' 
+                              ? (ann.staff_name && ann.staff_name !== 'all' ? `Staff (${ann.staff_name})` : `Staff (${ann.staff_role || 'all'})`) 
+                              : `Guest Room ${ann.target_room || 'All'}`}
+                          </span>
+                          <span className="text-xs text-neutral-200 truncate font-mono">{ann.message}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => toggleAnnouncementStatus(ann.id, ann.is_active)} className={`text-[10px] font-mono px-2.5 py-1 rounded-xl ${ann.is_active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-neutral-800 text-neutral-400'}`}>
+                            {ann.is_active ? 'LIVE' : 'HIDDEN'}
+                          </button>
+                          <button onClick={() => deleteAnnouncement(ann.id)} className="text-xs text-red-400 font-mono p-1 hover:text-red-300">✕</button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
-              <form onSubmit={handlePublishAnnouncement} className="flex gap-3 mb-4">
-                <input
-                  type="text"
-                  value={newAnnouncementText}
-                  onChange={(e) => setNewAnnouncementText(e.target.value)}
-                  placeholder={selectedStaffName !== 'all' ? `Send private message directly to ${selectedStaffName}...` : "Type broadcast announcement message..."}
-                  className="flex-1 bg-[#090d19] text-neutral-200 text-xs font-mono px-4 py-3 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none"
-                />
-                <button type="submit" className={`font-mono font-bold text-xs px-6 py-3 rounded-2xl transition-all shadow-md ${announcementTarget === 'guest' ? 'bg-amber-500 hover:bg-amber-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}>
-                  {selectedStaffName !== 'all' ? 'Send Direct' : 'Publish'}
-                </button>
-              </form>
+              {/* Walkie-Talkie Voice Notes Section */}
+              <div className="pt-4 border-t border-blue-500/[0.1]">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] uppercase font-mono tracking-widest text-cyan-400 font-bold">🎙️ Walkie-Talkie Voice Intercom</span>
+                  <span className="text-[10px] text-neutral-500 font-mono">Push-to-talk broadcast</span>
+                </div>
 
-              <div className="space-y-2 max-h-36 overflow-y-auto">
-                {announcements.length === 0 ? (
-                  <p className="text-xs text-neutral-500 font-mono italic">No broadcasts created.</p>
-                ) : (
-                  announcements.map((ann) => (
-                    <div key={ann.id} className="flex items-center justify-between bg-[#090d19] px-4 py-2.5 rounded-2xl border border-blue-500/[0.08]">
-                      <div className="flex items-center gap-3 truncate max-w-[850px]">
-                        <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-xl ${ann.target === 'staff' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
-                          {ann.target === 'staff' 
-                            ? (ann.staff_name && ann.staff_name !== 'all' ? `Staff (${ann.staff_name})` : `Staff (${ann.staff_role || 'all'})`) 
-                            : `Guest Room ${ann.target_room || 'All'}`}
-                        </span>
-                        <span className="text-xs text-neutral-200 truncate font-mono">{ann.message}</span>
+                <div className="flex items-center gap-4 mb-4">
+                  {!isRecording ? (
+                    <button
+                      type="button"
+                      onClick={startRecording}
+                      className="bg-red-600 hover:bg-red-500 text-white font-mono font-bold text-xs px-5 py-3 rounded-2xl flex items-center gap-2 shadow-lg transition-all animate-pulse"
+                    >
+                      <span>🔴 Hold / Click to Record Voice Note</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={stopRecording}
+                      className="bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs px-5 py-3 rounded-2xl flex items-center gap-2 shadow-lg transition-all animate-bounce"
+                    >
+                      <span>⏹️ Stop & Send Voice Note</span>
+                    </button>
+                  )}
+                  <span className="text-xs text-neutral-400 font-mono">
+                    Target: <strong className="text-amber-400">{selectedStaffName !== 'all' ? selectedStaffName : selectedBroadcastDept}</strong>
+                  </span>
+                </div>
+
+                <div className="space-y-2 max-h-36 overflow-y-auto">
+                  {voiceMessages.length === 0 ? (
+                    <p className="text-xs text-neutral-500 font-mono italic">No voice notes recorded yet.</p>
+                  ) : (
+                    voiceMessages.map((msg) => (
+                      <div key={msg.id} className="flex items-center justify-between bg-[#090d19] px-4 py-2.5 rounded-2xl border border-cyan-500/20">
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                            To: {msg.recipient_target}
+                          </span>
+                          <audio controls src={msg.audio_url} className="h-8 max-w-xs" />
+                        </div>
+                        <button onClick={() => deleteVoiceMessage(msg.id)} className="text-xs text-red-400 font-mono p-1 hover:text-red-300">✕</button>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => toggleAnnouncementStatus(ann.id, ann.is_active)} className={`text-[10px] font-mono px-2.5 py-1 rounded-xl ${ann.is_active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-neutral-800 text-neutral-400'}`}>
-                          {ann.is_active ? 'LIVE' : 'HIDDEN'}
-                        </button>
-                        <button onClick={() => deleteAnnouncement(ann.id)} className="text-xs text-red-400 font-mono p-1 hover:text-red-300">✕</button>
-                      </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
+
             </div>
 
           </div>
