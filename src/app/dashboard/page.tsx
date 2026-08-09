@@ -57,7 +57,6 @@ export default function ManagerDashboard() {
 
   const [newAnnouncementText, setNewAnnouncementText] = useState<string>('');
   const [announcementTarget, setAnnouncementTarget] = useState<'guest' | 'staff'>('guest');
-  const [selectedStaffRole, setSelectedStaffRole] = useState<string>('all');
   const [selectedBroadcastDept, setSelectedBroadcastDept] = useState<string>('all');
   const [selectedStaffName, setSelectedStaffName] = useState<string>('all');
   const [guestAnnouncementRoom, setGuestAnnouncementRoom] = useState<string>('all');
@@ -214,10 +213,10 @@ export default function ManagerDashboard() {
 
   const availableDepartments = Array.from(new Set(dbStaffMembers.map(s => s.department))).sort();
 
-  // Filter staff members based on the selected broadcast department dropdown
+  // Filter staff members based on the selected broadcast department dropdown (case-insensitive and trimmed)
   const filteredStaffForDropdown = dbStaffMembers.filter(s => {
     if (selectedBroadcastDept === 'all') return true;
-    return s.department.toLowerCase() === selectedBroadcastDept.toLowerCase();
+    return s.department?.trim().toLowerCase() === selectedBroadcastDept?.trim().toLowerCase();
   });
 
   const activeRoomsSet = new Set<string>();
@@ -617,9 +616,9 @@ export default function ManagerDashboard() {
                         onChange={(e) => setSelectedStaffName(e.target.value)}
                         className="bg-[#090d19] text-emerald-400 font-mono text-xs px-3.5 py-2 rounded-xl border border-emerald-500/30 focus:outline-none cursor-pointer"
                       >
-                        <option value="all">All Staff in Dept</option>
+                        <option value="all">All Staff in Dept ({filteredStaffForDropdown.length} available)</option>
                         {filteredStaffForDropdown.map((s) => (
-                          <option key={s.name} value={s.name}>{s.name} ({s.department})</option>
+                          <option key={s.name} value={s.name}>{s.name} {s.role ? `(${s.role})` : ''}</option>
                         ))}
                       </select>
                     </>
