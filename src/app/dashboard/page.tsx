@@ -213,6 +213,12 @@ export default function ManagerDashboard() {
 
   const availableDepartments = Array.from(new Set(dbStaffMembers.map(s => s.department))).sort();
 
+  // Filter staff members based on department dropdown selection for the individual picker
+  const filteredStaffForDropdown = dbStaffMembers.filter(s => {
+    if (selectedStaffRole === 'all') return true;
+    return s.department.toLowerCase() === selectedStaffRole.toLowerCase();
+  });
+
   const activeRoomsSet = new Set<string>();
   requests.forEach(r => { if (r.room) activeRoomsSet.add(r.room); });
   guestProfiles.forEach(p => { if (p.room) activeRoomsSet.add(p.room); });
@@ -608,11 +614,9 @@ export default function ManagerDashboard() {
                         className="bg-[#090d19] text-emerald-400 font-mono text-xs px-3.5 py-2 rounded-xl border border-emerald-500/30 focus:outline-none cursor-pointer"
                       >
                         <option value="all">All Staff in Dept</option>
-                        {dbStaffMembers
-                          .filter(s => selectedStaffRole === 'all' || s.department.toLowerCase() === selectedStaffRole.toLowerCase())
-                          .map((s) => (
-                            <option key={s.name} value={s.name}>{s.name}</option>
-                          ))}
+                        {filteredStaffForDropdown.map((s) => (
+                          <option key={s.name} value={s.name}>{s.name} ({s.department})</option>
+                        ))}
                       </select>
                     </>
                   ) : (
@@ -638,7 +642,7 @@ export default function ManagerDashboard() {
                   type="text"
                   value={newAnnouncementText}
                   onChange={(e) => setNewAnnouncementText(e.target.value)}
-                  placeholder={selectedStaffName !== 'all' ? `Send private announcement directly to ${selectedStaffName}...` : "Type broadcast announcement message..."}
+                  placeholder={selectedStaffName !== 'all' ? `Send private message directly to ${selectedStaffName}...` : "Type broadcast announcement message..."}
                   className="flex-1 bg-[#090d19] text-neutral-200 text-xs font-mono px-4 py-3 rounded-2xl border border-blue-500/[0.1] focus:border-amber-400 focus:outline-none"
                 />
                 <button type="submit" className={`font-mono font-bold text-xs px-6 py-3 rounded-2xl transition-all shadow-md ${announcementTarget === 'guest' ? 'bg-amber-500 hover:bg-amber-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}>
