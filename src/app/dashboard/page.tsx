@@ -150,26 +150,16 @@ export default function ManagerDashboard() {
     const { data: profileData } = await supabase.from('guest_profiles').select('*');
     if (profileData) setGuestProfiles(profileData);
 
-    // Fetch staff from Supabase (supports tables named 'staff_members' or 'staff')
-    let staffData: StaffMember[] | null = null;
-    const resStaffMembers = await supabase.from('staff_members').select('name, department, role, pin_code');
-    if (resStaffMembers.data && resStaffMembers.data.length > 0) {
-      staffData = resStaffMembers.data;
-    } else {
-      const resStaff = await supabase.from('staff').select('name, department, role, pin_code');
-      if (resStaff.data) {
-        staffData = resStaff.data;
-      }
-    }
+    // Fetch all staff members safely from Supabase sorted alphabetically
+    const { data: staffData, error: staffError } = await supabase
+      .from('staff_members')
+      .select('*')
+      .order('name', { ascending: true });
 
     if (staffData && staffData.length > 0) {
       setDbStaffMembers(staffData);
     } else {
-      // Fallback fallback sample staff if table is currently completely empty in Supabase
-      setDbStaffMembers([
-        { name: 'Markos', department: 'kitchen', role: 'Head Chef', pin_code: '1234' },
-        { name: 'Edom', department: 'front desk', role: 'Receptionist', pin_code: '5678' }
-      ]);
+      console.error('Error fetching staff:', staffError);
     }
 
     const { data: voiceData } = await supabase.from('voice_messages').select('*').order('created_at', { ascending: false });
@@ -226,7 +216,6 @@ export default function ManagerDashboard() {
     e.preventDefault();
     if (!newStaffName.trim() || !newStaffPin.trim()) return;
     
-    // Try inserting into staff_members table, fallback to staff table if needed
     const { error } = await supabase.from('staff_members').insert([{
       name: newStaffName.trim(),
       department: newStaffDept.trim(),
