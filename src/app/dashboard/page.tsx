@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
+import { ChevronDown, Clock, Loader2, CheckCircle2, Truck, Volume2, Search, Filter, Sparkles, Mic, Play, Pause } from 'lucide-react';
 
 interface RequestItem {
   id: string;
@@ -13,6 +14,7 @@ interface RequestItem {
   rating?: number;
   feedback?: string;
   created_at: string;
+  audio_url?: string; // Added support for embedded audio notes
 }
 
 interface FeedbackItem {
@@ -64,8 +66,15 @@ export default function ManagerDashboard() {
   const [dbStaffMembers, setDbStaffMembers] = useState<StaffMember[]>([]);
   const [voiceMessages, setVoiceMessages] = useState<VoiceMessage[]>([]);
   
-  // Navigation Tab State ('operations' | 'reviews' | 'staff' | 'crm' | 'communications')
+  // Navigation Tab State
   const [activeTab, setActiveTab] = useState<'operations' | 'reviews' | 'staff' | 'crm' | 'communications'>('operations');
+
+  // Accordion Expandable Panel States ('Pending' | 'In Progress' | 'On the Way' | 'Completed' | null)
+  const [expandedPanel, setExpandedPanel] = useState<string | null>('Pending');
+
+  const togglePanel = (statusKey: string) => {
+    setExpandedPanel(expandedPanel === statusKey ? null : statusKey);
+  };
 
   // Modal States
   const [isStaffModalOpen, setIsStaffModalOpen] = useState<boolean>(false);
@@ -75,7 +84,7 @@ export default function ManagerDashboard() {
   const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
   const [replyText, setReplyText] = useState<string>('');
 
-  // New Staff Management Form State
+  // Staff & Announcement Form States
   const [newStaffName, setNewStaffName] = useState<string>('');
   const [newStaffDept, setNewStaffDept] = useState<string>('kitchen');
   const [newStaffRole, setNewStaffRole] = useState<string>('Staff');
@@ -97,6 +106,7 @@ export default function ManagerDashboard() {
   const [crmGuestName, setCrmGuestName] = useState<string>('');
   const [crmPreferences, setCrmPreferences] = useState<string>('');
   
+  // Search & Filter States
   const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
@@ -148,10 +158,8 @@ export default function ManagerDashboard() {
   };
 
   const fetchData = async () => {
-    // 1. Fetch active operational tasks (excluding feedback rows if mixed, or standard requests)
     const { data: reqData } = await supabase.from('requests').select('*').order('created_at', { ascending: false });
     if (reqData) {
-      // Filter out pure feedback items from operational tasks queue
       const operationalTasks = reqData.filter(r => r.category !== 'Feedback' && !r.note?.startsWith('Rating:'));
       setRequests(operationalTasks);
       if (selectedRequest) {
@@ -160,11 +168,8 @@ export default function ManagerDashboard() {
       }
     }
 
-    // 2. Fetch guest feedback from dedicated table
     const { data: feedbackData } = await supabase.from('guest_feedback').select('*').order('created_at', { ascending: false });
-    if (feedbackData) {
-      setFeedbackList(feedbackData);
-    }
+    if (feedbackData) setFeedbackList(feedbackData);
 
     const { data: annData } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
     if (annData) setAnnouncements(annData);
@@ -172,14 +177,8 @@ export default function ManagerDashboard() {
     const { data: profileData } = await supabase.from('guest_profiles').select('*');
     if (profileData) setGuestProfiles(profileData);
 
-    const { data: staffData } = await supabase
-      .from('staff_members')
-      .select('*')
-      .order('name', { ascending: true });
-
-    if (staffData && staffData.length > 0) {
-      setDbStaffMembers(staffData);
-    }
+    const { data: staffData } = await supabase.from('staff_members').select('*').order('name', { ascending: true });
+    if (staffData && staffData.length > 0) setDbStaffMembers(staffData);
 
     const { data: voiceData } = await supabase.from('voice_messages').select('*').order('created_at', { ascending: false });
     if (voiceData) setVoiceMessages(voiceData);
@@ -216,18 +215,9 @@ export default function ManagerDashboard() {
 
   const handleSendReply = async () => {
     if (!selectedRequest || !replyText.trim()) return;
-
     const updatedNote = `${selectedRequest.note} | Staff Reply: ${replyText.trim()}`;
-
     try {
-      await supabase
-        .from('requests')
-        .update({ 
-          note: updatedNote,
-          status: 'In Progress' 
-        })
-        .eq('id', selectedRequest.id);
-
+      await supabase.from('requests').update({ note: updatedNote, status: 'In Progress' }).eq('id', selectedRequest.id);
       setReplyText('');
       fetchData();
     } catch (err) {
@@ -238,14 +228,12 @@ export default function ManagerDashboard() {
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStaffName.trim() || !newStaffPin.trim()) return;
-    
     const { error } = await supabase.from('staff_members').insert([{
       name: newStaffName.trim(),
       department: newStaffDept.trim(),
       role: newStaffRole.trim(),
       pin_code: newStaffPin.trim()
     }]);
-
     if (error) {
       await supabase.from('staff').insert([{
         name: newStaffName.trim(),
@@ -254,7 +242,6 @@ export default function ManagerDashboard() {
         pin_code: newStaffPin.trim()
       }]);
     }
-
     setNewStaffName('');
     setNewStaffPin('');
     setIsStaffModalOpen(false);
@@ -292,24 +279,19 @@ export default function ManagerDashboard() {
       mediaRecorderRef.current = mediaRecorder;
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const fileName = `voice_${Date.now()}.webm`;
-        
         const { error: uploadError } = await supabase.storage.from('voice-notes').upload(fileName, audioBlob);
         if (uploadError) {
           alert('Error uploading audio clip: ' + uploadError.message);
           return;
         }
-
         const { data: publicUrlData } = supabase.storage.from('voice-notes').getPublicUrl(fileName);
         const audioUrl = publicUrlData.publicUrl;
-
         const recipientTarget = selectedStaffName !== 'all' ? selectedStaffName : selectedBroadcastDept;
 
         await supabase.from('voice_messages').insert([{
@@ -317,7 +299,6 @@ export default function ManagerDashboard() {
           recipient_target: recipientTarget,
           audio_url: audioUrl
         }]);
-
         fetchData();
       };
 
@@ -408,10 +389,42 @@ export default function ManagerDashboard() {
   const topSellingItem = sortedCategories.length > 0 ? sortedCategories[0][0] : 'None yet';
 
   const columns = [
-    { title: 'Pending', statusKey: 'Pending', badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-    { title: 'In Progress', statusKey: 'In Progress', badgeClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
-    { title: 'On the Way', statusKey: 'On the Way', badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-    { title: 'Completed', statusKey: 'Completed', badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+    { 
+      title: 'Pending Requests', 
+      subtitle: 'Requires immediate staff attention',
+      statusKey: 'Pending', 
+      icon: <Clock className="w-5 h-5 animate-pulse" />,
+      containerClass: `bg-[#0b1021]/85 backdrop-blur-md border rounded-2xl shadow-xl overflow-hidden transition-all duration-300 ${urgentCount > 0 ? 'border-amber-500 shadow-amber-500/10 animate-pulse' : 'border-amber-500/30'}`,
+      headerClass: 'w-full flex items-center justify-between p-4 bg-amber-500/10 hover:bg-amber-500/15 transition-colors text-left cursor-pointer',
+      badgeClass: 'px-2.5 py-1 bg-amber-500/20 text-amber-400 text-xs font-mono font-bold rounded-full border border-amber-500/30'
+    },
+    { 
+      title: 'In Progress', 
+      subtitle: 'Currently being handled by staff',
+      statusKey: 'In Progress', 
+      icon: <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />,
+      containerClass: 'bg-[#0b1021]/85 backdrop-blur-md border border-cyan-500/30 rounded-2xl shadow-xl overflow-hidden transition-all duration-300',
+      headerClass: 'w-full flex items-center justify-between p-4 bg-cyan-500/10 hover:bg-cyan-500/15 transition-colors text-left cursor-pointer',
+      badgeClass: 'px-2.5 py-1 bg-cyan-500/20 text-cyan-400 text-xs font-mono font-bold rounded-full border border-cyan-500/30'
+    },
+    { 
+      title: 'On the Way', 
+      subtitle: 'Dispatched and headed to room',
+      statusKey: 'On the Way', 
+      icon: <Truck className="w-5 h-5 text-blue-400" />,
+      containerClass: 'bg-[#0b1021]/85 backdrop-blur-md border border-blue-500/30 rounded-2xl shadow-xl overflow-hidden transition-all duration-300',
+      headerClass: 'w-full flex items-center justify-between p-4 bg-blue-500/10 hover:bg-blue-500/15 transition-colors text-left cursor-pointer',
+      badgeClass: 'px-2.5 py-1 bg-blue-500/20 text-blue-400 text-xs font-mono font-bold rounded-full border border-blue-500/30'
+    },
+    { 
+      title: 'Completed', 
+      subtitle: 'Fulfilled requests history',
+      statusKey: 'Completed', 
+      icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />,
+      containerClass: 'bg-[#0b1021]/85 backdrop-blur-md border border-emerald-500/30 rounded-2xl shadow-xl overflow-hidden transition-all duration-300',
+      headerClass: 'w-full flex items-center justify-between p-4 bg-emerald-500/10 hover:bg-emerald-500/15 transition-colors text-left cursor-pointer',
+      badgeClass: 'px-2.5 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-mono font-bold rounded-full border border-emerald-500/30'
+    },
   ];
 
   return (
@@ -439,7 +452,7 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          {/* Upgraded Modern Pill Segmented Navigation Bar */}
+          {/* Pill Segmented Navigation Bar */}
           <div className="flex bg-[#050811] p-1.5 rounded-2xl border border-white/[0.06] shadow-inner overflow-x-auto max-w-full">
             <button
               onClick={() => setActiveTab('operations')}
@@ -476,25 +489,33 @@ export default function ManagerDashboard() {
             </button>
           </div>
 
+          {/* Minimalist Search and Filter Controls */}
           <div className="flex items-center gap-2.5 w-full xl:w-auto justify-end">
-            <input
-              type="text"
-              placeholder="Search orders, notes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-[#050811] text-xs text-neutral-200 px-3.5 py-2.5 rounded-xl border border-white/[0.06] focus:border-amber-400 focus:outline-none w-36 sm:w-44 transition-all"
-            />
-            <select
-              value={selectedRoomFilter}
-              onChange={(e) => setSelectedRoomFilter(e.target.value)}
-              className="bg-[#050811] text-xs font-mono text-amber-400 px-3 py-2.5 rounded-xl border border-white/[0.06] focus:outline-none cursor-pointer"
-            >
-              <option value="ALL">All Rooms</option>
-              {uniqueRooms.map(room => <option key={room} value={room}>Room {room}</option>)}
-            </select>
+            <div className="relative flex items-center">
+              <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search Room 302, item..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-[#050811] text-xs text-neutral-200 pl-9 pr-3.5 py-2.5 rounded-xl border border-white/[0.06] focus:border-amber-400 focus:outline-none w-40 sm:w-48 transition-all"
+              />
+            </div>
+            <div className="relative flex items-center">
+              <Filter className="w-3.5 h-3.5 text-amber-400 absolute left-3 pointer-events-none" />
+              <select
+                value={selectedRoomFilter}
+                onChange={(e) => setSelectedRoomFilter(e.target.value)}
+                className="bg-[#050811] text-xs font-mono text-amber-400 pl-9 pr-3 py-2.5 rounded-xl border border-white/[0.06] focus:outline-none cursor-pointer appearance-none"
+              >
+                <option value="ALL">All Rooms</option>
+                {uniqueRooms.map(room => <option key={room} value={room}>Room {room}</option>)}
+              </select>
+            </div>
             <button
               onClick={handleToggleSound}
               className={`px-3.5 py-2.5 rounded-xl text-xs transition-all ${soundEnabled ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-white/[0.02] text-neutral-500 border border-white/[0.04]'}`}
+              title="Toggle Alert Sounds"
             >
               {soundEnabled ? '🔔' : '🔕'}
             </button>
@@ -502,7 +523,7 @@ export default function ManagerDashboard() {
 
         </div>
 
-        {/* Upgraded Metrics Strip */}
+        {/* Metrics Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
           <div className="bg-[#0b1021]/80 backdrop-blur-xl border border-white/[0.06] p-4 rounded-2xl shadow-xl transition-all hover:border-white/[0.12]">
             <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest block mb-1">F&B Revenue</span>
@@ -534,80 +555,129 @@ export default function ManagerDashboard() {
         {activeTab === 'operations' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
             
-            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="lg:col-span-2 space-y-4">
               {columns.map((col) => {
                 const colRequests = filteredRequests.filter(r => r.status === col.statusKey);
+                const isExpanded = expandedPanel === col.statusKey;
 
                 return (
-                  <div key={col.statusKey} className="bg-[#0b1021]/80 backdrop-blur-xl rounded-3xl border border-white/[0.06] p-4 flex flex-col min-h-[550px] shadow-2xl">
+                  <div key={col.statusKey} className={col.containerClass}>
                     
-                    <div className={`flex justify-between items-center p-3.5 rounded-2xl border mb-4 ${col.badgeClass}`}>
-                      <h2 className="text-xs font-bold uppercase tracking-wider font-mono">{col.title}</h2>
-                      <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-xl bg-black/40 shadow-inner">
-                        {colRequests.length}
-                      </span>
-                    </div>
-
-                    <div className="space-y-3.5 flex-1 overflow-y-auto max-h-[500px] pr-1">
-                      {colRequests.length === 0 ? (
-                        <div className="h-48 flex flex-col items-center justify-center text-neutral-500 text-xs border border-white/[0.04] bg-[#050811]/40 rounded-2xl p-6 text-center">
-                          <span className="text-xl mb-1 opacity-40">✨</span>
-                          <span className="font-medium text-neutral-400">All caught up</span>
-                          <span className="text-[10px] text-neutral-600 mt-0.5">No active items in {col.title}</span>
+                    {/* Accordion Toggle Header */}
+                    <button
+                      onClick={() => togglePanel(col.statusKey)}
+                      className={col.headerClass}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-white/[0.04] rounded-xl border border-white/[0.06]">
+                          {col.icon}
                         </div>
-                      ) : (
-                        colRequests.map((req) => {
-                          const isDelayed = req.status === 'Pending' && (now - new Date(req.created_at).getTime() > 10 * 60 * 1000);
-                          const guestName = roomToGuestNameMap[req.room];
-                          const isSelected = selectedRequest?.id === req.id;
+                        <div>
+                          <h2 className="text-sm font-bold uppercase tracking-wider font-mono text-white">{col.title}</h2>
+                          <p className="text-xs text-neutral-400">{col.subtitle}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <span className={col.badgeClass}>
+                          {colRequests.length} Active
+                        </span>
+                        <ChevronDown className={`w-5 h-5 text-neutral-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                      </div>
+                    </button>
 
-                          return (
-                            <div 
-                              key={req.id} 
-                              onClick={() => setSelectedRequest(req)}
-                              className={`p-4 rounded-2xl border flex flex-col justify-between shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-0.5 ${
-                                isSelected 
-                                  ? 'bg-amber-500/15 border-amber-500/80 shadow-amber-500/10' 
-                                  : isDelayed 
-                                  ? 'bg-red-950/20 border-red-500/40 hover:border-red-500/60' 
-                                  : req.status === 'Pending' 
-                                  ? 'bg-[#0f152d] border-amber-500/30 hover:border-amber-500/50' 
-                                  : 'bg-[#050811]/70 border-white/[0.06] hover:border-white/[0.15] hover:bg-[#0f152d]/50'
-                              }`}
-                            >
-                              <div>
-                                <div className="flex justify-between items-center mb-2.5">
-                                  <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 text-xs font-mono font-bold border border-amber-500/20 shadow-sm">
-                                    Room {req.room} {guestName ? `(${guestName})` : ''}
-                                  </span>
-                                  {isDelayed ? (
-                                    <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/40 px-2 py-0.5 rounded-full font-mono font-bold animate-pulse">
-                                      OVERDUE
+                    {/* Smooth Expandable Accordion Content */}
+                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[800px] opacity-100 p-4' : 'max-h-0 opacity-0 p-0'}`}>
+                      <div className="space-y-3.5 bg-[#050811]/90 rounded-2xl p-3 border border-white/[0.06] max-h-[500px] overflow-y-auto">
+                        {colRequests.length === 0 ? (
+                          <div className="h-32 flex flex-col items-center justify-center text-neutral-500 text-xs border border-white/[0.04] bg-[#0b1021]/40 rounded-2xl p-6 text-center">
+                            <span className="text-xl mb-1 opacity-40">✨</span>
+                            <span className="font-medium text-neutral-400">All caught up</span>
+                            <span className="text-[10px] text-neutral-600 mt-0.5">No active items in {col.title}</span>
+                          </div>
+                        ) : (
+                          colRequests.map((req) => {
+                            const isDelayed = req.status === 'Pending' && (now - new Date(req.created_at).getTime() > 10 * 60 * 1000);
+                            const guestName = roomToGuestNameMap[req.room];
+                            const isSelected = selectedRequest?.id === req.id;
+
+                            return (
+                              <div 
+                                key={req.id} 
+                                onClick={() => setSelectedRequest(req)}
+                                className={`p-4 rounded-2xl border flex flex-col justify-between shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-0.5 ${
+                                  isSelected 
+                                    ? 'bg-amber-500/15 border-amber-500/80 shadow-amber-500/10' 
+                                    : isDelayed 
+                                    ? 'bg-red-950/20 border-red-500/40 hover:border-red-500/60' 
+                                    : req.status === 'Pending' 
+                                    ? 'bg-[#0f152d] border-amber-500/30 hover:border-amber-500/50' 
+                                    : 'bg-[#0b1021]/70 border-white/[0.06] hover:border-white/[0.15] hover:bg-[#0f152d]/50'
+                                }`}
+                              >
+                                <div>
+                                  <div className="flex justify-between items-center mb-2.5">
+                                    <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 text-xs font-mono font-bold border border-amber-500/20 shadow-sm">
+                                      Room {req.room} {guestName ? `(${guestName})` : ''}
                                     </span>
-                                  ) : (
-                                    <span className="text-[10px] text-neutral-400 font-mono">
-                                      {new Date(req.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
+                                    {isDelayed ? (
+                                      <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/40 px-2 py-0.5 rounded-full font-mono font-bold animate-pulse">
+                                        OVERDUE
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] text-neutral-400 font-mono">
+                                        {new Date(req.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <h3 className="text-xs font-semibold text-white mb-1.5">{req.category}</h3>
+                                  <p className="text-xs text-neutral-300 mb-3 bg-[#050811]/80 p-3 rounded-xl border border-white/[0.04] leading-relaxed">
+                                    {req.note}
+                                  </p>
+
+                                  {/* Audio Waveform Player Integration for Voice Notes */}
+                                  {req.audio_url && (
+                                    <div className="mb-3 p-3 bg-cyan-950/20 border border-cyan-500/30 rounded-xl flex items-center gap-3">
+                                      <div className="p-2 bg-cyan-500/20 text-cyan-400 rounded-lg">
+                                        <Mic className="w-4 h-4 animate-pulse" />
+                                      </div>
+                                      <div className="flex-1">
+                                        <span className="text-[10px] font-mono text-cyan-300 block mb-1">Voice Request Note</span>
+                                        <audio controls src={req.audio_url} className="w-full h-7" />
+                                      </div>
+                                    </div>
                                   )}
                                 </div>
 
-                                <h3 className="text-xs font-semibold text-white mb-1.5">{req.category}</h3>
-                                <p className="text-xs text-neutral-300 mb-3 bg-[#050811]/80 p-3 rounded-xl border border-white/[0.04] leading-relaxed">
-                                  {req.note}
-                                </p>
-                              </div>
+                                {/* One-Tap Quick-Action Status Buttons */}
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-3 border-t border-white/[0.06]" onClick={(e) => e.stopPropagation()}>
+                                  {col.statusKey !== 'Pending' && (
+                                    <button onClick={() => updateStatus(req.id, 'Pending')} className="py-1.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-[10px] text-neutral-300 transition-all font-medium">
+                                      Mark Pending
+                                    </button>
+                                  )}
+                                  {col.statusKey !== 'In Progress' && (
+                                    <button onClick={() => updateStatus(req.id, 'In Progress')} className="py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 rounded-xl text-[10px] transition-all font-medium">
+                                      Mark In Progress
+                                    </button>
+                                  )}
+                                  {col.statusKey !== 'On the Way' && (
+                                    <button onClick={() => updateStatus(req.id, 'On the Way')} className="py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/20 rounded-xl text-[10px] transition-all font-medium">
+                                      Dispatch (On Way)
+                                    </button>
+                                  )}
+                                  {col.statusKey !== 'Completed' && (
+                                    <button onClick={() => updateStatus(req.id, 'Completed')} className="py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-[10px] font-bold col-span-2 sm:col-span-1 transition-all shadow-sm">
+                                      Mark Done
+                                    </button>
+                                  )}
+                                </div>
 
-                              <div className="grid grid-cols-2 gap-1.5 pt-3 border-t border-white/[0.06]" onClick={(e) => e.stopPropagation()}>
-                                {col.statusKey !== 'Pending' && <button onClick={() => updateStatus(req.id, 'Pending')} className="py-1.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-[10px] text-neutral-300 transition-all font-medium">Pending</button>}
-                                {col.statusKey !== 'In Progress' && <button onClick={() => updateStatus(req.id, 'In Progress')} className="py-1.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-[10px] text-neutral-300 transition-all font-medium">Progress</button>}
-                                {col.statusKey !== 'On the Way' && <button onClick={() => updateStatus(req.id, 'On the Way')} className="py-1.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-[10px] text-neutral-300 transition-all font-medium">On Way</button>}
-                                {col.statusKey !== 'Completed' && <button onClick={() => updateStatus(req.id, 'Completed')} className="py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-[10px] font-bold col-span-2 transition-all shadow-sm">Mark Done</button>}
                               </div>
-
-                            </div>
-                          );
-                        })
-                      )}
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
 
                   </div>
@@ -728,7 +798,7 @@ export default function ManagerDashboard() {
                           </div>
                         </div>
                         <span className="text-[10px] font-mono text-neutral-500">
-                          {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({new Date(item.created_at).toLocaleDateString()})
+                          {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
 
