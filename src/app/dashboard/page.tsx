@@ -72,6 +72,9 @@ export default function ManagerDashboard() {
   // Accordion Expandable Panel States
   const [expandedPanel, setExpandedPanel] = useState<string | null>('Pending');
 
+  // Pagination state for Completed requests log
+  const [visibleCompletedCount, setVisibleCompletedCount] = useState<number>(5);
+
   const togglePanel = (statusKey: string) => {
     setExpandedPanel(expandedPanel === statusKey ? null : statusKey);
   };
@@ -564,6 +567,11 @@ export default function ManagerDashboard() {
               {columns.map((col) => {
                 const colRequests = filteredRequests.filter(r => r.status === col.statusKey);
                 const isExpanded = expandedPanel === col.statusKey;
+                
+                // Apply pagination slice if it's the Completed column
+                const displayedRequests = col.statusKey === 'Completed' 
+                  ? colRequests.slice(0, visibleCompletedCount) 
+                  : colRequests;
 
                 return (
                   <div key={col.statusKey} className={col.containerClass}>
@@ -591,8 +599,8 @@ export default function ManagerDashboard() {
                     </button>
 
                     {/* Smooth Expandable Accordion Content */}
-                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[800px] opacity-100 p-4' : 'max-h-0 opacity-0 p-0'}`}>
-                      <div className="space-y-3.5 bg-[#050811]/90 rounded-2xl p-4 border border-white/[0.06] max-h-[500px] overflow-y-auto">
+                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[1200px] opacity-100 p-4' : 'max-h-0 opacity-0 p-0'}`}>
+                      <div className="space-y-3.5 bg-[#050811]/90 rounded-2xl p-4 border border-white/[0.06] max-h-[600px] overflow-y-auto">
                         {colRequests.length === 0 ? (
                           <div className="h-40 flex flex-col items-center justify-center text-neutral-400 text-xs border border-dashed border-white/[0.08] bg-[#0b1021]/40 rounded-2xl p-6 text-center">
                             <span className="text-2xl mb-2 opacity-50">✨</span>
@@ -600,87 +608,99 @@ export default function ManagerDashboard() {
                             <span className="text-[11px] text-neutral-500">No active items currently in {col.title}.</span>
                           </div>
                         ) : (
-                          colRequests.map((req) => {
-                            const isDelayed = req.status === 'Pending' && (now - new Date(req.created_at).getTime() > 10 * 60 * 1000);
-                            const guestName = roomToGuestNameMap[req.room];
-                            const isSelected = selectedRequest?.id === req.id;
+                          <>
+                            {displayedRequests.map((req) => {
+                              const isDelayed = req.status === 'Pending' && (now - new Date(req.created_at).getTime() > 10 * 60 * 1000);
+                              const guestName = roomToGuestNameMap[req.room];
+                              const isSelected = selectedRequest?.id === req.id;
 
-                            return (
-                              <div 
-                                key={req.id} 
-                                onClick={() => setSelectedRequest(req)}
-                                className={`p-4 rounded-2xl border flex flex-col justify-between shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-0.5 ${
-                                  isSelected 
-                                    ? 'bg-amber-500/15 border-amber-500/80 shadow-amber-500/10' 
-                                    : isDelayed 
-                                    ? 'bg-red-950/20 border-red-500/40 hover:border-red-500/60' 
-                                    : req.status === 'Pending' 
-                                    ? 'bg-[#0f152d] border-amber-500/30 hover:border-amber-500/50' 
-                                    : 'bg-[#0b1021]/70 border-white/[0.06] hover:border-white/[0.15] hover:bg-[#0f152d]/50'
-                                }`}
-                              >
-                                <div>
-                                  <div className="flex justify-between items-center mb-2.5">
-                                    <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 text-xs font-mono font-bold border border-amber-500/20 shadow-sm">
-                                      Room {req.room} {guestName ? `(${guestName})` : ''}
-                                    </span>
-                                    {isDelayed ? (
-                                      <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/40 px-2 py-0.5 rounded-full font-mono font-bold animate-pulse">
-                                        OVERDUE
+                              return (
+                                <div 
+                                  key={req.id} 
+                                  onClick={() => setSelectedRequest(req)}
+                                  className={`p-4 rounded-2xl border flex flex-col justify-between shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-0.5 ${
+                                    isSelected 
+                                      ? 'bg-amber-500/15 border-amber-500/80 shadow-amber-500/10' 
+                                      : isDelayed 
+                                      ? 'bg-red-950/20 border-red-500/40 hover:border-red-500/60' 
+                                      : req.status === 'Pending' 
+                                      ? 'bg-[#0f152d] border-amber-500/30 hover:border-amber-500/50' 
+                                      : 'bg-[#0b1021]/70 border-white/[0.06] hover:border-white/[0.15] hover:bg-[#0f152d]/50'
+                                  }`}
+                                >
+                                  <div>
+                                    <div className="flex justify-between items-center mb-2.5">
+                                      <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 text-xs font-mono font-bold border border-amber-500/20 shadow-sm">
+                                        Room {req.room} {guestName ? `(${guestName})` : ''}
                                       </span>
-                                    ) : (
-                                      <span className="text-[10px] text-neutral-400 font-mono">
-                                        {new Date(req.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                      </span>
+                                      {isDelayed ? (
+                                        <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/40 px-2 py-0.5 rounded-full font-mono font-bold animate-pulse">
+                                          OVERDUE
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] text-neutral-400 font-mono">
+                                          {new Date(req.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <h3 className="text-xs font-semibold text-white mb-1.5">{req.category}</h3>
+                                    <p className="text-xs text-neutral-300 mb-3 bg-[#050811]/80 p-3 rounded-xl border border-white/[0.04] leading-relaxed">
+                                      {req.note}
+                                    </p>
+
+                                    {/* Audio Waveform Player Integration for Voice Notes */}
+                                    {req.audio_url && (
+                                      <div className="mb-3 p-3 bg-cyan-950/20 border border-cyan-500/30 rounded-xl flex items-center gap-3">
+                                        <div className="p-2 bg-cyan-500/20 text-cyan-400 rounded-lg">
+                                          <Mic className="w-4 h-4 animate-pulse" />
+                                        </div>
+                                        <div className="flex-1">
+                                          <span className="text-[10px] font-mono text-cyan-300 block mb-1">Voice Request Note</span>
+                                          <audio controls src={req.audio_url} className="w-full h-7" />
+                                        </div>
+                                      </div>
                                     )}
                                   </div>
 
-                                  <h3 className="text-xs font-semibold text-white mb-1.5">{req.category}</h3>
-                                  <p className="text-xs text-neutral-300 mb-3 bg-[#050811]/80 p-3 rounded-xl border border-white/[0.04] leading-relaxed">
-                                    {req.note}
-                                  </p>
+                                  {/* One-Tap Quick-Action Status Buttons */}
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-3 border-t border-white/[0.06]" onClick={(e) => e.stopPropagation()}>
+                                    {col.statusKey !== 'Pending' && (
+                                      <button onClick={() => updateStatus(req.id, 'Pending')} className="py-1.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-[10px] text-neutral-300 transition-all font-medium">
+                                        Mark Pending
+                                      </button>
+                                    )}
+                                    {col.statusKey !== 'In Progress' && (
+                                      <button onClick={() => updateStatus(req.id, 'In Progress')} className="py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 rounded-xl text-[10px] transition-all font-medium">
+                                        Mark In Progress
+                                      </button>
+                                    )}
+                                    {col.statusKey !== 'On the Way' && (
+                                      <button onClick={() => updateStatus(req.id, 'On the Way')} className="py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/20 rounded-xl text-[10px] transition-all font-medium">
+                                        Dispatch (On Way)
+                                      </button>
+                                    )}
+                                    {col.statusKey !== 'Completed' && (
+                                      <button onClick={() => updateStatus(req.id, 'Completed')} className="py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-[10px] font-bold col-span-2 sm:col-span-1 transition-all shadow-sm">
+                                        Mark Done
+                                      </button>
+                                    )}
+                                  </div>
 
-                                  {/* Audio Waveform Player Integration for Voice Notes */}
-                                  {req.audio_url && (
-                                    <div className="mb-3 p-3 bg-cyan-950/20 border border-cyan-500/30 rounded-xl flex items-center gap-3">
-                                      <div className="p-2 bg-cyan-500/20 text-cyan-400 rounded-lg">
-                                        <Mic className="w-4 h-4 animate-pulse" />
-                                      </div>
-                                      <div className="flex-1">
-                                        <span className="text-[10px] font-mono text-cyan-300 block mb-1">Voice Request Note</span>
-                                        <audio controls src={req.audio_url} className="w-full h-7" />
-                                      </div>
-                                    </div>
-                                  )}
                                 </div>
+                              );
+                            })}
 
-                                {/* One-Tap Quick-Action Status Buttons */}
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-3 border-t border-white/[0.06]" onClick={(e) => e.stopPropagation()}>
-                                  {col.statusKey !== 'Pending' && (
-                                    <button onClick={() => updateStatus(req.id, 'Pending')} className="py-1.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-[10px] text-neutral-300 transition-all font-medium">
-                                      Mark Pending
-                                    </button>
-                                  )}
-                                  {col.statusKey !== 'In Progress' && (
-                                    <button onClick={() => updateStatus(req.id, 'In Progress')} className="py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 rounded-xl text-[10px] transition-all font-medium">
-                                      Mark In Progress
-                                    </button>
-                                  )}
-                                  {col.statusKey !== 'On the Way' && (
-                                    <button onClick={() => updateStatus(req.id, 'On the Way')} className="py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/20 rounded-xl text-[10px] transition-all font-medium">
-                                      Dispatch (On Way)
-                                    </button>
-                                  )}
-                                  {col.statusKey !== 'Completed' && (
-                                    <button onClick={() => updateStatus(req.id, 'Completed')} className="py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-[10px] font-bold col-span-2 sm:col-span-1 transition-all shadow-sm">
-                                      Mark Done
-                                    </button>
-                                  )}
-                                </div>
-
-                              </div>
-                            );
-                          })
+                            {/* Load More Pagination Button for Completed Section */}
+                            {col.statusKey === 'Completed' && visibleCompletedCount < colRequests.length && (
+                              <button
+                                onClick={() => setVisibleCompletedCount(prev => prev + 5)}
+                                className="w-full py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-mono font-bold transition-all shadow-md flex items-center justify-center gap-2 mt-2"
+                              >
+                                <span>Load More Completed Requests ({colRequests.length - visibleCompletedCount} remaining)</span>
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
@@ -819,7 +839,7 @@ export default function ManagerDashboard() {
           </div>
         )}
 
-        {/* TAB 3: STAFF DIRECTORY (Improved Responsive Grid & Breathing Room) */}
+        {/* TAB 3: STAFF DIRECTORY */}
         {activeTab === 'staff' && (
           <div className="bg-[#0b1021]/80 backdrop-blur-xl border border-white/[0.06] p-6 sm:p-8 rounded-3xl shadow-2xl animate-fadeIn space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.06]">
@@ -865,7 +885,7 @@ export default function ManagerDashboard() {
           </div>
         )}
 
-        {/* TAB 4: GUEST CRM & SHIFT NOTES */}
+        {/* TAB 4: GUEST CRM & SHIFT NOTES (Updated with Responsive Multi-Column Grid) */}
         {activeTab === 'crm' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn">
             
@@ -884,19 +904,20 @@ export default function ManagerDashboard() {
                   </button>
                 </div>
 
-                <div className="space-y-3.5 max-h-[400px] overflow-y-auto pr-1">
+                {/* Updated Responsive Grid Container */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto pr-1">
                   {guestProfiles.length === 0 ? (
-                    <div className="h-40 flex flex-col items-center justify-center text-neutral-400 text-xs border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40 text-center">
+                    <div className="col-span-full h-40 flex flex-col items-center justify-center text-neutral-400 text-xs border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40 text-center">
                       <span className="text-2xl mb-2 opacity-50">📂</span>
                       <span className="font-semibold text-neutral-300">No guest profiles stored</span>
                       <span className="text-[11px] text-neutral-500 mt-1">Add guest preferences to track personalized service.</span>
                     </div>
                   ) : (
                     guestProfiles.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between bg-[#050811] p-4 rounded-2xl border border-white/[0.06] shadow transition-all hover:border-amber-500/30">
+                      <div key={p.id} className="flex flex-col justify-between bg-[#050811] p-4 rounded-2xl border border-white/[0.06] shadow transition-all hover:border-amber-500/30">
                         <div>
                           <span className="font-semibold text-amber-400 text-sm block mb-1">Room {p.room} — <span className="text-white">{p.guest_name || 'Guest'}</span></span>
-                          <span className="text-xs text-neutral-300 italic">"{p.preferences}"</span>
+                          <p className="text-xs text-neutral-300 italic">"{p.preferences}"</p>
                         </div>
                       </div>
                     ))
