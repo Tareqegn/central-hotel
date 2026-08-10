@@ -176,7 +176,7 @@ export default function StaffDepartmentView() {
       setAnnouncements(relevant);
     }
 
-    // Fetch voice messages
+    // Fetch voice messages with strict individual privacy filtering
     const { data: voiceData, error: voiceError } = await supabase
       .from('voice_messages')
       .select('*')
@@ -184,12 +184,21 @@ export default function StaffDepartmentView() {
 
     if (voiceData && !voiceError) {
       const relevantVoices = voiceData.filter((v) => {
-        const target = v.recipient_target?.toLowerCase() || 'all';
-        return (
-          target === 'all' ||
-          target === department.toLowerCase() ||
-          target === staffName.toLowerCase()
-        );
+        const target = v.recipient_target?.trim().toLowerCase() || 'all';
+        const currentStaff = staffName.trim().toLowerCase();
+        const currentDept = department.trim().toLowerCase();
+
+        // 1. If broadcasted to ALL or matches the department name, show to everyone in this department station
+        if (target === 'all' || target === currentDept || target.includes(currentDept)) {
+          return true;
+        }
+
+        // 2. If it is a private direct message, ONLY show it if the logged-in staff member's name matches
+        if (target.includes(currentStaff)) {
+          return true;
+        }
+
+        return false;
       });
       setVoiceMessages(relevantVoices);
     }
