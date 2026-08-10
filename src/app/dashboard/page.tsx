@@ -74,9 +74,6 @@ export default function ManagerDashboard() {
   const [selectedStaffName, setSelectedStaffName] = useState<string>('all');
   const [guestAnnouncementRoom, setGuestAnnouncementRoom] = useState<string>('all');
 
-  const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('ALL');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-
   // Voice Recording State
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -86,6 +83,9 @@ export default function ManagerDashboard() {
   const [crmRoom, setCrmRoom] = useState<string>('');
   const [crmGuestName, setCrmGuestName] = useState<string>('');
   const [crmPreferences, setCrmPreferences] = useState<string>('');
+  
+  const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   
   const [shiftNotes, setShiftNotes] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -150,8 +150,27 @@ export default function ManagerDashboard() {
     const { data: profileData } = await supabase.from('guest_profiles').select('*');
     if (profileData) setGuestProfiles(profileData);
 
-    const { data: staffData } = await supabase.from('staff_members').select('name, department, role, pin_code');
-    if (staffData) setDbStaffMembers(staffData);
+    // Fetch staff from Supabase (supports tables named 'staff_members' or 'staff')
+    let staffData: StaffMember[] | null = null;
+    const resStaffMembers = await supabase.from('staff_members').select('name, department, role, pin_code');
+    if (resStaffMembers.data && resStaffMembers.data.length > 0) {
+      staffData = resStaffMembers.data;
+    } else {
+      const resStaff = await supabase.from('staff').select('name, department, role, pin_code');
+      if (resStaff.data) {
+        staffData = resStaff.data;
+      }
+    }
+
+    if (staffData && staffData.length > 0) {
+      setDbStaffMembers(staffData);
+    } else {
+      // Fallback fallback sample staff if table is currently completely empty in Supabase
+      setDbStaffMembers([
+        { name: 'Markos', department: 'kitchen', role: 'Head Chef', pin_code: '1234' },
+        { name: 'Edom', department: 'front desk', role: 'Receptionist', pin_code: '5678' }
+      ]);
+    }
 
     const { data: voiceData } = await supabase.from('voice_messages').select('*').order('created_at', { ascending: false });
     if (voiceData) setVoiceMessages(voiceData);
@@ -168,6 +187,7 @@ export default function ManagerDashboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_profiles' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_members' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'voice_messages' }, () => fetchData())
       .subscribe();
 
@@ -205,19 +225,34 @@ export default function ManagerDashboard() {
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStaffName.trim() || !newStaffPin.trim()) return;
-    await supabase.from('staff_members').insert([{
+    
+    // Try inserting into staff_members table, fallback to staff table if needed
+    const { error } = await supabase.from('staff_members').insert([{
       name: newStaffName.trim(),
       department: newStaffDept.trim(),
       role: newStaffRole.trim(),
       pin_code: newStaffPin.trim()
     }]);
+
+    if (error) {
+      await supabase.from('staff').insert([{
+        name: newStaffName.trim(),
+        department: newStaffDept.trim(),
+        role: newStaffRole.trim(),
+        pin_code: newStaffPin.trim()
+      }]);
+    }
+
     setNewStaffName('');
     setNewStaffPin('');
     fetchData();
   };
 
   const handleDeleteStaff = async (name: string, department: string) => {
-    await supabase.from('staff_members').delete().eq('name', name).eq('department', department);
+    const { error } = await supabase.from('staff_members').delete().eq('name', name).eq('department', department);
+    if (error) {
+      await supabase.from('staff').delete().eq('name', name).eq('department', department);
+    }
     fetchData();
   };
 
@@ -318,7 +353,7 @@ export default function ManagerDashboard() {
     fetchData();
   };
 
-  const availableDepartments = Array.from(new Set(dbStaffMembers.map(s => s.department))).sort();
+  const availableDepartments = Array.from(new Set(dbStaffMembers.map(s => s.department || 'general'))).sort();
   const filteredStaffForDropdown = dbStaffMembers.filter(s => {
     if (selectedBroadcastDept === 'all') return true;
     return s.department?.trim().toLowerCase() === selectedBroadcastDept?.trim().toLowerCase();
