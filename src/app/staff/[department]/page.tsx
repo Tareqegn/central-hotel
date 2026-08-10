@@ -31,6 +31,14 @@ interface Announcement {
   created_at: string;
 }
 
+interface VoiceMessage {
+  id: string;
+  sender_name: string;
+  recipient_target: string;
+  audio_url: string;
+  created_at: string;
+}
+
 export default function StaffDepartmentView() {
   const params = useParams();
   const department = (params?.department as string) || 'general';
@@ -39,6 +47,7 @@ export default function StaffDepartmentView() {
 
   const [tasks, setTasks] = useState<RequestItem[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [voiceMessages, setVoiceMessages] = useState<VoiceMessage[]>([]);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   
   // Database Staff Login State & Roster
@@ -159,13 +168,30 @@ export default function StaffDepartmentView() {
       .order('created_at', { ascending: false });
 
     if (annData && !annError) {
-      // Filter relevant announcements for this specific workstation & logged-in staff member
       const relevant = annData.filter((ann) => {
         const matchesRole = !ann.staff_role || ann.staff_role === 'all' || ann.staff_role.toLowerCase() === department.toLowerCase();
         const matchesName = !ann.staff_name || ann.staff_name === 'all' || ann.staff_name.toLowerCase() === staffName.toLowerCase();
         return matchesRole && matchesName;
       });
       setAnnouncements(relevant);
+    }
+
+    // Fetch voice messages
+    const { data: voiceData, error: voiceError } = await supabase
+      .from('voice_messages')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (voiceData && !voiceError) {
+      const relevantVoices = voiceData.filter((v) => {
+        const target = v.recipient_target?.toLowerCase() || 'all';
+        return (
+          target === 'all' ||
+          target === department.toLowerCase() ||
+          target === staffName.toLowerCase()
+        );
+      });
+      setVoiceMessages(relevantVoices);
     }
   };
 
@@ -182,6 +208,10 @@ export default function StaffDepartmentView() {
         fetchTasksAndAnnouncements();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+        playAlertChime();
+        fetchTasksAndAnnouncements();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'voice_messages' }, () => {
         playAlertChime();
         fetchTasksAndAnnouncements();
       })
@@ -381,6 +411,28 @@ export default function StaffDepartmentView() {
                   </div>
                   <p className="text-xs text-white font-medium leading-relaxed">{ann.message}</p>
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Voice Messages / Intercom Section */}
+        {voiceMessages.length > 0 && (
+          <div className="mb-6 space-y-3">
+            {voiceMessages.map((v) => (
+              <div key={v.id} className="bg-[#18181b] border border-amber-500/30 p-4 rounded-2xl shadow-xl flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🎙️</span>
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 block mb-1">
+                      Voice Intercom ({v.recipient_target}) — From {v.sender_name}
+                    </span>
+                    <audio controls src={v.audio_url} className="h-8 max-w-full" />
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono text-neutral-500">
+                  {new Date(v.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
               </div>
             ))}
           </div>
