@@ -40,8 +40,8 @@ interface VoiceMessage {
 }
 
 export default function StaffDepartmentView() {
-  const params = useParams();
-  const department = (params?.department as string) || 'general';
+  const params = useParams<{ department: string }>();
+  const department = params?.department || 'general';
   
   const formattedDeptName = department.charAt(0).toUpperCase() + department.slice(1);
 
@@ -143,7 +143,9 @@ export default function StaffDepartmentView() {
         osc.start(ctx.currentTime + index * 0.15);
         osc.stop(ctx.currentTime + index * 0.15 + 0.3);
       });
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Audio context playback suppressed or unsupported:', e);
+    }
   };
 
   const fetchTasksAndAnnouncements = async () => {

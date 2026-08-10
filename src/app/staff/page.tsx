@@ -17,6 +17,13 @@ interface VoiceMessage {
   created_at: string;
 }
 
+interface StaffMember {
+  id: string;
+  name: string;
+  department: string;
+  role?: string;
+}
+
 const departments = [
   { 
     id: 'kitchen', 
@@ -81,10 +88,18 @@ export default function StaffHubPage() {
   const router = useRouter();
   
   const [activeModal, setActiveModal] = useState<'manager' | 'broadcast' | string | null>(null);
-  const [authStep, setAuthStep] = useState<'dept_pin' | 'staff_pin'>('dept_pin');
+  const [authStep, setAuthStep] = useState<'dept_pin' | 'staff_select' | 'staff_pin'>('dept_pin');
   const [pin, setPin] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Staff Roster for Hub Login
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+  const [loadingRoster, setLoadingRoster] = useState(false);
+
+  // Authenticated Hub Staff Session State
+  const [hubStaffName, setHubStaffName] = useState<string | null>(null);
 
   // Voice Messages Feed State
   const [voiceMessages, setVoiceMessages] = useState<VoiceMessage[]>([]);
@@ -96,11 +111,33 @@ export default function StaffHubPage() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [broadcastSuccess, setBroadcastSuccess] = useState(false);
 
-  // Fetch voice notes in real time so staff hub displays them live
+  // Check saved session on load
+  useEffect(() => {
+    const saved = sessionStorage.getItem('hotel_hub_authenticated_staff');
+    if (saved) {
+      setHubStaffName(saved);
+    }
+  }, []);
+
+  // Fetch voice notes and apply strict privacy filtering based on logged-in staff name
   useEffect(() => {
     const fetchVoiceMessages = async () => {
       const { data } = await supabase.from('voice_messages').select('*').order('created_at', { ascending: false });
-      if (data) setVoiceMessages(data);
+      if (data) {
+        if (!hubStaffName) {
+          // If not logged in as specific staff on hub, hide personal direct audio notes
+          setVoiceMessages([]);
+          return;
+        }
+
+        const currentStaffLower = hubStaffName.trim().toLowerCase();
+        const filtered = data.filter(msg => {
+          const target = msg.recipient_target?.trim().toLowerCase() || 'all';
+          // Show if broadcasted to 'all' or matches the logged-in staff name
+          return target === 'all' || target.includes(currentStaffLower) || target.includes('staff');
+        });
+        setVoiceMessages(filtered);
+      }
     };
 
     fetchVoiceMessages();
@@ -113,7 +150,7 @@ export default function StaffHubPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [hubStaffName]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,24 +179,37 @@ export default function StaffHubPage() {
         if (authStep === 'dept_pin') {
           if (pin === currentDept.defaultPin) {
             setPin('');
-            setAuthStep('staff_pin');
+            setLoadingRoster(true);
+            // Fetch staff roster for this department
+            const { data } = await supabase
+              .from('staff_members')
+              .select('*')
+              .ilike('department', `%${currentDept.id}%`);
+            
+            if (data) setStaffList(data);
+            setLoadingRoster(false);
+            setAuthStep('staff_select');
             setErrorMsg('');
           } else {
             setErrorMsg('Incorrect Department Station PIN');
             setPin('');
           }
-        } else {
+        } else if (authStep === 'staff_pin') {
+          if (!selectedStaff) return;
           const { data, error } = await supabase
             .from('staff_members')
             .select('*')
+            .eq('id', selectedStaff.id)
             .eq('pin_code', pin)
-            .ilike('department', `%${currentDept.id}%`)
             .limit(1);
 
           if (error || !data || data.length === 0) {
             setErrorMsg('Incorrect Staff PIN');
             setPin('');
           } else {
+            // Success logging into hub/station
+            sessionStorage.setItem('hotel_hub_authenticated_staff', selectedStaff.name);
+            setHubStaffName(selectedStaff.name);
             router.push(`/staff/${currentDept.id}`);
           }
         }
@@ -231,6 +281,19 @@ export default function StaffHubPage() {
           <h1 className="text-2xl font-serif tracking-wide text-white">Central Yamarech</h1>
           <p className="text-[10px] tracking-[0.3em] text-amber-400 uppercase mt-1 font-semibold">Operations & Staff Portal Hub</p>
           
+          {/* Authenticated Staff Status Bar */}
+          {hubStaffName && (
+            <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-xs font-mono text-amber-300">
+              <span>👤 Logged in as: <strong>{hubStaffName}</strong></span>
+              <button 
+                onClick={() => { sessionStorage.removeItem('hotel_hub_authenticated_staff'); setHubStaffName(null); }}
+                className="text-[10px] underline hover:text-white ml-2"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
+
           {/* Action Buttons Hub */}
           <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
             <button
@@ -244,7 +307,6 @@ export default function StaffHubPage() {
               <span className="text-neutral-500 text-xs">→</span>
             </button>
 
-            {/* Manager Live Broadcast Control Button */}
             <button
               onClick={() => { setActiveModal('broadcast'); setAuthStep('dept_pin'); setPin(''); setErrorMsg(''); setBroadcastMessage(''); }}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-400 rounded-full shadow-lg transition-all active:scale-95 group"
@@ -257,28 +319,34 @@ export default function StaffHubPage() {
           </div>
         </div>
 
-        {/* Live Audio Intercom Feed for Staff */}
-        {voiceMessages.length > 0 && (
-          <div className="bg-[#131622] border border-cyan-500/30 p-5 rounded-3xl shadow-xl space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
-                🎙️ Management Audio Voice Notes Feed
-              </span>
-              <span className="text-[10px] text-neutral-400 font-mono">{voiceMessages.length} active notes</span>
-            </div>
-            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-              {voiceMessages.map(msg => (
-                <div key={msg.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-[#0b0d14] px-4 py-3 rounded-2xl border border-cyan-500/20 gap-2">
-                  <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <span className="text-[10px] font-mono text-amber-400 font-bold whitespace-nowrap">From {msg.sender_name}</span>
-                    <audio controls src={msg.audio_url} className="h-8 w-full sm:w-64" />
+        {/* Secure Filtered Audio Intercom Feed for Staff */}
+        {hubStaffName ? (
+          voiceMessages.length > 0 && (
+            <div className="bg-[#131622] border border-cyan-500/30 p-5 rounded-3xl shadow-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                  🎙️ Private & Broadcast Voice Notes Feed
+                </span>
+                <span className="text-[10px] text-neutral-400 font-mono">{voiceMessages.length} notes for {hubStaffName}</span>
+              </div>
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                {voiceMessages.map(msg => (
+                  <div key={msg.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-[#0b0d14] px-4 py-3 rounded-2xl border border-cyan-500/20 gap-2">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <span className="text-[10px] font-mono text-amber-400 font-bold whitespace-nowrap">From {msg.sender_name}</span>
+                      <audio controls src={msg.audio_url} className="h-8 w-full sm:w-64" />
+                    </div>
+                    <span className="text-[10px] text-cyan-400 font-mono uppercase bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                      Target: {msg.recipient_target}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-cyan-400 font-mono uppercase bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
-                    Target: {msg.recipient_target}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
+          )
+        ) : (
+          <div className="bg-[#131622]/60 border border-dashed border-white/10 p-4 rounded-3xl text-center">
+            <p className="text-xs text-neutral-400 font-mono">🔒 Authenticate via any department station below to securely view your private voice notes.</p>
           </div>
         )}
 
@@ -287,7 +355,7 @@ export default function StaffHubPage() {
           {departments.map((dept) => (
             <div
               key={dept.id}
-              onClick={() => { setActiveModal(dept.id); setAuthStep('dept_pin'); setPin(''); setErrorMsg(''); }}
+              onClick={() => { setActiveModal(dept.id); setAuthStep('dept_pin'); setPin(''); setSelectedStaff(null); setErrorMsg(''); }}
               className={`cursor-pointer bg-gradient-to-br ${dept.theme} bg-[#131622] hover:bg-[#171a29] border p-6 rounded-3xl shadow-xl transition-all group flex flex-col justify-between relative overflow-hidden`}
             >
               <div>
@@ -447,7 +515,9 @@ export default function StaffHubPage() {
                   ? 'Executive Authorization' 
                   : authStep === 'dept_pin' 
                     ? `${activeModal?.toUpperCase()} Station PIN` 
-                    : `${activeModal?.toUpperCase()} Staff PIN`}
+                    : authStep === 'staff_select'
+                      ? 'Select Staff Profile'
+                      : `${selectedStaff?.name} PIN`}
               </h3>
               
               <p className="text-[11px] text-neutral-400 mb-4 font-light">
@@ -455,48 +525,82 @@ export default function StaffHubPage() {
                   ? 'Enter master manager PIN to access dashboard.'
                   : authStep === 'dept_pin'
                     ? `Enter station PIN (0000) for ${activeModal}.`
-                    : 'Enter your individual staff PIN (0000).'}
+                    : authStep === 'staff_select'
+                      ? 'Select your name from the roster below.'
+                      : 'Enter your individual staff PIN.'}
               </p>
               
-              <form onSubmit={handleLoginSubmit}>
-                <input 
-                  type="password" 
-                  maxLength={4}
-                  value={pin}
-                  onChange={(e) => { setPin(e.target.value); setErrorMsg(''); }}
-                  placeholder="••••"
-                  autoFocus
-                  className="w-full text-center tracking-[0.5em] text-lg py-3 rounded-xl bg-[#0b0d14] border border-white/10 text-white focus:outline-none focus:border-amber-500 mb-3"
-                />
-                {errorMsg && <p className="text-[10px] text-rose-400 mb-3 font-medium">{errorMsg}</p>}
+              {authStep === 'staff_select' ? (
+                <div>
+                  {loadingRoster ? (
+                    <p className="text-xs text-neutral-400 py-6">Loading roster...</p>
+                  ) : staffList.length === 0 ? (
+                    <p className="text-xs text-amber-400 py-4">No staff found for this department. Please add staff in Manager Hub.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-48 overflow-y-auto mb-4 text-left">
+                      {staffList.map((st) => (
+                        <button
+                          key={st.id}
+                          type="button"
+                          onClick={() => { setSelectedStaff(st); setAuthStep('staff_pin'); setPin(''); setErrorMsg(''); }}
+                          className="w-full bg-[#0b0d14] hover:bg-white/5 border border-white/10 p-2.5 rounded-xl text-xs text-white flex justify-between items-center transition-all"
+                        >
+                          <span className="font-semibold">{st.name}</span>
+                          <span className="text-[10px] text-amber-400 font-mono">{st.role || 'Staff'} →</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
-                <div className="flex gap-2">
                   <button 
                     type="button" 
-                    onClick={() => { 
-                      if (authStep === 'staff_pin') {
-                        setAuthStep('dept_pin');
-                        setPin('');
-                        setErrorMsg('');
-                      } else {
-                        setActiveModal(null); 
-                        setPin(''); 
-                        setErrorMsg(''); 
-                      }
-                    }}
-                    className="flex-1 py-2.5 bg-white/5 text-neutral-300 rounded-xl text-xs font-medium hover:bg-white/10"
+                    onClick={() => { setAuthStep('dept_pin'); setPin(''); setErrorMsg(''); }}
+                    className="w-full py-2 bg-white/5 text-neutral-300 rounded-xl text-xs font-medium hover:bg-white/10"
                   >
-                    {authStep === 'staff_pin' ? 'Back' : 'Cancel'}
-                  </button>
-                  <button 
-                    type="submit" 
-                    disabled={isLoading}
-                    className="flex-1 py-2.5 bg-amber-500 text-neutral-950 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-400 disabled:opacity-50"
-                  >
-                    {isLoading ? 'Verifying...' : authStep === 'dept_pin' ? 'Next' : 'Authorize'}
+                    Back to Station PIN
                   </button>
                 </div>
-              </form>
+              ) : (
+                <form onSubmit={handleLoginSubmit}>
+                  <input 
+                    type="password" 
+                    maxLength={4}
+                    value={pin}
+                    onChange={(e) => { setPin(e.target.value); setErrorMsg(''); }}
+                    placeholder="••••"
+                    autoFocus
+                    className="w-full text-center tracking-[0.5em] text-lg py-3 rounded-xl bg-[#0b0d14] border border-white/10 text-white focus:outline-none focus:border-amber-500 mb-3"
+                  />
+                  {errorMsg && <p className="text-[10px] text-rose-400 mb-3 font-medium">{errorMsg}</p>}
+
+                  <div className="flex gap-2">
+                    <button 
+                      type="button" 
+                      onClick={() => { 
+                        if (authStep === 'staff_pin') {
+                          setAuthStep('staff_select');
+                          setPin('');
+                          setErrorMsg('');
+                        } else {
+                          setActiveModal(null); 
+                          setPin(''); 
+                          setErrorMsg(''); 
+                        }
+                      }}
+                      className="flex-1 py-2.5 bg-white/5 text-neutral-300 rounded-xl text-xs font-medium hover:bg-white/10"
+                    >
+                      {authStep === 'staff_pin' ? 'Back' : 'Cancel'}
+                    </button>
+                    <button 
+                      type="submit" 
+                      disabled={isLoading}
+                      className="flex-1 py-2.5 bg-amber-500 text-neutral-950 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-400 disabled:opacity-50"
+                    >
+                      {isLoading ? 'Verifying...' : authStep === 'dept_pin' ? 'Next' : 'Authorize'}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           )}
 
