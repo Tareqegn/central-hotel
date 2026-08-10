@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
-import { ChevronDown, Clock, Loader2, CheckCircle2, Truck, Volume2, Search, Filter, Sparkles, Mic, Play, Pause } from 'lucide-react';
+import { ChevronDown, Clock, Loader2, CheckCircle2, Truck, Volume2, Search, Filter, Sparkles, Mic, Play, Pause, Users, MessageSquare, Star, Shield, FileText } from 'lucide-react';
 
 interface RequestItem {
   id: string;
@@ -14,7 +14,7 @@ interface RequestItem {
   rating?: number;
   feedback?: string;
   created_at: string;
-  audio_url?: string; // Added support for embedded audio notes
+  audio_url?: string;
 }
 
 interface FeedbackItem {
@@ -69,7 +69,7 @@ export default function ManagerDashboard() {
   // Navigation Tab State
   const [activeTab, setActiveTab] = useState<'operations' | 'reviews' | 'staff' | 'crm' | 'communications'>('operations');
 
-  // Accordion Expandable Panel States ('Pending' | 'In Progress' | 'On the Way' | 'Completed' | null)
+  // Accordion Expandable Panel States
   const [expandedPanel, setExpandedPanel] = useState<string | null>('Pending');
 
   const togglePanel = (statusKey: string) => {
@@ -452,18 +452,20 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          {/* Pill Segmented Navigation Bar */}
-          <div className="flex bg-[#050811] p-1.5 rounded-2xl border border-white/[0.06] shadow-inner overflow-x-auto max-w-full">
+          {/* Enhanced Pill Segmented Navigation Bar with Stronger Glow & Contrast */}
+          <div className="flex bg-[#050811] p-1.5 rounded-2xl border border-white/[0.08] shadow-inner overflow-x-auto max-w-full">
             <button
               onClick={() => setActiveTab('operations')}
-              className={`px-4 py-2 text-xs font-medium rounded-xl transition-all duration-200 ${activeTab === 'operations' ? 'bg-amber-500 text-black font-semibold shadow-lg shadow-amber-500/10' : 'text-neutral-400 hover:text-white'}`}
+              className={`px-4 py-2.5 text-xs font-medium rounded-xl transition-all duration-300 flex items-center gap-2 ${activeTab === 'operations' ? 'bg-amber-500 text-black font-bold shadow-lg shadow-amber-500/20 scale-[1.02]' : 'text-neutral-400 hover:text-white hover:bg-white/[0.02]'}`}
             >
-              Live Operations
+              <Clock className="w-3.5 h-3.5" />
+              <span>Live Operations</span>
             </button>
             <button
               onClick={() => setActiveTab('reviews')}
-              className={`px-4 py-2 text-xs font-medium rounded-xl transition-all duration-200 flex items-center gap-1.5 ${activeTab === 'reviews' ? 'bg-amber-500 text-black font-semibold shadow-lg shadow-amber-500/10' : 'text-neutral-400 hover:text-white'}`}
+              className={`px-4 py-2.5 text-xs font-medium rounded-xl transition-all duration-300 flex items-center gap-2 ${activeTab === 'reviews' ? 'bg-amber-500 text-black font-bold shadow-lg shadow-amber-500/20 scale-[1.02]' : 'text-neutral-400 hover:text-white hover:bg-white/[0.02]'}`}
             >
+              <Star className="w-3.5 h-3.5" />
               <span>Guest Reviews</span>
               <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${activeTab === 'reviews' ? 'bg-black/20 text-black' : 'bg-white/10 text-amber-400'}`}>
                 {feedbackList.length}
@@ -471,21 +473,24 @@ export default function ManagerDashboard() {
             </button>
             <button
               onClick={() => setActiveTab('staff')}
-              className={`px-4 py-2 text-xs font-medium rounded-xl transition-all duration-200 ${activeTab === 'staff' ? 'bg-amber-500 text-black font-semibold shadow-lg shadow-amber-500/10' : 'text-neutral-400 hover:text-white'}`}
+              className={`px-4 py-2.5 text-xs font-medium rounded-xl transition-all duration-300 flex items-center gap-2 ${activeTab === 'staff' ? 'bg-amber-500 text-black font-bold shadow-lg shadow-amber-500/20 scale-[1.02]' : 'text-neutral-400 hover:text-white hover:bg-white/[0.02]'}`}
             >
-              Staff Directory
+              <Users className="w-3.5 h-3.5" />
+              <span>Staff Directory</span>
             </button>
             <button
               onClick={() => setActiveTab('crm')}
-              className={`px-4 py-2 text-xs font-medium rounded-xl transition-all duration-200 ${activeTab === 'crm' ? 'bg-amber-500 text-black font-semibold shadow-lg shadow-amber-500/10' : 'text-neutral-400 hover:text-white'}`}
+              className={`px-4 py-2.5 text-xs font-medium rounded-xl transition-all duration-300 flex items-center gap-2 ${activeTab === 'crm' ? 'bg-amber-500 text-black font-bold shadow-lg shadow-amber-500/20 scale-[1.02]' : 'text-neutral-400 hover:text-white hover:bg-white/[0.02]'}`}
             >
-              Guest CRM & Notes
+              <Shield className="w-3.5 h-3.5" />
+              <span>Guest CRM & Notes</span>
             </button>
             <button
               onClick={() => setActiveTab('communications')}
-              className={`px-4 py-2 text-xs font-medium rounded-xl transition-all duration-200 ${activeTab === 'communications' ? 'bg-amber-500 text-black font-semibold shadow-lg shadow-amber-500/10' : 'text-neutral-400 hover:text-white'}`}
+              className={`px-4 py-2.5 text-xs font-medium rounded-xl transition-all duration-300 flex items-center gap-2 ${activeTab === 'communications' ? 'bg-amber-500 text-black font-bold shadow-lg shadow-amber-500/20 scale-[1.02]' : 'text-neutral-400 hover:text-white hover:bg-white/[0.02]'}`}
             >
-              Communications Hub
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Communications Hub</span>
             </button>
           </div>
 
@@ -587,12 +592,12 @@ export default function ManagerDashboard() {
 
                     {/* Smooth Expandable Accordion Content */}
                     <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[800px] opacity-100 p-4' : 'max-h-0 opacity-0 p-0'}`}>
-                      <div className="space-y-3.5 bg-[#050811]/90 rounded-2xl p-3 border border-white/[0.06] max-h-[500px] overflow-y-auto">
+                      <div className="space-y-3.5 bg-[#050811]/90 rounded-2xl p-4 border border-white/[0.06] max-h-[500px] overflow-y-auto">
                         {colRequests.length === 0 ? (
-                          <div className="h-32 flex flex-col items-center justify-center text-neutral-500 text-xs border border-white/[0.04] bg-[#0b1021]/40 rounded-2xl p-6 text-center">
-                            <span className="text-xl mb-1 opacity-40">✨</span>
-                            <span className="font-medium text-neutral-400">All caught up</span>
-                            <span className="text-[10px] text-neutral-600 mt-0.5">No active items in {col.title}</span>
+                          <div className="h-40 flex flex-col items-center justify-center text-neutral-400 text-xs border border-dashed border-white/[0.08] bg-[#0b1021]/40 rounded-2xl p-6 text-center">
+                            <span className="text-2xl mb-2 opacity-50">✨</span>
+                            <span className="font-semibold text-neutral-300 mb-1">All caught up!</span>
+                            <span className="text-[11px] text-neutral-500">No active items currently in {col.title}.</span>
                           </div>
                         ) : (
                           colRequests.map((req) => {
@@ -770,9 +775,10 @@ export default function ManagerDashboard() {
             </div>
 
             {feedbackList.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center text-neutral-500 text-xs tracking-wider uppercase font-mono border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40">
-                <span className="text-3xl mb-2">⭐</span>
-                No guest reviews submitted yet.
+              <div className="h-64 flex flex-col items-center justify-center text-neutral-400 text-xs tracking-wider uppercase font-mono border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40">
+                <span className="text-3xl mb-2 opacity-50">⭐</span>
+                <span className="font-semibold text-neutral-300 mb-1">No guest reviews yet</span>
+                <span className="text-[11px] text-neutral-500">Submissions from guest tablets will appear here.</span>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -813,7 +819,7 @@ export default function ManagerDashboard() {
           </div>
         )}
 
-        {/* TAB 3: STAFF DIRECTORY */}
+        {/* TAB 3: STAFF DIRECTORY (Improved Responsive Grid & Breathing Room) */}
         {activeTab === 'staff' && (
           <div className="bg-[#0b1021]/80 backdrop-blur-xl border border-white/[0.06] p-6 sm:p-8 rounded-3xl shadow-2xl animate-fadeIn space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.06]">
@@ -829,27 +835,33 @@ export default function ManagerDashboard() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {dbStaffMembers.length === 0 ? (
-                <p className="text-xs text-neutral-500 font-mono italic p-4">No staff registered yet.</p>
-              ) : (
-                dbStaffMembers.map((staff, idx) => (
-                  <div key={idx} className="flex items-center justify-between bg-[#050811] p-4 rounded-2xl border border-white/[0.06] shadow-lg transition-all hover:border-white/[0.15]">
-                    <div>
-                      <span className="font-semibold text-white block text-sm mb-0.5">{staff.name}</span>
-                      <span className="text-xs text-amber-400 capitalize">{staff.department} {staff.role ? `• ${staff.role}` : ''}</span>
+            {dbStaffMembers.length === 0 ? (
+              <div className="h-48 flex flex-col items-center justify-center text-neutral-400 text-xs border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40 text-center">
+                <span className="text-2xl mb-2 opacity-50">👥</span>
+                <span className="font-semibold text-neutral-300">No staff registered yet</span>
+                <span className="text-[11px] text-neutral-500 mt-1">Click "Register New Staff" above to add team members.</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {dbStaffMembers.map((staff, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-[#050811] p-5 rounded-2xl border border-white/[0.06] shadow-lg transition-all hover:border-amber-500/30">
+                    <div className="space-y-1">
+                      <span className="font-semibold text-white block text-sm">{staff.name}</span>
+                      <span className="text-xs text-amber-400 capitalize bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20 inline-block font-mono">
+                        {staff.department} {staff.role ? `• ${staff.role}` : ''}
+                      </span>
                     </div>
                     <button 
                       onClick={() => handleDeleteStaff(staff.name, staff.department)} 
-                      className="text-neutral-500 hover:text-red-400 text-xs p-2 bg-white/[0.02] hover:bg-red-500/10 rounded-xl transition-all"
+                      className="text-neutral-500 hover:text-red-400 text-xs p-2.5 bg-white/[0.02] hover:bg-red-500/10 rounded-xl transition-all"
                       title="Remove Staff"
                     >
                       ✕
                     </button>
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -872,12 +884,16 @@ export default function ManagerDashboard() {
                   </button>
                 </div>
 
-                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                <div className="space-y-3.5 max-h-[400px] overflow-y-auto pr-1">
                   {guestProfiles.length === 0 ? (
-                    <p className="text-xs text-neutral-500 font-mono italic p-2">No guest profiles stored.</p>
+                    <div className="h-40 flex flex-col items-center justify-center text-neutral-400 text-xs border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40 text-center">
+                      <span className="text-2xl mb-2 opacity-50">📂</span>
+                      <span className="font-semibold text-neutral-300">No guest profiles stored</span>
+                      <span className="text-[11px] text-neutral-500 mt-1">Add guest preferences to track personalized service.</span>
+                    </div>
                   ) : (
                     guestProfiles.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between bg-[#050811] p-4 rounded-2xl border border-white/[0.06] shadow transition-all hover:border-white/[0.12]">
+                      <div key={p.id} className="flex items-center justify-between bg-[#050811] p-4 rounded-2xl border border-white/[0.06] shadow transition-all hover:border-amber-500/30">
                         <div>
                           <span className="font-semibold text-amber-400 text-sm block mb-1">Room {p.room} — <span className="text-white">{p.guest_name || 'Guest'}</span></span>
                           <span className="text-xs text-neutral-300 italic">"{p.preferences}"</span>
@@ -985,7 +1001,9 @@ export default function ManagerDashboard() {
 
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {announcements.length === 0 ? (
-                  <p className="text-xs text-neutral-500 font-mono italic">No broadcasts created.</p>
+                  <div className="py-6 text-center border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40">
+                    <span className="text-xs text-neutral-400 font-mono">No broadcasts active.</span>
+                  </div>
                 ) : (
                   announcements.map((ann) => (
                     <div key={ann.id} className="flex items-center justify-between bg-[#050811] px-4 py-3 rounded-2xl border border-white/[0.06]">
@@ -1044,7 +1062,9 @@ export default function ManagerDashboard() {
 
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {voiceMessages.length === 0 ? (
-                  <p className="text-xs text-neutral-500 font-mono italic">No voice notes recorded yet.</p>
+                  <div className="py-6 text-center border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40">
+                    <span className="text-xs text-neutral-400 font-mono">No voice notes recorded yet.</span>
+                  </div>
                 ) : (
                   voiceMessages.map((msg) => (
                     <div key={msg.id} className="flex items-center justify-between bg-[#050811] px-4 py-3 rounded-2xl border border-cyan-500/20">
