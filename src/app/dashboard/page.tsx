@@ -15,6 +15,14 @@ interface RequestItem {
   created_at: string;
 }
 
+interface FeedbackItem {
+  id: string;
+  room: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
 interface Announcement {
   id: string;
   message: string;
@@ -50,13 +58,14 @@ interface VoiceMessage {
 
 export default function ManagerDashboard() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
+  const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [guestProfiles, setGuestProfiles] = useState<GuestProfile[]>([]);
   const [dbStaffMembers, setDbStaffMembers] = useState<StaffMember[]>([]);
   const [voiceMessages, setVoiceMessages] = useState<VoiceMessage[]>([]);
   
-  // Navigation Tab State ('operations' | 'staff' | 'crm' | 'communications')
-  const [activeTab, setActiveTab] = useState<'operations' | 'staff' | 'crm' | 'communications'>('operations');
+  // Navigation Tab State ('operations' | 'reviews' | 'staff' | 'crm' | 'communications')
+  const [activeTab, setActiveTab] = useState<'operations' | 'reviews' | 'staff' | 'crm' | 'communications'>('operations');
 
   // Modal States
   const [isStaffModalOpen, setIsStaffModalOpen] = useState<boolean>(false);
@@ -139,13 +148,22 @@ export default function ManagerDashboard() {
   };
 
   const fetchData = async () => {
+    // 1. Fetch active operational tasks (excluding feedback rows if mixed, or standard requests)
     const { data: reqData } = await supabase.from('requests').select('*').order('created_at', { ascending: false });
     if (reqData) {
-      setRequests(reqData);
+      // Filter out pure feedback items from operational tasks queue
+      const operationalTasks = reqData.filter(r => r.category !== 'Feedback' && !r.note?.startsWith('Rating:'));
+      setRequests(operationalTasks);
       if (selectedRequest) {
-        const updatedCurrent = reqData.find(r => r.id === selectedRequest.id);
+        const updatedCurrent = operationalTasks.find(r => r.id === selectedRequest.id);
         if (updatedCurrent) setSelectedRequest(updatedCurrent);
       }
+    }
+
+    // 2. Fetch guest feedback from dedicated table
+    const { data: feedbackData } = await supabase.from('guest_feedback').select('*').order('created_at', { ascending: false });
+    if (feedbackData) {
+      setFeedbackList(feedbackData);
     }
 
     const { data: annData } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
@@ -172,6 +190,10 @@ export default function ManagerDashboard() {
     const channel = supabase
       .channel('manager_dashboard_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, (payload: { eventType: string }) => {
+        if (payload.eventType === 'INSERT') playAlertChime();
+        fetchData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_feedback' }, (payload: { eventType: string }) => {
         if (payload.eventType === 'INSERT') playAlertChime();
         fetchData();
       })
@@ -363,8 +385,7 @@ export default function ManagerDashboard() {
     const matchesSearch = searchQuery === '' || 
       r.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.note.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.room.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (r.feedback && r.feedback.toLowerCase().includes(searchQuery.toLowerCase()));
+      r.room.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesRoom && matchesSearch;
   });
 
@@ -403,7 +424,7 @@ export default function ManagerDashboard() {
       <div className="max-w-[1600px] mx-auto space-y-6 relative z-10">
 
         {/* Top Header & Pill Navigation */}
-        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center bg-[#0b1021]/80 backdrop-blur-2xl border border-white/[0.06] p-5 rounded-3xl shadow-2xl gap-5">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center bg-[#0b1021]/85 backdrop-blur-2xl border border-white/[0.06] p-5 rounded-3xl shadow-2xl gap-5">
           
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-[#0e1428] border border-white/[0.08] flex items-center justify-center p-2 shadow-inner">
@@ -425,6 +446,15 @@ export default function ManagerDashboard() {
               className={`px-4 py-2 text-xs font-medium rounded-xl transition-all duration-200 ${activeTab === 'operations' ? 'bg-amber-500 text-black font-semibold shadow-lg shadow-amber-500/10' : 'text-neutral-400 hover:text-white'}`}
             >
               Live Operations
+            </button>
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`px-4 py-2 text-xs font-medium rounded-xl transition-all duration-200 flex items-center gap-1.5 ${activeTab === 'reviews' ? 'bg-amber-500 text-black font-semibold shadow-lg shadow-amber-500/10' : 'text-neutral-400 hover:text-white'}`}
+            >
+              <span>Guest Reviews</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${activeTab === 'reviews' ? 'bg-black/20 text-black' : 'bg-white/10 text-amber-400'}`}>
+                {feedbackList.length}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('staff')}
@@ -565,16 +595,6 @@ export default function ManagerDashboard() {
                                 <p className="text-xs text-neutral-300 mb-3 bg-[#050811]/80 p-3 rounded-xl border border-white/[0.04] leading-relaxed">
                                   {req.note}
                                 </p>
-
-                                {(req.rating || req.feedback) && (
-                                  <div className="mb-3 bg-amber-500/10 border-l-2 border-amber-400 p-2.5 rounded-r-xl">
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-[9px] uppercase font-mono tracking-widest text-amber-400 font-bold">Feedback</span>
-                                      {req.rating && <span className="bg-amber-400/20 text-amber-300 text-[9px] px-1.5 py-0.5 rounded font-mono font-bold">{req.rating}★</span>}
-                                    </div>
-                                    {req.feedback && <p className="text-xs text-neutral-100 italic">"{req.feedback}"</p>}
-                                  </div>
-                                )}
                               </div>
 
                               <div className="grid grid-cols-2 gap-1.5 pt-3 border-t border-white/[0.06]" onClick={(e) => e.stopPropagation()}>
@@ -666,7 +686,64 @@ export default function ManagerDashboard() {
           </div>
         )}
 
-        {/* TAB 2: STAFF DIRECTORY */}
+        {/* TAB 2: GUEST REVIEWS & FEEDBACK PANEL */}
+        {activeTab === 'reviews' && (
+          <div className="bg-[#0b1021]/80 backdrop-blur-xl border border-white/[0.06] p-6 sm:p-8 rounded-3xl shadow-2xl animate-fadeIn space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.06]">
+              <div>
+                <span className="text-[10px] font-mono tracking-widest text-amber-400 uppercase block mb-1">Guest Sentiment & Evaluation</span>
+                <h2 className="text-xl font-serif text-white">Guest Reviews & Ratings Log</h2>
+              </div>
+              <span className="text-xs font-mono text-neutral-400 bg-[#050811] px-4 py-2 rounded-2xl border border-white/[0.06]">
+                Total Submissions: {feedbackList.length}
+              </span>
+            </div>
+
+            {feedbackList.length === 0 ? (
+              <div className="h-64 flex flex-col items-center justify-center text-neutral-500 text-xs tracking-wider uppercase font-mono border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40">
+                <span className="text-3xl mb-2">⭐</span>
+                No guest reviews submitted yet.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {feedbackList.map((item) => {
+                  const guestName = roomToGuestNameMap[item.room];
+                  return (
+                    <div 
+                      key={item.id}
+                      className="bg-[#050811] border border-white/[0.08] p-5 rounded-2xl shadow-xl flex flex-col gap-3 transition-all hover:border-amber-500/30"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <span className="px-3 py-1 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-mono font-bold border border-amber-500/25">
+                            Room {item.room} {guestName ? `(${guestName})` : ''}
+                          </span>
+                          <div className="flex items-center text-amber-400 text-sm">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <span key={i} className={i < (item.rating || 0) ? 'text-amber-400' : 'text-neutral-700'}>
+                                ★
+                              </span>
+                            ))}
+                            <span className="ml-2 text-xs font-mono text-neutral-300 font-bold">({item.rating}/5)</span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-mono text-neutral-500">
+                          {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({new Date(item.created_at).toLocaleDateString()})
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-neutral-200 bg-[#0b1021] p-3.5 rounded-xl border border-white/[0.04] leading-relaxed italic">
+                        "{item.comment || 'No written comment provided.'}"
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: STAFF DIRECTORY */}
         {activeTab === 'staff' && (
           <div className="bg-[#0b1021]/80 backdrop-blur-xl border border-white/[0.06] p-6 sm:p-8 rounded-3xl shadow-2xl animate-fadeIn space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.06]">
@@ -706,7 +783,7 @@ export default function ManagerDashboard() {
           </div>
         )}
 
-        {/* TAB 3: GUEST CRM & SHIFT NOTES */}
+        {/* TAB 4: GUEST CRM & SHIFT NOTES */}
         {activeTab === 'crm' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn">
             
@@ -763,7 +840,7 @@ export default function ManagerDashboard() {
           </div>
         )}
 
-        {/* TAB 4: COMMUNICATIONS HUB */}
+        {/* TAB 5: COMMUNICATIONS HUB */}
         {activeTab === 'communications' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn">
             
