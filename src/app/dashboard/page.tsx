@@ -83,10 +83,11 @@ export default function ManagerDashboard() {
   const [isStaffModalOpen, setIsStaffModalOpen] = useState<boolean>(false);
   const [isCrmModalOpen, setIsCrmModalOpen] = useState<boolean>(false);
 
-  // Live Chat Reply State (Option 2: Always Visible & Accessible Concierge Chat)
+  // Live Chat Reply State & Synchronized Status
   const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
   const [chatRoomTarget, setChatRoomTarget] = useState<string>('');
   const [replyText, setReplyText] = useState<string>('');
+  const [activeRoomStatus, setActiveRoomStatus] = useState<string>('Pending');
 
   // Staff & Announcement Form States
   const [newStaffName, setNewStaffName] = useState<string>('');
@@ -168,7 +169,10 @@ export default function ManagerDashboard() {
       setRequests(operationalTasks);
       if (selectedRequest) {
         const updatedCurrent = operationalTasks.find(r => r.id === selectedRequest.id);
-        if (updatedCurrent) setSelectedRequest(updatedCurrent);
+        if (updatedCurrent) {
+          setSelectedRequest(updatedCurrent);
+          setActiveRoomStatus(updatedCurrent.status);
+        }
       }
     }
 
@@ -210,9 +214,65 @@ export default function ManagerDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [soundEnabled, selectedRequest]);
+  }, [soundEnabled]);
+
+  // Unique rooms computation
+  const activeRoomsSet = new Set<string>();
+  requests.forEach(r => { if (r.room) activeRoomsSet.add(r.room); });
+  guestProfiles.forEach(p => { if (p.room) activeRoomsSet.add(p.room); });
+  const uniqueRooms = Array.from(activeRoomsSet).sort((a, b) => parseInt(a) - parseInt(b) || a.localeCompare(b));
+  const roomToGuestNameMap: { [room: string]: string } = {};
+  guestProfiles.forEach(p => { if (p.guest_name) roomToGuestNameMap[p.room] = p.guest_name; });
+
+  const effectiveChatRoom = chatRoomTarget || (uniqueRooms.length > 0 ? uniqueRooms[0] : '101');
+  const roomRequests = requests.filter(r => r.room === effectiveChatRoom);
+  const activeRoomReq = roomRequests.find(r => r.status !== 'Completed') || roomRequests[0] || requests[0] || null;
+  const activeChatRequest = selectedRequest || activeRoomReq;
+
+  // Keep activeRoomStatus synchronized with activeChatRequest changes
+  useEffect(() => {
+    if (activeChatRequest) {
+      setActiveRoomStatus(activeChatRequest.status);
+    }
+  }, [activeChatRequest?.id, activeChatRequest?.status]);
+
+  // Realtime subscription specifically for active chat room requests
+  useEffect(() => {
+    const currentRoom = selectedRequest ? selectedRequest.room : effectiveChatRoom;
+    if (!currentRoom) return;
+
+    const roomChannel = supabase
+      .channel(`room-chat-${currentRoom}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'requests',
+          filter: `room=eq.${currentRoom}`,
+        },
+        (payload: { new: RequestItem }) => {
+          if (payload.new && payload.new.status) {
+            setActiveRoomStatus(payload.new.status);
+          }
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(roomChannel);
+    };
+  }, [selectedRequest, effectiveChatRoom]);
 
   const updateStatus = async (id: string, newStatus: string) => {
+    // Optimistic local state update
+    setActiveRoomStatus(newStatus);
+    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
+    if (selectedRequest && selectedRequest.id === id) {
+      setSelectedRequest(prev => prev ? { ...prev, status: newStatus } : null);
+    }
+
     await supabase.from('requests').update({ status: newStatus }).eq('id', id);
     if (newStatus === 'Completed' && selectedRequest?.id === id) {
       setSelectedRequest(null);
@@ -220,14 +280,26 @@ export default function ManagerDashboard() {
     fetchData();
   };
 
-  // Option 2: Always-Visible Chat Reply Handler
+  const handleUpdateStatus = async (newStatus: string) => {
+    if (!activeChatRequest) return;
+    await updateStatus(activeChatRequest.id, newStatus);
+  };
+
+  // Always-Visible Chat Reply Handler with Optimistic Updates
   const handleSendReply = async () => {
     if (!replyText.trim()) return;
 
-    if (selectedRequest) {
-      const updatedNote = `${selectedRequest.note} | Staff Reply: ${replyText.trim()}`;
+    if (activeChatRequest) {
+      const updatedNote = `${activeChatRequest.note} | Staff Reply: ${replyText.trim()}`;
       try {
-        await supabase.from('requests').update({ note: updatedNote, status: 'In Progress' }).eq('id', selectedRequest.id);
+        // Optimistic update
+        setActiveRoomStatus('In Progress');
+        setRequests(prev => prev.map(r => r.id === activeChatRequest.id ? { ...r, note: updatedNote, status: 'In Progress' } : r));
+        if (selectedRequest) {
+          setSelectedRequest({ ...selectedRequest, note: updatedNote, status: 'In Progress' });
+        }
+
+        await supabase.from('requests').update({ note: updatedNote, status: 'In Progress' }).eq('id', activeChatRequest.id);
         setReplyText('');
         fetchData();
       } catch (err) {
@@ -242,6 +314,7 @@ export default function ManagerDashboard() {
         if (existingReqForRoom) {
           const updatedNote = `${existingReqForRoom.note} | Staff Reply: ${replyText.trim()}`;
           await supabase.from('requests').update({ note: updatedNote, status: 'In Progress' }).eq('id', existingReqForRoom.id);
+          setActiveRoomStatus('In Progress');
         } else {
           await supabase.from('requests').insert([{
             room: targetRoom,
@@ -249,6 +322,7 @@ export default function ManagerDashboard() {
             note: `Staff Direct Message: ${replyText.trim()}`,
             status: 'In Progress'
           }]);
+          setActiveRoomStatus('In Progress');
         }
         setReplyText('');
         fetchData();
@@ -386,14 +460,6 @@ export default function ManagerDashboard() {
     return s.department?.trim().toLowerCase() === selectedBroadcastDept?.trim().toLowerCase();
   });
 
-  const activeRoomsSet = new Set<string>();
-  requests.forEach(r => { if (r.room) activeRoomsSet.add(r.room); });
-  guestProfiles.forEach(p => { if (p.room) activeRoomsSet.add(p.room); });
-
-  const uniqueRooms = Array.from(activeRoomsSet).sort((a, b) => parseInt(a) - parseInt(b) || a.localeCompare(b));
-  const roomToGuestNameMap: { [room: string]: string } = {};
-  guestProfiles.forEach(p => { if (p.guest_name) roomToGuestNameMap[p.room] = p.guest_name; });
-
   const filteredRequests = requests.filter(r => {
     const matchesRoom = selectedRoomFilter === 'ALL' || r.room === selectedRoomFilter;
     const matchesSearch = searchQuery === '' || 
@@ -402,12 +468,6 @@ export default function ManagerDashboard() {
       r.room.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesRoom && matchesSearch;
   });
-
-  // Option 2 Computations for Always-Visible Concierge Chat with Active Priority
-  const effectiveChatRoom = chatRoomTarget || (uniqueRooms.length > 0 ? uniqueRooms[0] : '101');
-  const roomRequests = requests.filter(r => r.room === effectiveChatRoom);
-  const activeRoomReq = roomRequests.find(r => r.status !== 'Completed') || roomRequests[0] || requests[0] || null;
-  const activeChatRequest = selectedRequest || activeRoomReq;
 
   const activeRoomsCount = new Set(filteredRequests.filter(r => r.status !== 'Completed').map(r => r.room)).size;
   const now = new Date().getTime();
@@ -653,6 +713,7 @@ export default function ManagerDashboard() {
                                   onClick={() => {
                                     setSelectedRequest(req);
                                     setChatRoomTarget(req.room);
+                                    setActiveRoomStatus(req.status);
                                   }}
                                   className={`p-4 rounded-2xl border flex flex-col justify-between shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-0.5 ${
                                     isSelected 
@@ -743,7 +804,7 @@ export default function ManagerDashboard() {
               })}
             </div>
 
-            {/* Always Visible & Accessible Concierge Chat Panel */}
+            {/* Always Visible & Accessible Concierge Chat Panel with Synchronized State */}
             <div className="bg-[#0b1021]/80 backdrop-blur-xl border border-white/[0.06] p-6 rounded-3xl shadow-2xl flex flex-col h-[600px]">
               <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] mb-4">
                 <div className="flex items-center gap-2">
@@ -786,8 +847,12 @@ export default function ManagerDashboard() {
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-neutral-400 font-mono block">Status / Type</span>
-                    <span className="text-xs text-amber-300 font-mono uppercase">
-                      {activeChatRequest ? activeChatRequest.status : 'Ready'}
+                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded border uppercase font-mono ${
+                      activeRoomStatus === 'Completed' 
+                        ? 'border-green-500/30 text-green-400 bg-green-500/10' 
+                        : 'border-yellow-500/30 text-yellow-400 bg-yellow-500/10'
+                    }`}>
+                      {activeRoomStatus}
                     </span>
                   </div>
                 </div>
@@ -818,24 +883,23 @@ export default function ManagerDashboard() {
                   )}
                 </div>
 
-                {activeChatRequest && (
-                  <div className="flex items-center gap-2 pt-3 shrink-0">
-                    <button 
-                      onClick={() => updateStatus(activeChatRequest.id, 'In Progress')}
-                      className="flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-white/[0.04] hover:bg-white/[0.08] text-amber-400 border border-white/[0.08] transition-all font-mono"
-                    >
-                      Mark Progress
-                    </button>
-                    <button 
-                      onClick={() => updateStatus(activeChatRequest.id, 'Completed')}
-                      className="flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition-all font-mono"
-                    >
-                      Mark Completed
-                    </button>
-                  </div>
-                )}
+                {/* Quick Status Action Buttons */}
+                <div className="flex gap-2 my-2 shrink-0">
+                  <button 
+                    onClick={() => handleUpdateStatus('In Progress')}
+                    className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700 text-slate-200 transition-colors font-mono uppercase"
+                  >
+                    Mark Progress
+                  </button>
+                  <button 
+                    onClick={() => handleUpdateStatus('Completed')}
+                    className="flex-1 py-2 bg-emerald-950/40 hover:bg-emerald-900/40 text-xs font-semibold rounded-xl border border-emerald-500/30 text-emerald-400 transition-colors font-mono uppercase"
+                  >
+                    Mark Completed
+                  </button>
+                </div>
 
-                <div className="pt-3 border-t border-white/[0.06] mt-3 flex items-center gap-2 shrink-0">
+                <div className="pt-2 border-t border-white/[0.06] flex items-center gap-2 shrink-0">
                   <input 
                     type="text"
                     value={replyText}
@@ -873,7 +937,7 @@ export default function ManagerDashboard() {
 
             {feedbackList.length === 0 ? (
               <div className="h-64 flex flex-col items-center justify-center text-neutral-400 text-xs tracking-wider uppercase font-mono border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40">
-                <span className="text-3xl mb-2 opacity-50">⭐</span>
+                <span className="text-3xl mb-2 opacity-50">📋</span>
                 <span className="font-semibold text-neutral-300 mb-1">No guest reviews yet</span>
                 <span className="text-[11px] text-neutral-500">Submissions from guest tablets will appear here.</span>
               </div>
@@ -984,7 +1048,7 @@ export default function ManagerDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto pr-1">
                   {guestProfiles.length === 0 ? (
                     <div className="col-span-full h-40 flex flex-col items-center justify-center text-neutral-400 text-xs border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40 text-center">
-                      <span className="text-2xl mb-2 opacity-50">📂</span>
+                      <span className="text-2xl mb-2 opacity-50">🗂️</span>
                       <span className="font-semibold text-neutral-300">No guest profiles stored</span>
                       <span className="text-[11px] text-neutral-500 mt-1">Add guest preferences to track personalized service.</span>
                     </div>
@@ -1144,7 +1208,7 @@ export default function ManagerDashboard() {
                     onClick={startRecording}
                     className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white font-medium text-xs px-5 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all animate-pulse"
                   >
-                    <span>🔴 Record Voice Note</span>
+                    <span>🎙️ Record Voice Note</span>
                   </button>
                 ) : (
                   <button
