@@ -718,42 +718,57 @@ export default function ManagerDashboard() {
 
               {selectedRequest ? (
                 <div className="flex-1 flex flex-col justify-between overflow-hidden">
-                  <div className="space-y-4 overflow-y-auto pr-2 flex-1">
-                    <div className="flex justify-between items-center bg-[#050811] p-3.5 rounded-2xl border border-amber-500/30">
-                      <div>
-                        <span className="text-xs font-mono font-bold text-amber-400 block">Room {selectedRequest.room}</span>
-                        <span className="text-xs text-white font-medium">{selectedRequest.category}</span>
-                      </div>
-                      <span className="text-[10px] uppercase px-2.5 py-1 rounded-lg font-mono bg-amber-500/20 text-amber-300">
-                        {selectedRequest.status}
-                      </span>
+                  
+                  {/* Room & Status Header */}
+                  <div className="flex justify-between items-center bg-[#050811] p-3.5 rounded-2xl border border-amber-500/30 mb-3 shrink-0">
+                    <div>
+                      <span className="text-xs font-mono font-bold text-amber-400 block">Room {selectedRequest.room}</span>
+                      <span className="text-xs text-white font-medium">{selectedRequest.category}</span>
                     </div>
-
-                    <div className="p-4 rounded-2xl bg-[#050811] border border-white/[0.06]">
-                      <span className="text-[9px] uppercase font-mono text-neutral-400 block mb-1">Original Request Content</span>
-                      <p className="text-xs text-neutral-200 leading-relaxed">{selectedRequest.note}</p>
-                      <span className="text-[9px] text-neutral-500 mt-2 block font-mono">
-                        {new Date(selectedRequest.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => updateStatus(selectedRequest.id, 'In Progress')}
-                        className="flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-white/[0.04] hover:bg-white/[0.08] text-amber-400 border border-white/[0.08] transition-all font-mono"
-                      >
-                        Mark Progress
-                      </button>
-                      <button 
-                        onClick={() => updateStatus(selectedRequest.id, 'Completed')}
-                        className="flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition-all font-mono"
-                      >
-                        Mark Completed
-                      </button>
-                    </div>
+                    <span className="text-[10px] uppercase px-2.5 py-1 rounded-lg font-mono bg-amber-500/20 text-amber-300">
+                      {selectedRequest.status}
+                    </span>
                   </div>
 
-                  <div className="pt-4 border-t border-white/[0.06] mt-4 flex items-center gap-2">
+                  {/* Threaded Chat Bubbles View */}
+                  <div className="space-y-3 overflow-y-auto pr-2 flex-1 bg-[#050811]/50 p-3 rounded-2xl border border-white/[0.04]">
+                    {selectedRequest.note.split('| Staff Reply:').map((messageChunk, index) => {
+                      const isStaffReply = index > 0;
+                      return (
+                        <div key={index} className={`flex flex-col ${isStaffReply ? 'items-end' : 'items-start'}`}>
+                          <span className="text-[9px] font-mono text-neutral-500 mb-1 px-1">
+                            {isStaffReply ? 'Manager / Staff' : `Guest (Room ${selectedRequest.room})`}
+                          </span>
+                          <div className={`p-3 rounded-2xl text-xs max-w-[85%] leading-relaxed ${
+                            isStaffReply 
+                              ? 'bg-amber-500/20 text-amber-200 border border-amber-500/30 rounded-tr-sm' 
+                              : 'bg-[#0b1021] text-neutral-200 border border-white/[0.08] rounded-tl-sm'
+                          }`}>
+                            {messageChunk.trim()}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Quick Status Buttons */}
+                  <div className="flex items-center gap-2 pt-3 shrink-0">
+                    <button 
+                      onClick={() => updateStatus(selectedRequest.id, 'In Progress')}
+                      className="flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-white/[0.04] hover:bg-white/[0.08] text-amber-400 border border-white/[0.08] transition-all font-mono"
+                    >
+                      Mark Progress
+                    </button>
+                    <button 
+                      onClick={() => updateStatus(selectedRequest.id, 'Completed')}
+                      className="flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition-all font-mono"
+                    >
+                      Mark Completed
+                    </button>
+                  </div>
+
+                  {/* Reply Input Bar */}
+                  <div className="pt-3 border-t border-white/[0.06] mt-3 flex items-center gap-2 shrink-0">
                     <input 
                       type="text"
                       value={replyText}
@@ -769,6 +784,7 @@ export default function ManagerDashboard() {
                       Send
                     </button>
                   </div>
+
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-neutral-500 text-xs">
