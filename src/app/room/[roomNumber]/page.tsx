@@ -176,42 +176,42 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
   am: {
     welcome: "እንኳን ደህና መጡ",
     suiteLocked: "ክፍል ተዘግቷል",
-    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊትዴስክ ተቀባይ ጋር ይመዝገቡ",
-    verifying: "የክፍል-ጊዜ ማረጋገጫ...",
+    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት ዴስክ መቀበያ ጋር ይመዝገቡ",
+    verifying: "መረጃዎችን በማጣራት ላይ...",
     servicesTab: "አገልግሎቶች",
     menuTab: "የምግብ ዝርዝር",
     folioTab: "ሂሳብ",
     callWaiter: " አስተናጋጅ ጥራ",
     roomCleaning: "የክፍል ጽዳት",
-    laundryService: "የልብስ ማጠቢያ",
+    laundryService: "ልብስ ማጠቢያ",
     taxiTransport: "ታክሲ",
     spaBooking: "ስፓ",
-    itemsSelected: "ምርቶች",
+    itemsSelected: "እቃዎች",
     confirmOrder: "ትዕዛዝ አረጋግጥ",
     orderStatus: "ሁኔታ",
     viewProgress: "ሁኔታ ይመልከቱ",
     close: "ዝጋ",
     submit: "ላክ",
-    specialInstructions: "ማስታወሻ ወይም ልዩ ጥያቄዎች",
-    placeholderNotes: "ለምሳሌ የአለርጂ ሁኔታ፣ ተጨማሪ ፎጣ...",
+    specialInstructions: "ልዩ ማስታወሻ ወይም ጥያቄ",
+    placeholderNotes: "ለምሳሌ: አለርጂ, ተጨማሪ ፎጣዎች...",
     departureTime: "የመነሻ ሰዓት",
     itemBreakdown: "የእቃዎች ዝርዝር",
     waiterAlert: "አስተናጋጅ ወደ ክፍልዎ እንዲመጣ ይፈልጋሉ?",
-    pending: "ተቀባይነት አግኝቷል",
+    pending: "ትዕዛዝ ተቀብለናል",
     inProgress: "በሂደት ላይ",
     completed: "ተጠናቋል",
     subtotal: "ንዑስ ድምር",
     serviceTax: "የአገልግሎት ክፍያ (10%)",
-    total: "አጠቃላይ ድምር",
-    clearCart: "ጋሪባዶ አድርግ",
-    viewCartAndPay: "ጋሪውን እይ እና አዘዝ",
-    estimatedArrival: "የሚደርስበት ግምታዊ ሰዓት",
+    total: "ጠቅላላ ድምር",
+    clearCart: "ጋሪ ባዶ አድርግ",
+    viewCartAndPay: "ጋሪውን እይ እና ትዕዛዝ አድርግ",
+    estimatedArrival: "ግምታዊ የመድረሻ ሰዓት",
     myFolioTitle: "የክፍልዎ ሂሳብ",
-    myFolioSubtitle: "በቆይታዎ የታዘዙ ሁሉም ወጪዎች",
-    noChargesYet: " እስካሁን የተመዘገበ ወጪ የለም",
-    stayTotal: "አጠቃላይ የቆይታ ወጪ",
-    rateServicePrompt: "የቆይታዎን አገልግሎት ይገመግሙ:",
-    feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይጻፉ...",
+    myFolioSubtitle: "የቀሩት ወጪዎች እና ትዕዛዞች",
+    noChargesYet: " እስካሁን ምንም ወጪ አልተመዘገበም",
+    stayTotal: "ጠቅላላ የቆይታ ወጪ",
+    rateServicePrompt: "እባክዎ አገልግሎቱን ይገምግሙ:",
+    feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይስጡ...",
     submitFeedback: "አስተያየት ላክ",
     feedbackThankYou: "ለሰጡን አስተያየት እናመሰግናለን!",
     laundryItems: { 
@@ -220,10 +220,10 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
       others: { name: "ሌሎች እቃዎች", price: 40 } 
     },
     menu: [
-      { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "ዳቦ፣ የወቅቱ ፍራፍሬ እና ቡና" },
+      { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "ትኩስ ዳቦ, ፍራፍሬ እና ቡና" },
       { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "ዳቦ እና የተፈጨ አቮካዶ" },
-      { id: 3, name: "ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከድንች ጥብስ ጋር" },
-      { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የስጋ በርገር ከቺዝ እና ድንች ጥብስ ጋር" },
+      { id: 3, name: "ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከ ድንች ጥብስ ጋር" },
+      { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የስጋ በርገር ከ አይብ እና ድንች ጥብስ ጋር" },
     ]
   }
 };
@@ -723,9 +723,9 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         
         <div className="max-w-xs w-full bg-[#131622] border border-white/[0.04] p-8 rounded-2xl shadow-2xl flex flex-col items-center relative z-10">
           <div className="w-16 h-16 mb-4 flex items-center justify-center">
-            <img src="/logo.png" alt="Central Yamarech Logo" className="w-full h-full object-contain" />
+            <span className="text-2xl font-serif text-amber-500 font-bold">CY</span>
           </div>
-          <h1 className="text-lg font-serif text-white tracking-wide">Central Yamarech</h1>
+          <h1 className="text-lg font-serif text-white tracking-wide">Central Hotel</h1>
           <p className="text-[9px] tracking-[0.2em] text-amber-500/85 uppercase mt-1 mb-6 font-medium">{t.suiteLocked}</p>
           <p className="text-neutral-400 text-xs leading-relaxed font-light">
             Room {roomNumber} is currently between guest stays. If you have just checked in, please contact front desk reception.
@@ -832,11 +832,11 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </div>
 
         <header className="w-full text-center mb-6">
-          <div className="w-14 h-14 mx-auto mb-3 flex items-center justify-center">
-            <img src="/logo.png" alt="Central Yamarech Logo" className="w-full h-full object-contain" />
+          <div className="w-14 h-14 mx-auto mb-3 flex items-center justify-center rounded-2xl bg-amber-500/10 border border-amber-500/20">
+            <span className="text-xl font-serif text-amber-400 font-bold">CY</span>
           </div>
-          <h1 className="text-xl font-serif tracking-wide font-normal">Central Yamarech</h1>
-          <p className="text-[9px] tracking-[0.25em] text-neutral-400 uppercase mt-1 font-medium">Hawassa Hotel</p>
+          <h1 className="text-xl font-serif tracking-wide font-normal">Central Hotel</h1>
+          <p className="text-[9px] tracking-[0.25em] text-neutral-400 uppercase mt-1 font-medium">Room Service Portal</p>
           
           <div className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[9px] text-amber-400 tracking-wider font-semibold uppercase">
             Guest: {sessionData?.guest_name || 'Valued Guest'} • Active
