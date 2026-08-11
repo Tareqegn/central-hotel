@@ -236,7 +236,8 @@ export default function ManagerDashboard() {
     }
   }, [activeChatRequest?.id, activeChatRequest?.status]);
 
-  // Realtime subscription specifically for active chat room requests
+  // FIX 3: Verify Realtime Subscription Filters matching active room ID precisely
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const currentRoom = selectedRequest ? selectedRequest.room : effectiveChatRoom;
     if (!currentRoom) return;
@@ -246,14 +247,16 @@ export default function ManagerDashboard() {
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
           table: 'requests',
           filter: `room=eq.${currentRoom}`,
         },
-        (payload: { new: RequestItem }) => {
-          if (payload.new && payload.new.status) {
-            setActiveRoomStatus(payload.new.status);
+        (payload) => { // 👉 Removed the explicit type here so TypeScript infers it
+          // Use type assertion if needed, or access payload.new directly
+          const newItem = payload.new as RequestItem;
+          if (newItem && newItem.status) {
+            setActiveRoomStatus(newItem.status);
           }
           fetchData();
         }
@@ -264,9 +267,9 @@ export default function ManagerDashboard() {
       supabase.removeChannel(roomChannel);
     };
   }, [selectedRequest, effectiveChatRoom]);
-
+  // FIX 1: Ensure Local State Updates Optimistically on Status Change
   const updateStatus = async (id: string, newStatus: string) => {
-    // Optimistic local state update
+    // Optimistic local state update instantly
     setActiveRoomStatus(newStatus);
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
     if (selectedRequest && selectedRequest.id === id) {
@@ -287,7 +290,7 @@ export default function ManagerDashboard() {
 
   // Always-Visible Chat Reply Handler with Optimistic Updates
   const handleSendReply = async () => {
-    if (!replyText.trim()) return;
+    if (!replyText.trim() || activeRoomStatus === 'Completed') return;
 
     if (activeChatRequest) {
       const updatedNote = `${activeChatRequest.note} | Staff Reply: ${replyText.trim()}`;
@@ -621,7 +624,7 @@ export default function ManagerDashboard() {
               className={`px-3.5 py-2.5 rounded-xl text-xs transition-all ${soundEnabled ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-white/[0.02] text-neutral-500 border border-white/[0.04]'}`}
               title="Toggle Alert Sounds"
             >
-              {soundEnabled ? '🔔' : '🔕'}
+              {soundEnabled ? '🔊' : '🔇'}
             </button>
           </div>
 
@@ -883,34 +886,53 @@ export default function ManagerDashboard() {
                   )}
                 </div>
 
-                {/* Quick Status Action Buttons */}
+                {/* FIX 2: Conditionally Control Status Action Buttons Based on Status */}
                 <div className="flex gap-2 my-2 shrink-0">
                   <button 
                     onClick={() => handleUpdateStatus('In Progress')}
-                    className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700 text-slate-200 transition-colors font-mono uppercase"
+                    disabled={activeRoomStatus === 'Completed'}
+                    className={`flex-1 py-2 text-xs font-semibold rounded-xl border transition-colors font-mono uppercase ${
+                      activeRoomStatus === 'Completed' 
+                        ? 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed opacity-60' 
+                        : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200'
+                    }`}
                   >
                     Mark Progress
                   </button>
                   <button 
                     onClick={() => handleUpdateStatus('Completed')}
-                    className="flex-1 py-2 bg-emerald-950/40 hover:bg-emerald-900/40 text-xs font-semibold rounded-xl border border-emerald-500/30 text-emerald-400 transition-colors font-mono uppercase"
+                    disabled={activeRoomStatus === 'Completed'}
+                    className={`flex-1 py-2 text-xs font-semibold rounded-xl border transition-colors font-mono uppercase ${
+                      activeRoomStatus === 'Completed' 
+                        ? 'bg-emerald-950/10 text-emerald-800 border-emerald-900/20 cursor-not-allowed opacity-60' 
+                        : 'bg-emerald-950/40 hover:bg-emerald-900/40 border-emerald-500/30 text-emerald-400'
+                    }`}
                   >
                     Mark Completed
                   </button>
                 </div>
 
+                {/* FIX 2: Conditionally Control Input and Send Button States Based on Status */}
                 <div className="pt-2 border-t border-white/[0.06] flex items-center gap-2 shrink-0">
                   <input 
                     type="text"
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendReply()}
-                    placeholder={`Type direct message to Room ${selectedRequest ? selectedRequest.room : effectiveChatRoom}...`}
-                    className="flex-1 bg-[#050811] text-xs text-white focus:outline-none px-4 py-3 rounded-xl border border-white/[0.06] focus:border-amber-400 transition-all"
+                    onKeyDown={(e) => e.key === 'Enter' && activeRoomStatus !== 'Completed' && handleSendReply()}
+                    disabled={activeRoomStatus === 'Completed'}
+                    placeholder={activeRoomStatus === 'Completed' ? 'Chat is closed for completed requests...' : `Type direct message to Room ${selectedRequest ? selectedRequest.room : effectiveChatRoom}...`}
+                    className={`flex-1 bg-[#050811] text-xs text-white focus:outline-none px-4 py-3 rounded-xl border border-white/[0.06] focus:border-amber-400 transition-all ${
+                      activeRoomStatus === 'Completed' ? 'opacity-50 cursor-not-allowed bg-neutral-900/50' : ''
+                    }`}
                   />
                   <button 
                     onClick={handleSendReply}
-                    className="px-4 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl text-xs uppercase tracking-wider font-mono shadow-md transition-all"
+                    disabled={activeRoomStatus === 'Completed'}
+                    className={`px-4 py-3 rounded-xl text-xs uppercase tracking-wider font-mono shadow-md transition-all ${
+                      activeRoomStatus === 'Completed' 
+                        ? 'bg-neutral-800 text-neutral-600 cursor-not-allowed opacity-50' 
+                        : 'bg-amber-500 hover:bg-amber-400 text-black font-bold'
+                    }`}
                   >
                     Send
                   </button>
@@ -937,7 +959,7 @@ export default function ManagerDashboard() {
 
             {feedbackList.length === 0 ? (
               <div className="h-64 flex flex-col items-center justify-center text-neutral-400 text-xs tracking-wider uppercase font-mono border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40">
-                <span className="text-3xl mb-2 opacity-50">📋</span>
+                <span className="text-3xl mb-2 opacity-50">⭐</span>
                 <span className="font-semibold text-neutral-300 mb-1">No guest reviews yet</span>
                 <span className="text-[11px] text-neutral-500">Submissions from guest tablets will appear here.</span>
               </div>
@@ -1048,7 +1070,7 @@ export default function ManagerDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto pr-1">
                   {guestProfiles.length === 0 ? (
                     <div className="col-span-full h-40 flex flex-col items-center justify-center text-neutral-400 text-xs border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40 text-center">
-                      <span className="text-2xl mb-2 opacity-50">🗂️</span>
+                      <span className="text-2xl mb-2 opacity-50">📂</span>
                       <span className="font-semibold text-neutral-300">No guest profiles stored</span>
                       <span className="text-[11px] text-neutral-500 mt-1">Add guest preferences to track personalized service.</span>
                     </div>
