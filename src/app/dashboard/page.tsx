@@ -214,6 +214,9 @@ export default function ManagerDashboard() {
 
   const updateStatus = async (id: string, newStatus: string) => {
     await supabase.from('requests').update({ status: newStatus }).eq('id', id);
+    if (newStatus === 'Completed' && selectedRequest?.id === id) {
+      setSelectedRequest(null);
+    }
     fetchData();
   };
 
@@ -233,7 +236,7 @@ export default function ManagerDashboard() {
     } else {
       const activeRoomsList = Array.from(activeRoomsSet);
       const targetRoom = chatRoomTarget || (activeRoomsList.length > 0 ? activeRoomsList[0] : '101');
-      const existingReqForRoom = requests.find(r => r.room === targetRoom);
+      const existingReqForRoom = requests.find(r => r.room === targetRoom && r.status !== 'Completed');
 
       try {
         if (existingReqForRoom) {
@@ -400,9 +403,11 @@ export default function ManagerDashboard() {
     return matchesRoom && matchesSearch;
   });
 
-  // Option 2 Computations for Always-Visible Concierge Chat
+  // Option 2 Computations for Always-Visible Concierge Chat with Active Priority
   const effectiveChatRoom = chatRoomTarget || (uniqueRooms.length > 0 ? uniqueRooms[0] : '101');
-  const activeChatRequest = selectedRequest || requests.find(r => r.room === effectiveChatRoom) || requests[0] || null;
+  const roomRequests = requests.filter(r => r.room === effectiveChatRoom);
+  const activeRoomReq = roomRequests.find(r => r.status !== 'Completed') || roomRequests[0] || requests[0] || null;
+  const activeChatRequest = selectedRequest || activeRoomReq;
 
   const activeRoomsCount = new Set(filteredRequests.filter(r => r.status !== 'Completed').map(r => r.room)).size;
   const now = new Date().getTime();
@@ -486,7 +491,7 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          {/* Enhanced Pill Segmented Navigation Bar with Stronger Glow & Contrast */}
+          {/* Enhanced Pill Segmented Navigation Bar */}
           <div className="flex bg-[#050811] p-1.5 rounded-2xl border border-white/[0.08] shadow-inner overflow-x-auto max-w-full">
             <button
               onClick={() => setActiveTab('operations')}
@@ -528,7 +533,7 @@ export default function ManagerDashboard() {
             </button>
           </div>
 
-          {/* Minimalist Search and Filter Controls */}
+          {/* Search and Filter Controls */}
           <div className="flex items-center gap-2.5 w-full xl:w-auto justify-end">
             <div className="relative flex items-center">
               <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 pointer-events-none" />
@@ -590,7 +595,7 @@ export default function ManagerDashboard() {
           </div>
         </div>
 
-        {/* TAB 1: LIVE OPERATIONS & OPTION 2 ALWAYS-VISIBLE CHAT */}
+        {/* TAB 1: LIVE OPERATIONS & CHAT */}
         {activeTab === 'operations' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
             
@@ -599,7 +604,6 @@ export default function ManagerDashboard() {
                 const colRequests = filteredRequests.filter(r => r.status === col.statusKey);
                 const isExpanded = expandedPanel === col.statusKey;
                 
-                // Apply pagination slice if it's the Completed column
                 const displayedRequests = col.statusKey === 'Completed' 
                   ? colRequests.slice(0, visibleCompletedCount) 
                   : colRequests;
@@ -607,7 +611,6 @@ export default function ManagerDashboard() {
                 return (
                   <div key={col.statusKey} className={col.containerClass}>
                     
-                    {/* Accordion Toggle Header */}
                     <button
                       onClick={() => togglePanel(col.statusKey)}
                       className={col.headerClass}
@@ -629,7 +632,6 @@ export default function ManagerDashboard() {
                       </div>
                     </button>
 
-                    {/* Smooth Expandable Accordion Content */}
                     <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[1200px] opacity-100 p-4' : 'max-h-0 opacity-0 p-0'}`}>
                       <div className="space-y-3.5 bg-[#050811]/90 rounded-2xl p-4 border border-white/[0.06] max-h-[600px] overflow-y-auto">
                         {colRequests.length === 0 ? (
@@ -683,7 +685,6 @@ export default function ManagerDashboard() {
                                       {req.note}
                                     </p>
 
-                                    {/* Audio Waveform Player Integration for Voice Notes */}
                                     {req.audio_url && (
                                       <div className="mb-3 p-3 bg-cyan-950/20 border border-cyan-500/30 rounded-xl flex items-center gap-3">
                                         <div className="p-2 bg-cyan-500/20 text-cyan-400 rounded-lg">
@@ -697,7 +698,6 @@ export default function ManagerDashboard() {
                                     )}
                                   </div>
 
-                                  {/* One-Tap Quick-Action Status Buttons */}
                                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-3 border-t border-white/[0.06]" onClick={(e) => e.stopPropagation()}>
                                     {col.statusKey !== 'Pending' && (
                                       <button onClick={() => updateStatus(req.id, 'Pending')} className="py-1.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-xl text-[10px] text-neutral-300 transition-all font-medium">
@@ -725,7 +725,6 @@ export default function ManagerDashboard() {
                               );
                             })}
 
-                            {/* Load More Pagination Button for Completed Section */}
                             {col.statusKey === 'Completed' && visibleCompletedCount < colRequests.length && (
                               <button
                                 onClick={() => setVisibleCompletedCount(prev => prev + 5)}
@@ -744,7 +743,7 @@ export default function ManagerDashboard() {
               })}
             </div>
 
-            {/* Option 2: Always Visible & Accessible Concierge Chat Panel */}
+            {/* Always Visible & Accessible Concierge Chat Panel */}
             <div className="bg-[#0b1021]/80 backdrop-blur-xl border border-white/[0.06] p-6 rounded-3xl shadow-2xl flex flex-col h-[600px]">
               <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] mb-4">
                 <div className="flex items-center gap-2">
@@ -765,7 +764,6 @@ export default function ManagerDashboard() {
 
               <div className="flex-1 flex flex-col justify-between overflow-hidden">
                 
-                {/* Room Selector & Status Header */}
                 <div className="flex justify-between items-center bg-[#050811] p-3.5 rounded-2xl border border-amber-500/30 mb-3 shrink-0">
                   <div className="flex flex-col">
                     <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider">Active Chat Room</span>
@@ -789,12 +787,11 @@ export default function ManagerDashboard() {
                   <div className="text-right">
                     <span className="text-[10px] text-neutral-400 font-mono block">Status / Type</span>
                     <span className="text-xs text-amber-300 font-mono uppercase">
-                      {selectedRequest ? selectedRequest.status : (activeChatRequest ? activeChatRequest.status : 'Ready')}
+                      {activeChatRequest ? activeChatRequest.status : 'Ready'}
                     </span>
                   </div>
                 </div>
 
-                {/* Threaded Chat Bubbles View */}
                 <div className="space-y-3 overflow-y-auto pr-2 flex-1 bg-[#050811]/50 p-3 rounded-2xl border border-white/[0.04]">
                   {activeChatRequest ? (
                     activeChatRequest.note.split('| Staff Reply:').map((messageChunk, index) => {
@@ -821,7 +818,6 @@ export default function ManagerDashboard() {
                   )}
                 </div>
 
-                {/* Quick Status Buttons */}
                 {activeChatRequest && (
                   <div className="flex items-center gap-2 pt-3 shrink-0">
                     <button 
@@ -839,7 +835,6 @@ export default function ManagerDashboard() {
                   </div>
                 )}
 
-                {/* Reply Input Bar */}
                 <div className="pt-3 border-t border-white/[0.06] mt-3 flex items-center gap-2 shrink-0">
                   <input 
                     type="text"
@@ -863,7 +858,7 @@ export default function ManagerDashboard() {
           </div>
         )}
 
-        {/* TAB 2: GUEST REVIEWS & FEEDBACK PANEL */}
+        {/* TAB 2: GUEST REVIEWS */}
         {activeTab === 'reviews' && (
           <div className="bg-[#0b1021]/80 backdrop-blur-xl border border-white/[0.06] p-6 sm:p-8 rounded-3xl shadow-2xl animate-fadeIn space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.06]">
