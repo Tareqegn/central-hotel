@@ -175,13 +175,13 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
   },
   am: {
     welcome: "እንኳን ደህና መጡ",
-    suiteLocked: "ክፍል የተጠበቀ",
-    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት መቀመጫ ጋር ይመዝገቡ",
-    verifying: "መረጃ-ን በመፈተሽ ላይ...",
+    suiteLocked: "ክፍል ተዘግቷል",
+    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት ዴስክ ጋር ያረጋግጡ",
+    verifying: "ክፍል እየመረመረ ነው...",
     servicesTab: "አገልግሎቶች",
     menuTab: "የምግብ ዝርዝር",
     folioTab: "ሂሳብ",
-    callWaiter: " አስተናጋጅ ጥራ",
+    callWaiter: "አስተናጋጅ ጥራ",
     roomCleaning: "የክፍል ጽዳት",
     laundryService: "የልብስ ማጠቢያ",
     taxiTransport: "ታክሲ",
@@ -192,25 +192,25 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     viewProgress: "ሁኔታ ይመልከቱ",
     close: "ዝጋ",
     submit: "ላክ",
-    specialInstructions: "ልዩ ማስታወሻ ወይም ጥያቄ",
-    placeholderNotes: "ለምሳሌ አለርጂ፣ ተጨማሪ ፎጣ...",
+    specialInstructions: "ልዩ ማስታወሻዎች",
+    placeholderNotes: "ለምሳሌ: አለርጂዎች, ተጨማሪ...",
     departureTime: "የመነሻ ሰዓት",
     itemBreakdown: "የእቃዎች ዝርዝር",
-    waiterAlert: "አስተናጋጅ ወደ ክፍል እንዲመጣ ይፈልጋሉ?",
-    pending: "ትዕዛዝ ተቀብለናል",
+    waiterAlert: "አስተናጋጅ ወደ ክፍልዎ እንዲመጣ ይፈልጋሉ?",
+    pending: "ጥያቄ ደርሷል",
     inProgress: "በሂደት ላይ",
     completed: "ተጠናቋል",
-    subtotal: "ንኡስ ድምር",
+    subtotal: "ንዑስ ድምር",
     serviceTax: "የአገልግሎት ክፍያ (10%)",
     total: "አጠቃላይ ድምር",
-    clearCart: "ጋሪ ባዶ አድርግ",
-    viewCartAndPay: "ጋሪውን እይ እና ትዕዛዝ አስገባ",
-    estimatedArrival: "ግምታዊ የመድረሻ ሰዓት",
+    clearCart: "ጋሪባዶ አድርግ",
+    viewCartAndPay: "ጋሪውን ይመልከቱ እና ትዕዛዝ ይስጡ",
+    estimatedArrival: "ግምታዊ መድረሻ",
     myFolioTitle: "የክፍል ሂሳብዎ",
-    myFolioSubtitle: "እስካሁን ያዘዟቸው ትዕዛዞች",
-    noChargesYet: " እስካሁን የተመዘገበ ክፍያ የለም።",
+    myFolioSubtitle: "የሁሉም ቆይታ ትዕዛዞች መግለጫ",
+    noChargesYet: " እስካሁን የተመዘገበ ክፍያ የለም",
     stayTotal: "አጠቃላይ የቆይታ ክፍያ",
-    rateServicePrompt: "ቆይታዎን ይገመግሙ:",
+    rateServicePrompt: "ቆይታዎን ይገምግሙ:",
     feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይስጡን...",
     submitFeedback: "አስተያየት ላክ",
     feedbackThankYou: "ለሰጡን አስተያየት እናመሰግናለን!",
@@ -220,10 +220,10 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
       others: { name: "ሌሎች እቃዎች", price: 40 } 
     },
     menu: [
-      { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "ትኩስ ዳቦ፣ ፍራፍሬ እና ቡና" },
+      { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "ትኩስፓስትሪ, ፍራፍሬ እና ቡና" },
       { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "የተፈጨ አቮካዶ እና እንቁላል" },
       { id: 3, name: "ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከድንች ጥብስ ጋር" },
-      { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የስጋ በርገር ከቺዝ እና ድንች ጥብስ ጋር" },
+      { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የስጋ ፓቲ, ቸዳር አይብ እና ድንች" },
     ]
   }
 };
@@ -881,7 +881,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </div>
 
         {activeTab === 'services' && (
-          <div className="w-full flex flex-col gap-4 pb-4">
+          <div className="w-full flex flex-col gap-4 pb-32">
             <div className="relative group w-full mb-1">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-amber-300 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
               <button 
@@ -924,7 +924,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         )}
 
         {activeTab === 'menu' && (
-          <div className="w-full flex flex-col gap-2.5 pb-20 max-h-[380px] overflow-y-auto pr-1">
+          <div className="w-full flex flex-col gap-2.5 pb-32 max-h-[380px] overflow-y-auto pr-1">
             {t.menu.map((item: MenuItem) => (
               <div key={item.id} className={`p-3.5 rounded-2xl flex items-center justify-between border transition-all ${
                 darkMode ? 'bg-white/[0.02] border-white/[0.03]' : 'bg-neutral-50 border-neutral-200'
@@ -959,7 +959,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         )}
 
         {activeTab === 'folio' && (
-          <div className="w-full flex flex-col pb-20 max-h-[380px] overflow-y-auto pr-1 space-y-4">
+          <div className="w-full flex flex-col pb-32 max-h-[380px] overflow-y-auto pr-1 space-y-4">
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-400">{t.myFolioTitle}</h2>
               <p className="text-[10px] text-neutral-400 font-light">{t.myFolioSubtitle}</p>
@@ -1082,9 +1082,9 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
           </div>
         )}
 
-        {/* Repositioned Active Request Status Tracker inside phone container boundaries */}
+        {/* Repositioned Active Request Status Tracker inside phone container boundaries with safe inset margins */}
         {trackedOrder && trackedOrder.category !== 'Feedback' && trackedOrder.category !== 'Checkout' && trackedOrder.category !== 'Live Concierge Chat' && !isModalOpen && (
-          <div className={`absolute bottom-3 left-4 right-4 p-3.5 rounded-2xl flex items-center justify-between shadow-2xl border backdrop-blur-xl z-30 ${
+          <div className={`absolute bottom-4 left-4 right-4 p-3.5 rounded-2xl flex items-center justify-between shadow-2xl border backdrop-blur-xl z-30 ${
             trackedOrder.status === 'Completed'
               ? 'bg-emerald-950/95 border-emerald-500/40 text-emerald-100' 
               : darkMode ? 'bg-[#131622]/98 border-amber-500/35 text-white' : 'bg-white/98 border-neutral-300 text-neutral-900'
