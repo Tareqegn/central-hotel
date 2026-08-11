@@ -196,11 +196,11 @@ export default function ManagerDashboard() {
     fetchData();
     const channel = supabase
       .channel('manager_dashboard_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, (payload: { eventType: string }) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, (payload: any) => {
         if (payload.eventType === 'INSERT') playAlertChime();
         fetchData();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_feedback' }, (payload: { eventType: string }) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_feedback' }, (payload: any) => {
         if (payload.eventType === 'INSERT') playAlertChime();
         fetchData();
       })
@@ -236,7 +236,6 @@ export default function ManagerDashboard() {
     }
   }, [activeChatRequest?.id, activeChatRequest?.status]);
 
-  // FIX 3: Verify Realtime Subscription Filters matching active room ID precisely
   useEffect(() => {
     const currentRoom = selectedRequest ? selectedRequest.room : effectiveChatRoom;
     if (!currentRoom) return;
@@ -265,7 +264,7 @@ export default function ManagerDashboard() {
       supabase.removeChannel(roomChannel);
     };
   }, [selectedRequest, effectiveChatRoom]);
-  // FIX 1: Ensure Local State Updates Optimistically on Status Change
+
   const updateStatus = async (id: string, newStatus: string) => {
     setActiveRoomStatus(newStatus);
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
@@ -285,49 +284,32 @@ export default function ManagerDashboard() {
     await updateStatus(activeChatRequest.id, newStatus);
   };
 
-  // Always-Visible Chat Reply Handler with Optimistic Updates
+  // Always-Visible & Flexible Chat Reply Handler
   const handleSendReply = async () => {
-    if (!replyText.trim() || activeRoomStatus === 'Completed') return;
+    if (!replyText.trim()) return;
 
-    if (activeChatRequest) {
-      const updatedNote = `${activeChatRequest.note} | Staff Reply: ${replyText.trim()}`;
-      try {
+    const targetRoom = selectedRequest ? selectedRequest.room : effectiveChatRoom;
+    const activeReqForRoom = requests.find(r => r.room === targetRoom && r.status !== 'Completed');
+
+    try {
+      if (activeReqForRoom) {
+        const updatedNote = `${activeReqForRoom.note} | Staff Reply: ${replyText.trim()}`;
+        await supabase.from('requests').update({ note: updatedNote, status: 'In Progress' }).eq('id', activeReqForRoom.id);
         setActiveRoomStatus('In Progress');
-        setRequests(prev => prev.map(r => r.id === activeChatRequest.id ? { ...r, note: updatedNote, status: 'In Progress' } : r));
-        if (selectedRequest) {
-          setSelectedRequest({ ...selectedRequest, note: updatedNote, status: 'In Progress' });
-        }
-
-        await supabase.from('requests').update({ note: updatedNote, status: 'In Progress' }).eq('id', activeChatRequest.id);
-        setReplyText('');
-        fetchData();
-      } catch (err) {
-        console.error('Error sending reply:', err);
+      } else {
+        await supabase.from('requests').insert([{
+          room: targetRoom,
+          category: 'Concierge Chat',
+          note: `Staff Direct Message: ${replyText.trim()}`,
+          status: 'In Progress'
+        }]);
+        setActiveRoomStatus('In Progress');
       }
-    } else {
-      const activeRoomsList = Array.from(activeRoomsSet);
-      const targetRoom = chatRoomTarget || (activeRoomsList.length > 0 ? activeRoomsList[0] : '101');
-      const existingReqForRoom = requests.find(r => r.room === targetRoom && r.status !== 'Completed');
-
-      try {
-        if (existingReqForRoom) {
-          const updatedNote = `${existingReqForRoom.note} | Staff Reply: ${replyText.trim()}`;
-          await supabase.from('requests').update({ note: updatedNote, status: 'In Progress' }).eq('id', existingReqForRoom.id);
-          setActiveRoomStatus('In Progress');
-        } else {
-          await supabase.from('requests').insert([{
-            room: targetRoom,
-            category: 'Concierge Chat',
-            note: `Staff Direct Message: ${replyText.trim()}`,
-            status: 'In Progress'
-          }]);
-          setActiveRoomStatus('In Progress');
-        }
-        setReplyText('');
-        fetchData();
-      } catch (err) {
-        console.error('Error sending chat message:', err);
-      }
+      setReplyText('');
+      setSelectedRequest(null);
+      fetchData();
+    } catch (err) {
+      console.error('Error sending chat message:', err);
     }
   };
 
@@ -803,7 +785,7 @@ export default function ManagerDashboard() {
               })}
             </div>
 
-            {/* Always Visible & Accessible Concierge Chat Panel with Synchronized State */}
+            {/* Always Flexible Concierge Chat Panel */}
             <div className="bg-[#0b1021]/80 backdrop-blur-xl border border-white/[0.06] p-6 rounded-3xl shadow-2xl flex flex-col h-[600px]">
               <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] mb-4">
                 <div className="flex items-center gap-2">
@@ -882,53 +864,35 @@ export default function ManagerDashboard() {
                   )}
                 </div>
 
-                {/* FIX 2: Conditionally Control Status Action Buttons Based on Status */}
+                {/* Status Quick Action Buttons */}
                 <div className="flex gap-2 my-2 shrink-0">
                   <button 
                     onClick={() => handleUpdateStatus('In Progress')}
-                    disabled={activeRoomStatus === 'Completed'}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-xl border transition-colors font-mono uppercase ${
-                      activeRoomStatus === 'Completed' 
-                        ? 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed opacity-60' 
-                        : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200'
-                    }`}
+                    className="flex-1 py-2 text-xs font-semibold rounded-xl border bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200 transition-colors font-mono uppercase cursor-pointer"
                   >
                     Mark Progress
                   </button>
                   <button 
                     onClick={() => handleUpdateStatus('Completed')}
-                    disabled={activeRoomStatus === 'Completed'}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-xl border transition-colors font-mono uppercase ${
-                      activeRoomStatus === 'Completed' 
-                        ? 'bg-emerald-950/10 text-emerald-800 border-emerald-900/20 cursor-not-allowed opacity-60' 
-                        : 'bg-emerald-950/40 hover:bg-emerald-900/40 border-emerald-500/30 text-emerald-400'
-                    }`}
+                    className="flex-1 py-2 text-xs font-semibold rounded-xl border bg-emerald-950/40 hover:bg-emerald-900/40 border-emerald-500/30 text-emerald-400 transition-colors font-mono uppercase cursor-pointer"
                   >
                     Mark Completed
                   </button>
                 </div>
 
-                {/* FIX 2: Conditionally Control Input and Send Button States Based on Status */}
+                {/* Unlocked & Always Accessible Chat Input */}
                 <div className="pt-2 border-t border-white/[0.06] flex items-center gap-2 shrink-0">
                   <input 
                     type="text"
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && activeRoomStatus !== 'Completed' && handleSendReply()}
-                    disabled={activeRoomStatus === 'Completed'}
-                    placeholder={activeRoomStatus === 'Completed' ? 'Chat is closed for completed requests...' : `Type direct message to Room ${selectedRequest ? selectedRequest.room : effectiveChatRoom}...`}
-                    className={`flex-1 bg-[#050811] text-xs text-white focus:outline-none px-4 py-3 rounded-xl border border-white/[0.06] focus:border-amber-400 transition-all ${
-                      activeRoomStatus === 'Completed' ? 'opacity-50 cursor-not-allowed bg-neutral-900/50' : ''
-                    }`}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendReply()}
+                    placeholder={`Type message to Room ${selectedRequest ? selectedRequest.room : effectiveChatRoom}...`}
+                    className="flex-1 bg-[#050811] text-xs text-white focus:outline-none px-4 py-3 rounded-xl border border-white/[0.06] focus:border-amber-400 transition-all cursor-text"
                   />
                   <button 
                     onClick={handleSendReply}
-                    disabled={activeRoomStatus === 'Completed'}
-                    className={`px-4 py-3 rounded-xl text-xs uppercase tracking-wider font-mono shadow-md transition-all ${
-                      activeRoomStatus === 'Completed' 
-                        ? 'bg-neutral-800 text-neutral-600 cursor-not-allowed opacity-50' 
-                        : 'bg-amber-500 hover:bg-amber-400 text-black font-bold'
-                    }`}
+                    className="px-4 py-3 rounded-xl text-xs uppercase tracking-wider font-mono shadow-md transition-all bg-amber-500 hover:bg-amber-400 text-black font-bold cursor-pointer"
                   >
                     Send
                   </button>
@@ -1008,7 +972,7 @@ export default function ManagerDashboard() {
               </div>
               <button
                 onClick={() => setIsStaffModalOpen(true)}
-                className="bg-amber-500 hover:bg-amber-400 text-black font-medium text-xs px-5 py-3 rounded-2xl transition-all shadow-lg flex items-center gap-2"
+                className="bg-amber-500 hover:bg-amber-400 text-black font-medium text-xs px-5 py-3 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
               >
                 <span>+ Register New Staff</span>
               </button>
@@ -1032,7 +996,7 @@ export default function ManagerDashboard() {
                     </div>
                     <button 
                       onClick={() => handleDeleteStaff(staff.name, staff.department)} 
-                      className="text-neutral-500 hover:text-red-400 text-xs p-2.5 bg-white/[0.02] hover:bg-red-500/10 rounded-xl transition-all"
+                      className="text-neutral-500 hover:text-red-400 text-xs p-2.5 bg-white/[0.02] hover:bg-red-500/10 rounded-xl transition-all cursor-pointer"
                       title="Remove Staff"
                     >
                       ✕
@@ -1057,7 +1021,7 @@ export default function ManagerDashboard() {
                   </div>
                   <button
                     onClick={() => setIsCrmModalOpen(true)}
-                    className="bg-amber-500 hover:bg-amber-400 text-black font-medium text-xs px-4 py-2.5 rounded-xl transition-all shadow-md"
+                    className="bg-amber-500 hover:bg-amber-400 text-black font-medium text-xs px-4 py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
                   >
                     + Add Profile
                   </button>
@@ -1117,8 +1081,8 @@ export default function ManagerDashboard() {
                 </div>
                 
                 <div className="flex bg-[#050811] p-1 rounded-xl border border-white/[0.06]">
-                  <button type="button" onClick={() => setAnnouncementTarget('guest')} className={`px-3 py-1.5 text-xs rounded-lg transition-all ${announcementTarget === 'guest' ? 'bg-amber-500 text-black font-semibold' : 'text-neutral-400'}`}>Guests</button>
-                  <button type="button" onClick={() => setAnnouncementTarget('staff')} className={`px-3 py-1.5 text-xs rounded-lg transition-all ${announcementTarget === 'staff' ? 'bg-blue-600 text-white font-semibold' : 'text-neutral-400'}`}>Staff</button>
+                  <button type="button" onClick={() => setAnnouncementTarget('guest')} className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${announcementTarget === 'guest' ? 'bg-amber-500 text-black font-semibold' : 'text-neutral-400'}`}>Guests</button>
+                  <button type="button" onClick={() => setAnnouncementTarget('staff')} className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${announcementTarget === 'staff' ? 'bg-blue-600 text-white font-semibold' : 'text-neutral-400'}`}>Staff</button>
                 </div>
               </div>
 
@@ -1173,7 +1137,7 @@ export default function ManagerDashboard() {
                   placeholder={selectedStaffName !== 'all' ? `Send private message directly to ${selectedStaffName}...` : "Type broadcast announcement message..."}
                   className="w-full bg-[#050811] text-neutral-200 text-xs p-4 rounded-2xl border border-white/[0.06] focus:border-amber-400 focus:outline-none h-24 resize-none leading-relaxed shadow-inner"
                 />
-                <button type="submit" className={`w-full font-medium text-xs py-3.5 rounded-2xl transition-all shadow-md ${announcementTarget === 'guest' ? 'bg-amber-500 hover:bg-amber-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}>
+                <button type="submit" className={`w-full font-medium text-xs py-3.5 rounded-2xl transition-all shadow-md cursor-pointer ${announcementTarget === 'guest' ? 'bg-amber-500 hover:bg-amber-400 text-black' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}>
                   {selectedStaffName !== 'all' ? 'Send Direct Message' : 'Publish Broadcast'}
                 </button>
               </form>
@@ -1195,10 +1159,10 @@ export default function ManagerDashboard() {
                         <span className="text-xs text-neutral-200 truncate">{ann.message}</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <button onClick={() => toggleAnnouncementStatus(ann.id, ann.is_active)} className={`text-[10px] font-mono px-2.5 py-1 rounded-xl ${ann.is_active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-neutral-800 text-neutral-400'}`}>
+                        <button onClick={() => toggleAnnouncementStatus(ann.id, ann.is_active)} className={`text-[10px] font-mono px-2.5 py-1 rounded-xl cursor-pointer ${ann.is_active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-neutral-800 text-neutral-400'}`}>
                           {ann.is_active ? 'LIVE' : 'HIDDEN'}
                         </button>
-                        <button onClick={() => deleteAnnouncement(ann.id)} className="text-xs text-red-400 p-1 hover:text-red-300">✕</button>
+                        <button onClick={() => deleteAnnouncement(ann.id)} className="text-xs text-red-400 p-1 hover:text-red-300 cursor-pointer">✕</button>
                       </div>
                     </div>
                   ))
@@ -1224,7 +1188,7 @@ export default function ManagerDashboard() {
                   <button
                     type="button"
                     onClick={startRecording}
-                    className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white font-medium text-xs px-5 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all animate-pulse"
+                    className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white font-medium text-xs px-5 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all animate-pulse cursor-pointer"
                   >
                     <span>🎙️ Record Voice Note</span>
                   </button>
@@ -1232,7 +1196,7 @@ export default function ManagerDashboard() {
                   <button
                     type="button"
                     onClick={stopRecording}
-                    className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs px-5 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all animate-bounce"
+                    className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs px-5 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all animate-bounce cursor-pointer"
                   >
                     <span>⏹️ Stop & Send</span>
                   </button>
@@ -1253,7 +1217,7 @@ export default function ManagerDashboard() {
                         </span>
                         <audio controls src={msg.audio_url} className="h-8 max-w-[200px] sm:max-w-xs" />
                       </div>
-                      <button onClick={() => deleteVoiceMessage(msg.id)} className="text-xs text-red-400 p-1 hover:text-red-300">✕</button>
+                      <button onClick={() => deleteVoiceMessage(msg.id)} className="text-xs text-red-400 p-1 hover:text-red-300 cursor-pointer">✕</button>
                     </div>
                   ))
                 )}
@@ -1271,7 +1235,7 @@ export default function ManagerDashboard() {
           <div className="bg-[#0b1021] border border-white/[0.08] w-full max-w-lg p-6 sm:p-8 rounded-3xl shadow-2xl relative">
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/[0.06]">
               <h3 className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">Register New Staff Member</h3>
-              <button onClick={() => setIsStaffModalOpen(false)} className="text-neutral-400 hover:text-white p-2 text-sm">✕</button>
+              <button onClick={() => setIsStaffModalOpen(false)} className="text-neutral-400 hover:text-white p-2 text-sm cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleAddStaff} className="space-y-4">
@@ -1329,13 +1293,13 @@ export default function ManagerDashboard() {
                 <button
                   type="button"
                   onClick={() => setIsStaffModalOpen(false)}
-                  className="px-5 py-3 rounded-xl text-xs bg-white/[0.03] text-neutral-300 hover:bg-white/[0.08] transition-all"
+                  className="px-5 py-3 rounded-xl text-xs bg-white/[0.03] text-neutral-300 hover:bg-white/[0.08] transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs py-3 px-6 rounded-xl transition-all shadow-lg"
+                  className="bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs py-3 px-6 rounded-xl transition-all shadow-lg cursor-pointer"
                 >
                   Save & Register
                 </button>
@@ -1351,7 +1315,7 @@ export default function ManagerDashboard() {
           <div className="bg-[#0b1021] border border-white/[0.08] w-full max-w-lg p-6 sm:p-8 rounded-3xl shadow-2xl relative">
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/[0.06]">
               <h3 className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">Add Guest CRM Profile</h3>
-              <button onClick={() => setIsCrmModalOpen(false)} className="text-neutral-400 hover:text-white p-2 text-sm">✕</button>
+              <button onClick={() => setIsCrmModalOpen(false)} className="text-neutral-400 hover:text-white p-2 text-sm cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleSaveGuestProfile} className="space-y-4">
@@ -1394,13 +1358,13 @@ export default function ManagerDashboard() {
                 <button
                   type="button"
                   onClick={() => setIsCrmModalOpen(false)}
-                  className="px-5 py-3 rounded-xl text-xs bg-white/[0.03] text-neutral-300 hover:bg-white/[0.08] transition-all"
+                  className="px-5 py-3 rounded-xl text-xs bg-white/[0.03] text-neutral-300 hover:bg-white/[0.08] transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs py-3 px-6 rounded-xl transition-all shadow-lg"
+                  className="bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs py-3 px-6 rounded-xl transition-all shadow-lg cursor-pointer"
                 >
                   Save Profile
                 </button>
