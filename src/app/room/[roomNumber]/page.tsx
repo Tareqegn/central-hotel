@@ -174,44 +174,44 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     ]
   },
   am: {
-    welcome: "እንኳን ደህና መጡ",
-    suiteLocked: "ክፍል ተረጋግጧል",
-    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከሪሴፕሽን ጋር ያረጋግጡ",
-    verifying: "መረጃ በመጣራት ላይ...",
+    welcome: "ሰላም እንደመጡ",
+    suiteLocked: "ክፍሉ ተቆልፏል",
+    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት መቀመጫ ጋር ይመዝገቡ",
+    verifying: "መረጃ እያረጋገጠ ነው...",
     servicesTab: "አገልግሎቶች",
     menuTab: "የምግብ ዝርዝር",
     folioTab: "ሂሳብ",
     callWaiter: "አስተናጋጅ ጥራ",
-    roomCleaning: "የክፍል ጽዳት",
-    laundryService: "የልብስ ማጠቢያ",
+    roomCleaning: "ክፍል ማጽዳት",
+    laundryService: "ልብስ ማጠቢያ",
     taxiTransport: "ታክሲ",
     spaBooking: "ስፓ",
-    itemsSelected: "ምርቶች",
+    itemsSelected: "እቃዎች",
     confirmOrder: "ትዕዛዝ አረጋግጥ",
     orderStatus: "ሁኔታ",
-    viewProgress: "ሁኔታ ተመልከት",
+    viewProgress: "ሁኔታውን ማየት",
     close: "ዝጋ",
     submit: "ላክ",
     specialInstructions: "ልዩ ማስታወሻዎች",
-    placeholderNotes: "ለምሳሌ፦ አለርጂ፣ ተጨማሪ ፎጣ...",
+    placeholderNotes: "ለምሳሌ: አለርጂ፣ ተጨማሪ ፎጣ...",
     departureTime: "የመነሻ ሰዓት",
     itemBreakdown: "የእቃዎች ዝርዝር",
-    waiterAlert: "አስተናጋጅ ወደ ክፍልዎ እንዲመጣ ይፈልጋሉ?",
-    pending: "ደርሷል",
+    waiterAlert: "አስተናጋጅ ወደ ክፍል እንዲመጣ ይፈልጋሉ?",
+    pending: "ተቀብሏል",
     inProgress: "በሂደት ላይ",
     completed: "ተጠናቋል",
     subtotal: "ንዑስ ድምር",
     serviceTax: "የአገልግሎት ክፍያ (10%)",
-    total: "ጠቅላላ ድምር",
-    clearCart: "ጋሪ ባዶ አድርግ",
-    viewCartAndPay: "ጋሪይ አሳይ እና ትዕዛዝ አስገባ",
-    estimatedArrival: "ግምታዊ መድረሻ",
-    myFolioTitle: "የክፍል ሂሳብዎ",
-    myFolioSubtitle: "እስካሁን የታዘዙ አገልግሎቶች",
+    total: "አጠቃላይ ድምር",
+    clearCart: "ጋሪውን ባዶ አድርግ",
+    viewCartAndPay: "ጋሪውን ማየት እና ማዘዝ",
+    estimatedArrival: "ግምታዊ መምጣት",
+    myFolioTitle: "የእርስዎ ሂሳብ",
+    myFolioSubtitle: "የቀሩት የቆይታ ሂሳቦች",
     noChargesYet: " እስካሁን የተመዘገበ ክፍያ የለም",
-    stayTotal: "ጠቅላላ የቆይታ ክፍያ",
-    rateServicePrompt: "ቆይታዎን ይገምግሙ:",
-    feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይጻፉ...",
+    stayTotal: "አጠቃላይ የቆይታ ክፍያ",
+    rateServicePrompt: "አገልግሎቱን ይገመግሙ:",
+    feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይስጡ...",
     submitFeedback: "አስተያየት ላክ",
     feedbackThankYou: "ለሰጡን አስተያየት እናመሰግናለን!",
     laundryItems: { 
@@ -220,9 +220,9 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
       others: { name: "ሌሎች እቃዎች", price: 40 } 
     },
     menu: [
-      { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "ፓስትሪ፣ ፍራፍሬ እና ቡና" },
-      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "ዳቦ እና አቮካዶ" },
-      { id: 3, name: "ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከፍራፍሬ ጋር" },
+      { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "ትኩስ pastry እና ቡና" },
+      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "የተፈጨ አቮካዶ እና እንቁላል" },
+      { id: 3, name: "ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከድንች ጋር" },
       { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የስጋ በርገር ከቺዝ ጋር" },
     ]
   }
@@ -276,17 +276,17 @@ function GuestChatWidget({ roomNumber }: { roomNumber: string }) {
   };
 
   return (
-    <div className="fixed bottom-4 left-4 z-45 font-sans">
+    <div className="w-full font-sans">
       {!isOpen ? (
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 transition-all transform hover:scale-105"
+          className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold px-4 py-3 rounded-2xl shadow-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.01]"
         >
           <MessageSquare className="w-5 h-5" />
           <span className="text-xs uppercase tracking-wider font-mono">Chat with Concierge</span>
         </button>
       ) : (
-        <div className="bg-[#0b1021] border border-amber-500/35 w-72 sm:w-80 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[360px]">
+        <div className="bg-[#0b1021] border border-amber-500/35 w-full rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[300px]">
           
           {/* Header */}
           <div className="bg-[#050811] p-3 border-b border-white/[0.08] flex items-center justify-between">
@@ -802,8 +802,8 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
 
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/[0.05] blur-[140px] pointer-events-none rounded-full" />
 
-      {/* Main Container Wrapper */}
-      <div className={`w-full max-w-md rounded-[2rem] border p-6 sm:p-8 shadow-2xl relative z-10 transition-colors duration-300 mb-20 overflow-hidden ${
+      {/* Main Container Wrapper (Phone Frame) */}
+      <div className={`w-full max-w-md rounded-[2rem] border p-6 sm:p-8 shadow-2xl relative z-10 transition-colors duration-300 mb-8 overflow-hidden flex flex-col min-h-[750px] ${
         darkMode ? 'bg-[#131622] border-white/[0.04]' : 'bg-white border-neutral-200'
       }`}>
         
@@ -881,7 +881,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </div>
 
         {activeTab === 'services' && (
-          <div className="w-full flex flex-col gap-4 pb-28">
+          <div className="w-full flex flex-col gap-4 pb-44">
             <div className="relative group w-full mb-1">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-amber-300 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
               <button 
@@ -924,7 +924,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         )}
 
         {activeTab === 'menu' && (
-          <div className="w-full flex flex-col gap-2.5 pb-28 max-h-[380px] overflow-y-auto pr-1">
+          <div className="w-full flex flex-col gap-2.5 pb-44 max-h-[380px] overflow-y-auto pr-1">
             {t.menu.map((item: MenuItem) => (
               <div key={item.id} className={`p-3.5 rounded-2xl flex items-center justify-between border transition-all ${
                 darkMode ? 'bg-white/[0.02] border-white/[0.03]' : 'bg-neutral-50 border-neutral-200'
@@ -959,7 +959,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         )}
 
         {activeTab === 'folio' && (
-          <div className="w-full flex flex-col pb-28 max-h-[380px] overflow-y-auto pr-1 space-y-4">
+          <div className="w-full flex flex-col pb-44 max-h-[380px] overflow-y-auto pr-1 space-y-4">
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-400">{t.myFolioTitle}</h2>
               <p className="text-[10px] text-neutral-400 font-light">{t.myFolioSubtitle}</p>
@@ -1082,51 +1082,56 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
           </div>
         )}
 
-        {/* Active Request Status Tracker positioned with proper bottom spacing */}
-        {trackedOrder && trackedOrder.category !== 'Feedback' && trackedOrder.category !== 'Checkout' && trackedOrder.category !== 'Live Concierge Chat' && !isModalOpen && (
-          <div className="absolute bottom-3 left-4 right-4 p-3.5 rounded-2xl flex items-center justify-between shadow-2xl border backdrop-blur-xl z-30 bg-[#131622]/98 border-amber-500/35 text-white">
-            <div className="flex items-center gap-2.5">
-              <span className={`w-2 h-2 rounded-full shrink-0 ${trackedOrder.status === 'Completed' ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
-              <div className="overflow-hidden">
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-400">
-                  {trackedOrder.status === 'Completed' ? 'Request Completed' : `${t.orderStatus}: ${trackedOrder.status}`}
-                </p>
-                <p className="text-[10px] text-neutral-300 truncate max-w-[140px] font-light">
-                  {getDetailedLiveStatus(trackedOrder.category, trackedOrder.status)}
-                </p>
+        {/* Bottom Stack Inside Phone Container Wrapper (Status Tracker + Chat Widget) */}
+        <div className="absolute bottom-3 left-4 right-4 z-30 flex flex-col gap-2">
+          
+          {/* Active Request Status Tracker */}
+          {trackedOrder && trackedOrder.category !== 'Feedback' && trackedOrder.category !== 'Checkout' && trackedOrder.category !== 'Live Concierge Chat' && !isModalOpen && (
+            <div className="p-3 rounded-2xl flex items-center justify-between shadow-2xl border backdrop-blur-xl bg-[#131622]/98 border-amber-500/35 text-white">
+              <div className="flex items-center gap-2.5">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${trackedOrder.status === 'Completed' ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
+                <div className="overflow-hidden">
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-400">
+                    {trackedOrder.status === 'Completed' ? 'Request Completed' : `${t.orderStatus}: ${trackedOrder.status}`}
+                  </p>
+                  <p className="text-[10px] text-neutral-300 truncate max-w-[130px] font-light">
+                    {getDetailedLiveStatus(trackedOrder.category, trackedOrder.status)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {trackedOrder.status !== 'Completed' && trackedOrder.note && trackedOrder.note.includes('ETA:') && (
+                  <div className="text-right hidden sm:block">
+                    <span className="block text-[8px] uppercase tracking-wider text-neutral-400">{t.estimatedArrival}</span>
+                    <span className="text-[11px] font-mono font-bold text-amber-400">
+                      {trackedOrder.note.split('ETA: ')[1]?.split(' |')[0]}
+                    </span>
+                  </div>
+                )}
+
+                {trackedOrder.status === 'Completed' ? (
+                  <button onClick={() => { setActiveOrderId(null); setTrackedOrder(null); }} className="bg-emerald-500 text-neutral-950 text-[9px] uppercase tracking-wider font-bold px-2 py-1.5 rounded-xl active:scale-95 transition-all">
+                    Dismiss
+                  </button>
+                ) : (
+                  <button onClick={() => setIsModalOpen(true)} className="bg-amber-500 text-neutral-950 text-[9px] uppercase tracking-wider font-bold px-2 py-1.5 rounded-xl active:scale-95 transition-all">
+                    {t.viewProgress}
+                  </button>
+                )}
               </div>
             </div>
+          )}
 
-            <div className="flex items-center gap-2 shrink-0">
-              {trackedOrder.status !== 'Completed' && trackedOrder.note && trackedOrder.note.includes('ETA:') && (
-                <div className="text-right hidden sm:block">
-                  <span className="block text-[8px] uppercase tracking-wider text-neutral-400">{t.estimatedArrival}</span>
-                  <span className="text-[11px] font-mono font-bold text-amber-400">
-                    {trackedOrder.note.split('ETA: ')[1]?.split(' |')[0]}
-                  </span>
-                </div>
-              )}
+          {/* Concierge Chat Widget anchored inside the phone wrapper */}
+          <GuestChatWidget roomNumber={roomNumber} />
 
-              {trackedOrder.status === 'Completed' ? (
-                <button onClick={() => { setActiveOrderId(null); setTrackedOrder(null); }} className="bg-emerald-500 text-neutral-950 text-[9px] uppercase tracking-wider font-bold px-2.5 py-1.5 rounded-xl active:scale-95 transition-all">
-                  Dismiss
-                </button>
-              ) : (
-                <button onClick={() => setIsModalOpen(true)} className="bg-amber-500 text-neutral-950 text-[9px] uppercase tracking-wider font-bold px-2.5 py-1.5 rounded-xl active:scale-95 transition-all">
-                  {t.viewProgress}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+        </div>
 
       </div>
 
-      {/* Extracted Live Chat Widget to prevent overlapping */}
-      <GuestChatWidget roomNumber={roomNumber} />
-
       {Object.keys(cart).length > 0 && !isModalOpen && !isCartOpen && (
-        <div className="fixed bottom-6 left-5 right-5 max-w-md mx-auto z-30 transition-all duration-300">
+        <div className="fixed bottom-6 left-5 right-5 max-w-md mx-auto z-40 transition-all duration-300">
           <button 
             onClick={() => setIsCartOpen(true)}
             className="w-full py-3.5 px-5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-110 text-neutral-950 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-2xl flex items-center justify-between active:scale-[0.99] transition-all"
