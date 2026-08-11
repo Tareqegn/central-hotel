@@ -83,8 +83,9 @@ export default function ManagerDashboard() {
   const [isStaffModalOpen, setIsStaffModalOpen] = useState<boolean>(false);
   const [isCrmModalOpen, setIsCrmModalOpen] = useState<boolean>(false);
 
-  // Live Chat Reply State
+  // Live Chat Reply State (Option 2: Always Visible & Accessible Concierge Chat)
   const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
+  const [chatRoomTarget, setChatRoomTarget] = useState<string>('');
   const [replyText, setReplyText] = useState<string>('');
 
   // Staff & Announcement Form States
@@ -216,15 +217,41 @@ export default function ManagerDashboard() {
     fetchData();
   };
 
+  // Option 2: Always-Visible Chat Reply Handler
   const handleSendReply = async () => {
-    if (!selectedRequest || !replyText.trim()) return;
-    const updatedNote = `${selectedRequest.note} | Staff Reply: ${replyText.trim()}`;
-    try {
-      await supabase.from('requests').update({ note: updatedNote, status: 'In Progress' }).eq('id', selectedRequest.id);
-      setReplyText('');
-      fetchData();
-    } catch (err) {
-      console.error('Error sending reply:', err);
+    if (!replyText.trim()) return;
+
+    if (selectedRequest) {
+      const updatedNote = `${selectedRequest.note} | Staff Reply: ${replyText.trim()}`;
+      try {
+        await supabase.from('requests').update({ note: updatedNote, status: 'In Progress' }).eq('id', selectedRequest.id);
+        setReplyText('');
+        fetchData();
+      } catch (err) {
+        console.error('Error sending reply:', err);
+      }
+    } else {
+      const activeRoomsList = Array.from(activeRoomsSet);
+      const targetRoom = chatRoomTarget || (activeRoomsList.length > 0 ? activeRoomsList[0] : '101');
+      const existingReqForRoom = requests.find(r => r.room === targetRoom);
+
+      try {
+        if (existingReqForRoom) {
+          const updatedNote = `${existingReqForRoom.note} | Staff Reply: ${replyText.trim()}`;
+          await supabase.from('requests').update({ note: updatedNote, status: 'In Progress' }).eq('id', existingReqForRoom.id);
+        } else {
+          await supabase.from('requests').insert([{
+            room: targetRoom,
+            category: 'Concierge Chat',
+            note: `Staff Direct Message: ${replyText.trim()}`,
+            status: 'In Progress'
+          }]);
+        }
+        setReplyText('');
+        fetchData();
+      } catch (err) {
+        console.error('Error sending chat message:', err);
+      }
     }
   };
 
@@ -372,6 +399,10 @@ export default function ManagerDashboard() {
       r.room.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesRoom && matchesSearch;
   });
+
+  // Option 2 Computations for Always-Visible Concierge Chat
+  const effectiveChatRoom = chatRoomTarget || (uniqueRooms.length > 0 ? uniqueRooms[0] : '101');
+  const activeChatRequest = selectedRequest || requests.find(r => r.room === effectiveChatRoom) || requests[0] || null;
 
   const activeRoomsCount = new Set(filteredRequests.filter(r => r.status !== 'Completed').map(r => r.room)).size;
   const now = new Date().getTime();
@@ -559,7 +590,7 @@ export default function ManagerDashboard() {
           </div>
         </div>
 
-        {/* TAB 1: LIVE OPERATIONS & CHAT REPLY */}
+        {/* TAB 1: LIVE OPERATIONS & OPTION 2 ALWAYS-VISIBLE CHAT */}
         {activeTab === 'operations' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
             
@@ -617,7 +648,10 @@ export default function ManagerDashboard() {
                               return (
                                 <div 
                                   key={req.id} 
-                                  onClick={() => setSelectedRequest(req)}
+                                  onClick={() => {
+                                    setSelectedRequest(req);
+                                    setChatRoomTarget(req.room);
+                                  }}
                                   className={`p-4 rounded-2xl border flex flex-col justify-between shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-0.5 ${
                                     isSelected 
                                       ? 'bg-amber-500/15 border-amber-500/80 shadow-amber-500/10' 
@@ -710,88 +744,120 @@ export default function ManagerDashboard() {
               })}
             </div>
 
+            {/* Option 2: Always Visible & Accessible Concierge Chat Panel */}
             <div className="bg-[#0b1021]/80 backdrop-blur-xl border border-white/[0.06] p-6 rounded-3xl shadow-2xl flex flex-col h-[600px]">
               <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] mb-4">
-                <span className="text-xs uppercase font-mono tracking-widest text-amber-400 font-bold">💬 Live Guest Chat & Reply</span>
-                <span className="text-[10px] text-neutral-500 font-mono">Real-time sync</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs uppercase font-mono tracking-widest text-amber-400 font-bold">💬 Live Concierge Chat</span>
+                  {selectedRequest && (
+                    <button 
+                      onClick={() => setSelectedRequest(null)}
+                      className="text-[10px] bg-white/[0.05] hover:bg-white/[0.1] text-neutral-300 px-2 py-0.5 rounded-lg border border-white/[0.1] transition-all"
+                    >
+                      Clear Focus
+                    </button>
+                  )}
+                </div>
+                <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Always Active
+                </span>
               </div>
 
-              {selectedRequest ? (
-                <div className="flex-1 flex flex-col justify-between overflow-hidden">
-                  
-                  {/* Room & Status Header */}
-                  <div className="flex justify-between items-center bg-[#050811] p-3.5 rounded-2xl border border-amber-500/30 mb-3 shrink-0">
-                    <div>
-                      <span className="text-xs font-mono font-bold text-amber-400 block">Room {selectedRequest.room}</span>
-                      <span className="text-xs text-white font-medium">{selectedRequest.category}</span>
-                    </div>
-                    <span className="text-[10px] uppercase px-2.5 py-1 rounded-lg font-mono bg-amber-500/20 text-amber-300">
-                      {selectedRequest.status}
+              <div className="flex-1 flex flex-col justify-between overflow-hidden">
+                
+                {/* Room Selector & Status Header */}
+                <div className="flex justify-between items-center bg-[#050811] p-3.5 rounded-2xl border border-amber-500/30 mb-3 shrink-0">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider">Active Chat Room</span>
+                    <select
+                      value={selectedRequest ? selectedRequest.room : effectiveChatRoom}
+                      onChange={(e) => {
+                        setSelectedRequest(null);
+                        setChatRoomTarget(e.target.value);
+                      }}
+                      className="bg-[#050811] text-xs font-mono font-bold text-amber-400 focus:outline-none cursor-pointer mt-0.5"
+                    >
+                      {uniqueRooms.length === 0 ? (
+                        <option value="101">Room 101</option>
+                      ) : (
+                        uniqueRooms.map(r => (
+                          <option key={r} value={r}>Room {r} {roomToGuestNameMap[r] ? `(${roomToGuestNameMap[r]})` : ''}</option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-neutral-400 font-mono block">Status / Type</span>
+                    <span className="text-xs text-amber-300 font-mono uppercase">
+                      {selectedRequest ? selectedRequest.status : (activeChatRequest ? activeChatRequest.status : 'Ready')}
                     </span>
                   </div>
+                </div>
 
-                  {/* Threaded Chat Bubbles View */}
-                  <div className="space-y-3 overflow-y-auto pr-2 flex-1 bg-[#050811]/50 p-3 rounded-2xl border border-white/[0.04]">
-                    {selectedRequest.note.split('| Staff Reply:').map((messageChunk, index) => {
+                {/* Threaded Chat Bubbles View */}
+                <div className="space-y-3 overflow-y-auto pr-2 flex-1 bg-[#050811]/50 p-3 rounded-2xl border border-white/[0.04]">
+                  {activeChatRequest ? (
+                    activeChatRequest.note.split('| Staff Reply:').map((messageChunk, index) => {
                       const isStaffReply = index > 0;
                       return (
                         <div key={index} className={`flex flex-col ${isStaffReply ? 'items-end' : 'items-start'}`}>
                           <span className="text-[9px] font-mono text-neutral-500 mb-1 px-1">
-                            {isStaffReply ? 'Manager / Staff' : `Guest (Room ${selectedRequest.room})`}
+                            {isStaffReply ? 'Manager / Staff' : `Guest (Room ${activeChatRequest.room})`}
                           </span>
                           <div className={`p-3 rounded-2xl text-xs max-w-[85%] leading-relaxed ${
                             isStaffReply 
                               ? 'bg-amber-500/20 text-amber-200 border border-amber-500/30 rounded-tr-sm' 
                               : 'bg-[#0b1021] text-neutral-200 border border-white/[0.08] rounded-tl-sm'
                           }`}>
-                            {messageChunk.trim()}
+                            {messageChunk.replace('Staff Direct Message:', '').trim()}
                           </div>
                         </div>
                       );
-                    })}
-                  </div>
+                    })
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center text-neutral-500 text-xs">
+                      <p>Start a conversation with this room below.</p>
+                    </div>
+                  )}
+                </div>
 
-                  {/* Quick Status Buttons */}
+                {/* Quick Status Buttons */}
+                {activeChatRequest && (
                   <div className="flex items-center gap-2 pt-3 shrink-0">
                     <button 
-                      onClick={() => updateStatus(selectedRequest.id, 'In Progress')}
+                      onClick={() => updateStatus(activeChatRequest.id, 'In Progress')}
                       className="flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-white/[0.04] hover:bg-white/[0.08] text-amber-400 border border-white/[0.08] transition-all font-mono"
                     >
                       Mark Progress
                     </button>
                     <button 
-                      onClick={() => updateStatus(selectedRequest.id, 'Completed')}
+                      onClick={() => updateStatus(activeChatRequest.id, 'Completed')}
                       className="flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition-all font-mono"
                     >
                       Mark Completed
                     </button>
                   </div>
+                )}
 
-                  {/* Reply Input Bar */}
-                  <div className="pt-3 border-t border-white/[0.06] mt-3 flex items-center gap-2 shrink-0">
-                    <input 
-                      type="text"
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSendReply()}
-                      placeholder="Type reply to guest room..."
-                      className="flex-1 bg-[#050811] text-xs text-white focus:outline-none px-4 py-3 rounded-xl border border-white/[0.06] focus:border-amber-400 transition-all"
-                    />
-                    <button 
-                      onClick={handleSendReply}
-                      className="px-4 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl text-xs uppercase tracking-wider font-mono shadow-md transition-all"
-                    >
-                      Send
-                    </button>
-                  </div>
+                {/* Reply Input Bar */}
+                <div className="pt-3 border-t border-white/[0.06] mt-3 flex items-center gap-2 shrink-0">
+                  <input 
+                    type="text"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendReply()}
+                    placeholder={`Type direct message to Room ${selectedRequest ? selectedRequest.room : effectiveChatRoom}...`}
+                    className="flex-1 bg-[#050811] text-xs text-white focus:outline-none px-4 py-3 rounded-xl border border-white/[0.06] focus:border-amber-400 transition-all"
+                  />
+                  <button 
+                    onClick={handleSendReply}
+                    className="px-4 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl text-xs uppercase tracking-wider font-mono shadow-md transition-all"
+                  >
+                    Send
+                  </button>
+                </div>
 
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-neutral-500 text-xs">
-                  <span className="text-2xl mb-2 opacity-40">📨</span>
-                  <p className="max-w-xs leading-relaxed">Select any ticket card from the live pipeline to open the interactive chat reply interface.</p>
-                </div>
-              )}
+              </div>
             </div>
 
           </div>
@@ -901,7 +967,7 @@ export default function ManagerDashboard() {
           </div>
         )}
 
-        {/* TAB 4: GUEST CRM & SHIFT NOTES (Updated with Responsive Multi-Column Grid) */}
+        {/* TAB 4: GUEST CRM & SHIFT NOTES */}
         {activeTab === 'crm' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn">
             
@@ -920,7 +986,6 @@ export default function ManagerDashboard() {
                   </button>
                 </div>
 
-                {/* Updated Responsive Grid Container */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto pr-1">
                   {guestProfiles.length === 0 ? (
                     <div className="col-span-full h-40 flex flex-col items-center justify-center text-neutral-400 text-xs border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40 text-center">
