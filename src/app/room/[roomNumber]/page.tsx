@@ -175,55 +175,55 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
   },
   am: {
     welcome: "እንኳን ደህና መጡ",
-    suiteLocked: "ክፍል ተዘግቷል",
-    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት ዴስክ ጋር ይመዝገቡ",
-    verifying: "መረጃዎችን በመፈተሽ ላይ...",
+    suiteLocked: "ክፍል የተጠበቀ",
+    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት መቀመጫ ጋር ይመዝገቡ",
+    verifying: "መረጃ-ን በመፈተሽ ላይ...",
     servicesTab: "አገልግሎቶች",
     menuTab: "የምግብ ዝርዝር",
-    folioTab: "ክፍያ",
-    callWaiter: "አስተናጋጅ ጥራ",
-    roomCleaning: "ክፍል ማፅዳት",
-    laundryService: "ልብስ ማጠቢያ",
+    folioTab: "ሂሳብ",
+    callWaiter: " አስተናጋጅ ጥራ",
+    roomCleaning: "የክፍል ጽዳት",
+    laundryService: "የልብስ ማጠቢያ",
     taxiTransport: "ታክሲ",
     spaBooking: "ስፓ",
-    itemsSelected: "የተመረጡ",
+    itemsSelected: "እቃዎች",
     confirmOrder: "ትዕዛዝ አረጋግጥ",
     orderStatus: "ሁኔታ",
-    viewProgress: "ሁኔታውን ተመልከት",
+    viewProgress: "ሁኔታ ይመልከቱ",
     close: "ዝጋ",
     submit: "ላክ",
     specialInstructions: "ልዩ ማስታወሻ ወይም ጥያቄ",
-    placeholderNotes: "ለምሳሌ: አለርጂ, ተጨማሪ ፎጣዎች...",
+    placeholderNotes: "ለምሳሌ አለርጂ፣ ተጨማሪ ፎጣ...",
     departureTime: "የመነሻ ሰዓት",
-    itemBreakdown: "የዕቃዎች ዝርዝር",
-    waiterAlert: "አስተናጋጅ ወደ ክፍልዎ እንዲመጣ ይፈልጋሉ?",
-    pending: "ጥያቄው ደርሷል",
+    itemBreakdown: "የእቃዎች ዝርዝር",
+    waiterAlert: "አስተናጋጅ ወደ ክፍል እንዲመጣ ይፈልጋሉ?",
+    pending: "ትዕዛዝ ተቀብለናል",
     inProgress: "በሂደት ላይ",
     completed: "ተጠናቋል",
-    subtotal: "ንዑስ ድምር",
+    subtotal: "ንኡስ ድምር",
     serviceTax: "የአገልግሎት ክፍያ (10%)",
-    total: "ጠቅላላ ድምር",
-    clearCart: "ሰረገላውን ባዶ አድርግ",
-    viewCartAndPay: "ትዕዛዝ ማረጋገጫ",
+    total: "አጠቃላይ ድምር",
+    clearCart: "ጋሪ ባዶ አድርግ",
+    viewCartAndPay: "ጋሪውን እይ እና ትዕዛዝ አስገባ",
     estimatedArrival: "ግምታዊ የመድረሻ ሰዓት",
-    myFolioTitle: "የክፍልዎ ወጪዎች",
-    myFolioSubtitle: "እስካሁን የታዘዙ አገልግሎቶች",
-    noChargesYet: "እስካሁን የተመዘገበ ወጪ የለም።",
-    stayTotal: "ጠቅላላ የቆይታ ወጪ",
-    rateServicePrompt: "ቆይታዎን ይገምግሙ:",
+    myFolioTitle: "የክፍል ሂሳብዎ",
+    myFolioSubtitle: "እስካሁን ያዘዟቸው ትዕዛዞች",
+    noChargesYet: " እስካሁን የተመዘገበ ክፍያ የለም።",
+    stayTotal: "አጠቃላይ የቆይታ ክፍያ",
+    rateServicePrompt: "ቆይታዎን ይገመግሙ:",
     feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይስጡን...",
     submitFeedback: "አስተያየት ላክ",
-    feedbackThankYou: "ስለ አስተያየትዎ እናመሰግናለን!",
+    feedbackThankYou: "ለሰጡን አስተያየት እናመሰግናለን!",
     laundryItems: { 
       shirts: { name: "ሸሚዝ", price: 50 }, 
       pants: { name: "ሱሪ", price: 70 }, 
       others: { name: "ሌሎች እቃዎች", price: 40 } 
     },
     menu: [
-      { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "ትኩስ ዳቦ, ፍራፍሬ እና ቡና" },
-      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "ቂጣ እና አቮካዶ" },
+      { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "ትኩስ ዳቦ፣ ፍራፍሬ እና ቡና" },
+      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "የተፈጨ አቮካዶ እና እንቁላል" },
       { id: 3, name: "ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከድንች ጥብስ ጋር" },
-      { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የተፈጨ ስጋ በርገር ከድንች ጥብስ ጋር" },
+      { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የስጋ በርገር ከቺዝ እና ድንች ጥብስ ጋር" },
     ]
   }
 };
@@ -286,7 +286,7 @@ function GuestChatWidget({ roomNumber }: { roomNumber: string }) {
           <span className="text-xs uppercase tracking-wider font-mono">Chat with Concierge</span>
         </button>
       ) : (
-        <div className="bg-[#0b1021] border border-amber-500/30 w-72 sm:w-80 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[400px]">
+        <div className="bg-[#0b1021] border border-amber-500/35 w-72 sm:w-80 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[360px]">
           
           {/* Header */}
           <div className="bg-[#050811] p-3 border-b border-white/[0.08] flex items-center justify-between">
@@ -802,7 +802,8 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
 
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/[0.05] blur-[140px] pointer-events-none rounded-full" />
 
-      <div className={`w-full max-w-md rounded-[2rem] border p-6 sm:p-8 shadow-2xl relative z-10 transition-colors duration-300 mb-20 ${
+      {/* Main Container Wrapper given relative positioning so child absolute elements stay inside */}
+      <div className={`w-full max-w-md rounded-[2rem] border p-6 sm:p-8 shadow-2xl relative z-10 transition-colors duration-300 mb-20 overflow-hidden ${
         darkMode ? 'bg-[#131622] border-white/[0.04]' : 'bg-white border-neutral-200'
       }`}>
         
@@ -1081,10 +1082,55 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
           </div>
         )}
 
+        {/* Repositioned Active Request Status Tracker inside phone container boundaries */}
+        {trackedOrder && trackedOrder.category !== 'Feedback' && trackedOrder.category !== 'Checkout' && trackedOrder.category !== 'Live Concierge Chat' && !isModalOpen && (
+          <div className={`absolute bottom-3 left-4 right-4 p-3.5 rounded-2xl flex items-center justify-between shadow-2xl border backdrop-blur-xl z-30 ${
+            trackedOrder.status === 'Completed'
+              ? 'bg-emerald-950/95 border-emerald-500/40 text-emerald-100' 
+              : darkMode ? 'bg-[#131622]/98 border-amber-500/35 text-white' : 'bg-white/98 border-neutral-300 text-neutral-900'
+          }`}>
+            <div className="flex items-center gap-2.5">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${trackedOrder.status === 'Completed' ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
+              <div className="overflow-hidden">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-400">
+                  {trackedOrder.status === 'Completed' ? 'Request Completed' : `${t.orderStatus}: ${trackedOrder.status}`}
+                </p>
+                <p className="text-[10px] text-neutral-300 truncate max-w-[140px] font-light">
+                  {getDetailedLiveStatus(trackedOrder.category, trackedOrder.status)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {trackedOrder.status !== 'Completed' && trackedOrder.note && trackedOrder.note.includes('ETA:') && (
+                <div className="text-right hidden sm:block">
+                  <span className="block text-[8px] uppercase tracking-wider text-neutral-400">{t.estimatedArrival}</span>
+                  <span className="text-[11px] font-mono font-bold text-amber-400">
+                    {trackedOrder.note.split('ETA: ')[1]?.split(' |')[0]}
+                  </span>
+                </div>
+              )}
+
+              {trackedOrder.status === 'Completed' ? (
+                <button onClick={() => { setActiveOrderId(null); setTrackedOrder(null); }} className="bg-emerald-500 text-neutral-950 text-[9px] uppercase tracking-wider font-bold px-2.5 py-1.5 rounded-xl active:scale-95 transition-all">
+                  Dismiss
+                </button>
+              ) : (
+                <button onClick={() => setIsModalOpen(true)} className="bg-amber-500 text-neutral-950 text-[9px] uppercase tracking-wider font-bold px-2.5 py-1.5 rounded-xl active:scale-95 transition-all">
+                  {t.viewProgress}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Repositioned Guest Chat Widget inside phone container boundaries */}
+        <GuestChatWidget roomNumber={roomNumber} />
+
       </div>
 
       {Object.keys(cart).length > 0 && !isModalOpen && !isCartOpen && (
-        <div className={`fixed ${trackedOrder ? 'bottom-20' : 'bottom-6'} left-5 right-5 max-w-md mx-auto z-30 transition-all duration-300`}>
+        <div className="fixed bottom-6 left-5 right-5 max-w-md mx-auto z-30 transition-all duration-300">
           <button 
             onClick={() => setIsCartOpen(true)}
             className="w-full py-3.5 px-5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-110 text-neutral-950 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-2xl flex items-center justify-between active:scale-[0.99] transition-all"
@@ -1166,47 +1212,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
             </div>
           </div>
         </>
-      )}
-
-      {trackedOrder && trackedOrder.category !== 'Feedback' && trackedOrder.category !== 'Checkout' && trackedOrder.category !== 'Live Concierge Chat' && !isModalOpen && (
-        <div className={`fixed bottom-6 right-5 max-w-sm mx-auto p-4 rounded-2xl flex items-center justify-between shadow-2xl border backdrop-blur-xl z-30 ${
-          trackedOrder.status === 'Completed'
-            ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-100' 
-            : darkMode ? 'bg-[#131622]/95 border-amber-500/30 text-white' : 'bg-white/95 border-neutral-300 text-neutral-900'
-        }`}>
-          <div className="flex items-center gap-3">
-            <span className={`w-2 h-2 rounded-full ${trackedOrder.status === 'Completed' ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-400">
-                {trackedOrder.status === 'Completed' ? 'Request Completed' : `${t.orderStatus}: ${trackedOrder.status}`}
-              </p>
-              <p className="text-[11px] text-neutral-300 truncate max-w-[150px] font-light">
-                {getDetailedLiveStatus(trackedOrder.category, trackedOrder.status)}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {trackedOrder.status !== 'Completed' && trackedOrder.note && trackedOrder.note.includes('ETA:') && (
-              <div className="text-right hidden sm:block">
-                <span className="block text-[9px] uppercase tracking-wider text-neutral-400">{t.estimatedArrival}</span>
-                <span className="text-xs font-mono font-bold text-amber-400">
-                  {trackedOrder.note.split('ETA: ')[1]?.split(' |')[0]}
-                </span>
-              </div>
-            )}
-
-            {trackedOrder.status === 'Completed' ? (
-              <button onClick={() => { setActiveOrderId(null); setTrackedOrder(null); }} className="bg-emerald-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
-                Dismiss
-              </button>
-            ) : (
-              <button onClick={() => setIsModalOpen(true)} className="bg-amber-500 text-neutral-950 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all">
-                {t.viewProgress}
-              </button>
-            )}
-          </div>
-        </div>
       )}
 
       {isModalOpen && trackedOrder && (
@@ -1320,7 +1325,6 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </>
       )}
 
-      <GuestChatWidget roomNumber={roomNumber} />
     </div>
   );
 }
