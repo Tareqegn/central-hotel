@@ -1,9 +1,10 @@
-// Front Desk Check-In & Smart Guest Memory Portal with SMS & Session Tokens
+// Front Desk Check-In & Smart Guest Memory Portal with SMS, Session Tokens & Live Chat Widget
 "use client";
 
 import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../supabaseClient';
+import { MessageSquare, Send, X } from 'lucide-react';
 
 interface MenuItem {
   id: number;
@@ -229,6 +230,123 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
 
 interface PageProps {
   params: Promise<{ roomNumber: string }> | { roomNumber: string };
+}
+
+function GuestChatWidget({ roomNumber }: { roomNumber: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+
+  const fetchRoomChat = async () => {
+    const { data } = await supabase
+      .from('requests')
+      .select('*')
+      .eq('room', roomNumber)
+      .order('created_at', { ascending: true });
+    if (data) setChatHistory(data);
+  };
+
+  useEffect(() => {
+    fetchRoomChat();
+    const channel = supabase
+      .channel(`guest_room_${roomNumber}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'requests', filter: `room=eq.${roomNumber}` }, () => {
+        fetchRoomChat();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomNumber]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim()) return;
+
+    await supabase.from('requests').insert([{
+      room: roomNumber,
+      category: 'Live Concierge Chat',
+      note: message.trim(),
+      status: 'Pending'
+    }]);
+
+    setMessage('');
+    fetchRoomChat();
+  };
+
+  return (
+    <div className="fixed bottom-4 left-4 z-50 font-sans">
+      {!isOpen ? (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 transition-all transform hover:scale-105"
+        >
+          <MessageSquare className="w-5 h-5" />
+          <span className="text-xs uppercase tracking-wider font-mono">Chat with Concierge</span>
+        </button>
+      ) : (
+        <div className="bg-[#0b1021] border border-amber-500/30 w-80 sm:w-96 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[450px]">
+          
+          {/* Header */}
+          <div className="bg-[#050811] p-4 border-b border-white/[0.08] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="text-xs font-mono font-bold text-amber-400 uppercase">Concierge Live Chat</span>
+            </div>
+            <button onClick={() => setIsOpen(false)} className="text-neutral-400 hover:text-white">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Messages Body */}
+          <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#050811]/50">
+            {chatHistory.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center text-neutral-500 text-xs">
+                <p>How can we assist you today? Send a message to our manager team.</p>
+              </div>
+            ) : (
+              chatHistory.map((item) => (
+                <div key={item.id} className="space-y-1">
+                  {/* Guest Initial Note */}
+                  <div className="flex justify-end">
+                    <div className="bg-amber-500 text-black text-xs p-3 rounded-2xl rounded-tr-none max-w-[80%] font-medium">
+                      {item.note.includes('Staff Reply:') ? item.note.split(' | Staff Reply:')[0] : item.note}
+                    </div>
+                  </div>
+
+                  {/* Manager Reply (if exists) */}
+                  {item.note.includes('Staff Reply:') && (
+                    <div className="flex justify-start">
+                      <div className="bg-[#121829] border border-amber-500/20 text-neutral-200 text-xs p-3 rounded-2xl rounded-tl-none max-w-[80%]">
+                        <span className="text-[9px] font-mono text-amber-400 block mb-1">Front Desk / Manager</span>
+                        {item.note.split(' | Staff Reply:')[1]}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Input Footer */}
+          <form onSubmit={handleSendMessage} className="p-3 bg-[#050811] border-t border-white/[0.08] flex items-center gap-2">
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Ask for anything..."
+              className="flex-1 bg-[#0b1021] text-xs text-white px-3.5 py-2.5 rounded-xl border border-white/[0.06] focus:border-amber-400 focus:outline-none"
+            />
+            <button type="submit" className="bg-amber-500 hover:bg-amber-400 text-black p-2.5 rounded-xl transition-all">
+              <Send className="w-4 h-4" />
+            </button>
+          </form>
+
+        </div>
+      )}
+    </div>
+  );
 }
 
 function RoomContent({ roomNumber }: { roomNumber: string }) {
@@ -618,7 +736,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
   }
 
   return (
-    <div className={`min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden transition-colors duration-500 font-sans antialiased tracking-tight ${
+    <div className={`min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-y-auto transition-colors duration-500 font-sans antialiased tracking-tight ${
       darkMode ? 'bg-[#0b0d14] text-neutral-100' : 'bg-[#f7f8fa] text-neutral-900'
     }`}>
       
@@ -684,7 +802,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
 
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/[0.05] blur-[140px] pointer-events-none rounded-full" />
 
-      <div className={`w-full max-w-md rounded-[2rem] border p-6 sm:p-8 shadow-2xl relative z-10 transition-colors duration-300 ${
+      <div className={`w-full max-w-md rounded-[2rem] border p-6 sm:p-8 shadow-2xl relative z-10 transition-colors duration-300 mb-20 ${
         darkMode ? 'bg-[#131622] border-white/[0.04]' : 'bg-white border-neutral-200'
       }`}>
         
@@ -805,7 +923,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         )}
 
         {activeTab === 'menu' && (
-          <div className="w-full flex flex-col gap-2.5 pb-32 max-h-[380px] overflow-y-auto pr-1">
+          <div className="w-full flex flex-col gap-2.5 pb-20 max-h-[380px] overflow-y-auto pr-1">
             {t.menu.map((item: MenuItem) => (
               <div key={item.id} className={`p-3.5 rounded-2xl flex items-center justify-between border transition-all ${
                 darkMode ? 'bg-white/[0.02] border-white/[0.03]' : 'bg-neutral-50 border-neutral-200'
@@ -840,19 +958,19 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         )}
 
         {activeTab === 'folio' && (
-          <div className="w-full flex flex-col pb-28 max-h-[380px] overflow-y-auto pr-1 space-y-4">
+          <div className="w-full flex flex-col pb-20 max-h-[380px] overflow-y-auto pr-1 space-y-4">
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-400">{t.myFolioTitle}</h2>
               <p className="text-[10px] text-neutral-400 font-light">{t.myFolioSubtitle}</p>
             </div>
 
-            {activeRequests.filter(r => r.category !== 'Feedback' && r.category !== 'Checkout').length === 0 ? (
+            {activeRequests.filter(r => r.category !== 'Feedback' && r.category !== 'Checkout' && r.category !== 'Live Concierge Chat').length === 0 ? (
               <div className="text-center py-8 text-neutral-500 text-xs font-light">
                 {t.noChargesYet}
               </div>
             ) : (
               <div className="space-y-2.5">
-                {activeRequests.filter(r => r.category !== 'Feedback' && r.category !== 'Checkout').map((req) => {
+                {activeRequests.filter(r => r.category !== 'Feedback' && r.category !== 'Checkout' && r.category !== 'Live Concierge Chat').map((req) => {
                   const reqPrice = extractPriceFromNote(req.note);
                   return (
                     <div key={req.id} className={`p-3.5 rounded-2xl border flex flex-col gap-2 ${
@@ -890,7 +1008,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
               </div>
             )}
 
-            {activeRequests.filter(r => r.category !== 'Feedback' && r.category !== 'Checkout').length > 0 && (
+            {activeRequests.filter(r => r.category !== 'Feedback' && r.category !== 'Checkout' && r.category !== 'Live Concierge Chat').length > 0 && (
               <div className={`p-4 rounded-2xl border flex justify-between items-center ${
                 darkMode ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50 border-amber-200'
               }`}>
@@ -1050,8 +1168,8 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </>
       )}
 
-      {trackedOrder && trackedOrder.category !== 'Feedback' && trackedOrder.category !== 'Checkout' && !isModalOpen && (
-        <div className={`fixed bottom-6 left-5 right-5 max-w-md mx-auto p-4 rounded-2xl flex items-center justify-between shadow-2xl border backdrop-blur-xl z-30 ${
+      {trackedOrder && trackedOrder.category !== 'Feedback' && trackedOrder.category !== 'Checkout' && trackedOrder.category !== 'Live Concierge Chat' && !isModalOpen && (
+        <div className={`fixed bottom-6 right-5 max-w-sm mx-auto p-4 rounded-2xl flex items-center justify-between shadow-2xl border backdrop-blur-xl z-30 ${
           trackedOrder.status === 'Completed'
             ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-100' 
             : darkMode ? 'bg-[#131622]/95 border-amber-500/30 text-white' : 'bg-white/95 border-neutral-300 text-neutral-900'
@@ -1062,7 +1180,7 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
               <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-400">
                 {trackedOrder.status === 'Completed' ? 'Request Completed' : `${t.orderStatus}: ${trackedOrder.status}`}
               </p>
-              <p className="text-[11px] text-neutral-300 truncate max-w-[170px] font-light">
+              <p className="text-[11px] text-neutral-300 truncate max-w-[150px] font-light">
                 {getDetailedLiveStatus(trackedOrder.category, trackedOrder.status)}
               </p>
             </div>
@@ -1201,6 +1319,8 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
           </div>
         </>
       )}
+
+      <GuestChatWidget roomNumber={roomNumber} />
     </div>
   );
 }
