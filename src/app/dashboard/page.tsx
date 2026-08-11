@@ -237,7 +237,6 @@ export default function ManagerDashboard() {
   }, [activeChatRequest?.id, activeChatRequest?.status]);
 
   // FIX 3: Verify Realtime Subscription Filters matching active room ID precisely
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const currentRoom = selectedRequest ? selectedRequest.room : effectiveChatRoom;
     if (!currentRoom) return;
@@ -252,9 +251,8 @@ export default function ManagerDashboard() {
           table: 'requests',
           filter: `room=eq.${currentRoom}`,
         },
-        (payload) => { // 👉 Removed the explicit type here so TypeScript infers it
-          // Use type assertion if needed, or access payload.new directly
-          const newItem = payload.new as RequestItem;
+        (payload: any) => {
+          const newItem = payload.new;
           if (newItem && newItem.status) {
             setActiveRoomStatus(newItem.status);
           }
@@ -269,7 +267,6 @@ export default function ManagerDashboard() {
   }, [selectedRequest, effectiveChatRoom]);
   // FIX 1: Ensure Local State Updates Optimistically on Status Change
   const updateStatus = async (id: string, newStatus: string) => {
-    // Optimistic local state update instantly
     setActiveRoomStatus(newStatus);
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
     if (selectedRequest && selectedRequest.id === id) {
@@ -295,7 +292,6 @@ export default function ManagerDashboard() {
     if (activeChatRequest) {
       const updatedNote = `${activeChatRequest.note} | Staff Reply: ${replyText.trim()}`;
       try {
-        // Optimistic update
         setActiveRoomStatus('In Progress');
         setRequests(prev => prev.map(r => r.id === activeChatRequest.id ? { ...r, note: updatedNote, status: 'In Progress' } : r));
         if (selectedRequest) {
@@ -699,7 +695,7 @@ export default function ManagerDashboard() {
                       <div className="space-y-3.5 bg-[#050811]/90 rounded-2xl p-4 border border-white/[0.06] max-h-[600px] overflow-y-auto">
                         {colRequests.length === 0 ? (
                           <div className="h-40 flex flex-col items-center justify-center text-neutral-400 text-xs border border-dashed border-white/[0.08] bg-[#0b1021]/40 rounded-2xl p-6 text-center">
-                            <span className="text-2xl mb-2 opacity-50">✨</span>
+                            <span className="text-2xl mb-2 opacity-50">📭</span>
                             <span className="font-semibold text-neutral-300 mb-1">All caught up!</span>
                             <span className="text-[11px] text-neutral-500">No active items currently in {col.title}.</span>
                           </div>
@@ -959,7 +955,7 @@ export default function ManagerDashboard() {
 
             {feedbackList.length === 0 ? (
               <div className="h-64 flex flex-col items-center justify-center text-neutral-400 text-xs tracking-wider uppercase font-mono border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40">
-                <span className="text-3xl mb-2 opacity-50">⭐</span>
+                <span className="text-3xl mb-2 opacity-50">📭</span>
                 <span className="font-semibold text-neutral-300 mb-1">No guest reviews yet</span>
                 <span className="text-[11px] text-neutral-500">Submissions from guest tablets will appear here.</span>
               </div>
@@ -1070,7 +1066,7 @@ export default function ManagerDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto pr-1">
                   {guestProfiles.length === 0 ? (
                     <div className="col-span-full h-40 flex flex-col items-center justify-center text-neutral-400 text-xs border border-dashed border-white/[0.08] rounded-2xl bg-[#050811]/40 text-center">
-                      <span className="text-2xl mb-2 opacity-50">📂</span>
+                      <span className="text-2xl mb-2 opacity-50">🛡️</span>
                       <span className="font-semibold text-neutral-300">No guest profiles stored</span>
                       <span className="text-[11px] text-neutral-500 mt-1">Add guest preferences to track personalized service.</span>
                     </div>
