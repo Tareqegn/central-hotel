@@ -176,44 +176,44 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
   am: {
     welcome: "እንኳን ደህና መጡ",
     suiteLocked: "ክፍል ተዘግቷል",
-    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት ዴስክ መቀበያ ጋር ይመዝገቡ",
-    verifying: "መረጃዎችን በማጣራት ላይ...",
+    securityMsg: "እባክዎ ትክክለኛውን የክፍል QR ኮድ ይቃኙ ወይም ከፊት ዴስክ ጋር ይመዝገቡ",
+    verifying: "መረጃዎችን በመፈተሽ ላይ...",
     servicesTab: "አገልግሎቶች",
     menuTab: "የምግብ ዝርዝር",
-    folioTab: "ሂሳብ",
-    callWaiter: " አስተናጋጅ ጥራ",
-    roomCleaning: "የክፍል ጽዳት",
+    folioTab: "ክፍያ",
+    callWaiter: "አስተናጋጅ ጥራ",
+    roomCleaning: "ክፍል ማፅዳት",
     laundryService: "ልብስ ማጠቢያ",
     taxiTransport: "ታክሲ",
     spaBooking: "ስፓ",
-    itemsSelected: "እቃዎች",
+    itemsSelected: "የተመረጡ",
     confirmOrder: "ትዕዛዝ አረጋግጥ",
     orderStatus: "ሁኔታ",
-    viewProgress: "ሁኔታ ይመልከቱ",
+    viewProgress: "ሁኔታውን ተመልከት",
     close: "ዝጋ",
     submit: "ላክ",
     specialInstructions: "ልዩ ማስታወሻ ወይም ጥያቄ",
     placeholderNotes: "ለምሳሌ: አለርጂ, ተጨማሪ ፎጣዎች...",
     departureTime: "የመነሻ ሰዓት",
-    itemBreakdown: "የእቃዎች ዝርዝር",
+    itemBreakdown: "የዕቃዎች ዝርዝር",
     waiterAlert: "አስተናጋጅ ወደ ክፍልዎ እንዲመጣ ይፈልጋሉ?",
-    pending: "ትዕዛዝ ተቀብለናል",
+    pending: "ጥያቄው ደርሷል",
     inProgress: "በሂደት ላይ",
     completed: "ተጠናቋል",
     subtotal: "ንዑስ ድምር",
     serviceTax: "የአገልግሎት ክፍያ (10%)",
     total: "ጠቅላላ ድምር",
-    clearCart: "ጋሪ ባዶ አድርግ",
-    viewCartAndPay: "ጋሪውን እይ እና ትዕዛዝ አድርግ",
+    clearCart: "ሰረገላውን ባዶ አድርግ",
+    viewCartAndPay: "ትዕዛዝ ማረጋገጫ",
     estimatedArrival: "ግምታዊ የመድረሻ ሰዓት",
-    myFolioTitle: "የክፍልዎ ሂሳብ",
-    myFolioSubtitle: "የቀሩት ወጪዎች እና ትዕዛዞች",
-    noChargesYet: " እስካሁን ምንም ወጪ አልተመዘገበም",
+    myFolioTitle: "የክፍልዎ ወጪዎች",
+    myFolioSubtitle: "እስካሁን የታዘዙ አገልግሎቶች",
+    noChargesYet: "እስካሁን የተመዘገበ ወጪ የለም።",
     stayTotal: "ጠቅላላ የቆይታ ወጪ",
-    rateServicePrompt: "እባክዎ አገልግሎቱን ይገምግሙ:",
-    feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይስጡ...",
+    rateServicePrompt: "ቆይታዎን ይገምግሙ:",
+    feedbackPlaceholder: "ስለ ቆይታዎ አስተያየት ይስጡን...",
     submitFeedback: "አስተያየት ላክ",
-    feedbackThankYou: "ለሰጡን አስተያየት እናመሰግናለን!",
+    feedbackThankYou: "ስለ አስተያየትዎ እናመሰግናለን!",
     laundryItems: { 
       shirts: { name: "ሸሚዝ", price: 50 }, 
       pants: { name: "ሱሪ", price: 70 }, 
@@ -221,9 +221,9 @@ const TRANSLATIONS: Record<string, TranslationSchema> = {
     },
     menu: [
       { id: 1, name: "ቁርስ", price: 280, icon: "croissant", desc: "ትኩስ ዳቦ, ፍራፍሬ እና ቡና" },
-      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "ዳቦ እና የተፈጨ አቮካዶ" },
-      { id: 3, name: "ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከ ድንች ጥብስ ጋር" },
-      { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የስጋ በርገር ከ አይብ እና ድንች ጥብስ ጋር" },
+      { id: 2, name: "አቮካዶ ቶስት", price: 220, icon: "avocado", desc: "ቂጣ እና አቮካዶ" },
+      { id: 3, name: "ሳንድዊች", price: 340, icon: "sandwich", desc: "የዶሮ ሳንድዊች ከድንች ጥብስ ጋር" },
+      { id: 4, name: "በርገር", price: 410, icon: "burger", desc: "የተፈጨ ስጋ በርገር ከድንች ጥብስ ጋር" },
     ]
   }
 };
@@ -276,7 +276,7 @@ function GuestChatWidget({ roomNumber }: { roomNumber: string }) {
   };
 
   return (
-    <div className="fixed bottom-4 left-4 z-50 font-sans">
+    <div className="absolute bottom-4 left-4 z-20 font-sans">
       {!isOpen ? (
         <button
           onClick={() => setIsOpen(true)}
@@ -286,10 +286,10 @@ function GuestChatWidget({ roomNumber }: { roomNumber: string }) {
           <span className="text-xs uppercase tracking-wider font-mono">Chat with Concierge</span>
         </button>
       ) : (
-        <div className="bg-[#0b1021] border border-amber-500/30 w-80 sm:w-96 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[450px]">
+        <div className="bg-[#0b1021] border border-amber-500/30 w-72 sm:w-80 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[400px]">
           
           {/* Header */}
-          <div className="bg-[#050811] p-4 border-b border-white/[0.08] flex items-center justify-between">
+          <div className="bg-[#050811] p-3 border-b border-white/[0.08] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span className="text-xs font-mono font-bold text-amber-400 uppercase">Concierge Live Chat</span>
@@ -300,7 +300,7 @@ function GuestChatWidget({ roomNumber }: { roomNumber: string }) {
           </div>
 
           {/* Messages Body */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#050811]/50">
+          <div className="flex-1 p-3 overflow-y-auto space-y-3 bg-[#050811]/50">
             {chatHistory.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-neutral-500 text-xs">
                 <p>How can we assist you today? Send a message to our manager team.</p>
@@ -310,7 +310,7 @@ function GuestChatWidget({ roomNumber }: { roomNumber: string }) {
                 <div key={item.id} className="space-y-1">
                   {/* Guest Initial Note */}
                   <div className="flex justify-end">
-                    <div className="bg-amber-500 text-black text-xs p-3 rounded-2xl rounded-tr-none max-w-[80%] font-medium">
+                    <div className="bg-amber-500 text-black text-xs p-2.5 rounded-2xl rounded-tr-none max-w-[80%] font-medium">
                       {item.note.includes('Staff Reply:') ? item.note.split(' | Staff Reply:')[0] : item.note}
                     </div>
                   </div>
@@ -318,7 +318,7 @@ function GuestChatWidget({ roomNumber }: { roomNumber: string }) {
                   {/* Manager Reply (if exists) */}
                   {item.note.includes('Staff Reply:') && (
                     <div className="flex justify-start">
-                      <div className="bg-[#121829] border border-amber-500/20 text-neutral-200 text-xs p-3 rounded-2xl rounded-tl-none max-w-[80%]">
+                      <div className="bg-[#121829] border border-amber-500/20 text-neutral-200 text-xs p-2.5 rounded-2xl rounded-tl-none max-w-[80%]">
                         <span className="text-[9px] font-mono text-amber-400 block mb-1">Front Desk / Manager</span>
                         {item.note.split(' | Staff Reply:')[1]}
                       </div>
@@ -330,15 +330,15 @@ function GuestChatWidget({ roomNumber }: { roomNumber: string }) {
           </div>
 
           {/* Input Footer */}
-          <form onSubmit={handleSendMessage} className="p-3 bg-[#050811] border-t border-white/[0.08] flex items-center gap-2">
+          <form onSubmit={handleSendMessage} className="p-2.5 bg-[#050811] border-t border-white/[0.08] flex items-center gap-2">
             <input
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Ask for anything..."
-              className="flex-1 bg-[#0b1021] text-xs text-white px-3.5 py-2.5 rounded-xl border border-white/[0.06] focus:border-amber-400 focus:outline-none"
+              className="flex-1 bg-[#0b1021] text-xs text-white px-3 py-2 rounded-xl border border-white/[0.06] focus:border-amber-400 focus:outline-none"
             />
-            <button type="submit" className="bg-amber-500 hover:bg-amber-400 text-black p-2.5 rounded-xl transition-all">
+            <button type="submit" className="bg-amber-500 hover:bg-amber-400 text-black p-2 rounded-xl transition-all">
               <Send className="w-4 h-4" />
             </button>
           </form>
@@ -723,9 +723,9 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         
         <div className="max-w-xs w-full bg-[#131622] border border-white/[0.04] p-8 rounded-2xl shadow-2xl flex flex-col items-center relative z-10">
           <div className="w-16 h-16 mb-4 flex items-center justify-center">
-            <span className="text-2xl font-serif text-amber-500 font-bold">CY</span>
+            <img src="/logo.png" alt="Central Yamarech Logo" className="w-full h-full object-contain" />
           </div>
-          <h1 className="text-lg font-serif text-white tracking-wide">Central Hotel</h1>
+          <h1 className="text-lg font-serif text-white tracking-wide">Central Yamarech</h1>
           <p className="text-[9px] tracking-[0.2em] text-amber-500/85 uppercase mt-1 mb-6 font-medium">{t.suiteLocked}</p>
           <p className="text-neutral-400 text-xs leading-relaxed font-light">
             Room {roomNumber} is currently between guest stays. If you have just checked in, please contact front desk reception.
@@ -832,11 +832,11 @@ function RoomContent({ roomNumber }: { roomNumber: string }) {
         </div>
 
         <header className="w-full text-center mb-6">
-          <div className="w-14 h-14 mx-auto mb-3 flex items-center justify-center rounded-2xl bg-amber-500/10 border border-amber-500/20">
-            <span className="text-xl font-serif text-amber-400 font-bold">CY</span>
+          <div className="w-14 h-14 mx-auto mb-3 flex items-center justify-center">
+            <img src="/logo.png" alt="Central Yamarech Logo" className="w-full h-full object-contain" />
           </div>
-          <h1 className="text-xl font-serif tracking-wide font-normal">Central Hotel</h1>
-          <p className="text-[9px] tracking-[0.25em] text-neutral-400 uppercase mt-1 font-medium">Room Service Portal</p>
+          <h1 className="text-xl font-serif tracking-wide font-normal">Central Yamarech</h1>
+          <p className="text-[9px] tracking-[0.25em] text-neutral-400 uppercase mt-1 font-medium">Hawassa Hotel</p>
           
           <div className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[9px] text-amber-400 tracking-wider font-semibold uppercase">
             Guest: {sessionData?.guest_name || 'Valued Guest'} • Active
